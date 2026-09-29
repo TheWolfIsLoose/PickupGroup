@@ -210,6 +210,25 @@ leader"; play-history analytics (Raider.IO covers it); a per-player
     accepts (search failures logged against time since the last
     search).
 
+**Round 1 results (2026-09-28, from the saved log):**
+- 1a: cover on and off over the search panel: nothing blocked. **Works.**
+- 1b: our click opened Blizzard's sign-up dialog, Blizzard's Sign Up
+  went through (none -> applied), nothing blocked. **Shift-click to add a
+  note works with Blizzard's own dialog; no note-box workaround needed.**
+- 1b': sign-up straight from our click (ApplyToGroup): applied, nothing
+  blocked. **Click Apply works.**
+- 1c: only Blizzard's refresh was used. A burst of refreshes fails with
+  "throttled"; 3 s after a throttled attempt still failed; 7.6 s and
+  10.1 s later went through. The window is somewhere between ~4 and ~8 s
+  after the last search. Every search fires the results event twice.
+  Round 2: our own Search button (untested so far), spaced 4 / 5 / 6 / 8 s.
+- **Found**: a listing's name comes back as a protected string (it shows
+  in the log as `|Kv1|k`): it can be displayed but not read. So a spam
+  filter can't match words in titles, and "search text" can only be
+  Blizzard's server-side search text, not our own matching. Design
+  impact on Clean-up: spam filtering has to use what is readable
+  (leader, activity, members, age...), to be checked.
+
 ## Phase 2 — the pane (first playable)
 
 Pane over the results area, top bar (tabs, Refresh, sidecar button),
