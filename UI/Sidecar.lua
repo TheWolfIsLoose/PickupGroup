@@ -27,6 +27,8 @@ local dungeonButtons, checks, diffButtons = {}, {}, {}
 local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
+local filterView, optionsView, view = nil, nil, "filter"
+local headTabs = {}
 local open = {}  -- raid name -> heading unfolded (this session)
 
 local function Changed()
@@ -75,7 +77,6 @@ local function PaintRaid(f)
         local on = not f.difficulties or f.difficulties[b.diff]
         b:Paint(on, on and b.color or nil)
     end
-    checks.raidRoom:Set(f.room)
     -- Lockouts differ per difficulty, but boss rules don't: with several
     -- difficulties on, the same rules judge every one of them.
     local nDiff, nRules = 0, 0
@@ -269,11 +270,8 @@ local function BuildRaid(parent)
         b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), -16)
         diffButtons[i] = b
     end
-    local cb = Kit.Check(box, "Room in the raid", function(on) editing.room = on or nil; Changed() end)
-    cb:SetPoint("TOPLEFT", 0, -46)
-    checks.raidRoom = cb
     bossLabel = Label(box, "")
-    bossLabel:SetPoint("TOPLEFT", 0, -72)
+    bossLabel:SetPoint("TOPLEFT", 0, -46)
     bossLabel:SetWidth(W - 2 * PAD)
     bossLabel:SetJustifyH("LEFT")
     bossLabel:SetWordWrap(true)
@@ -283,6 +281,91 @@ local function BuildRaid(parent)
     bossBox:SetHeight(1)
     box:SetHeight(300)
     return box
+end
+
+-- Options: the switch to Blizzard's list and the clean-up rules.
+local function BuildOptions(parent)
+    local box = CreateFrame("Frame", nil, parent)
+    local c = ns.db.cleanup
+    local function Set(key, on)
+        c[key] = on
+        ns.Log.Emit("setting", { key = "cleanup." .. key, on = on })
+        ns.Pane.Render()
+    end
+    local y = 0
+    local blizz = Kit.Check(box, "Use Blizzard's group list instead", function(on)
+        ns.db.useBlizzard = on
+        ns.Log.Emit("setting", { key = "useBlizzard", on = on })
+        ns.Pane.Update()
+    end)
+    blizz:SetPoint("TOPLEFT", 0, y)
+    box.blizz = blizz
+    y = y - 22
+    local hint = Label(box, "A PickupGroup button on Blizzard's panel brings this back.")
+    hint:SetPoint("TOPLEFT", 0, y)
+    hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
+    y = y - 32
+
+    local head = Label(box, "Clean-up: hide listings that...")
+    head:SetPoint("TOPLEFT", 0, y)
+    y = y - 18
+    box.checks = {}
+    for _, row in ipairs({
+        { "stale", "Are listed longer than" },
+        { "advert", "Look like adverts" },
+        { "carry", "Offer a carry" },
+        { "blacklist", "Are led by a blacklisted player" },
+    }) do
+        local key = row[1]
+        local cb = Kit.Check(box, row[2], function(on) Set(key, on) end)
+        cb:SetPoint("TOPLEFT", 0, y)
+        box.checks[key] = cb
+        if key == "stale" then
+            local hours = Kit.Edit(box, 36, function(text)
+                local n = tonumber(text)
+                if n and n > 0 then c.staleHours = n; ns.Pane.Render() end
+            end, true)
+            hours:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+            local unit = Label(box, "hours")
+            unit:SetPoint("LEFT", hours, "RIGHT", 4, 0)
+            box.hours = hours
+        end
+        y = y - 22
+    end
+    local tip = Label(box, "Adverts: no leader score and the voice chat field filled in. "
+        .. "Right-click a row to report, blacklist or hide its leader.")
+    tip:SetPoint("TOPLEFT", 0, y - 2)
+    tip:SetWidth(W - 2 * PAD); tip:SetJustifyH("LEFT"); tip:SetWordWrap(true)
+    y = y - 48
+
+    box.count = Label(box, "")
+    box.count:SetPoint("TOPLEFT", 0, y - 4)
+    local clear = CreateFrame("Button", nil, box)
+    clear:SetSize(60, 20)
+    clear:SetPoint("TOPRIGHT", 0, y)
+    Kit.Button(clear)
+    clear:SetNormalFontObject("PickupGroupFontSmall")
+    clear:SetText("Clear")
+    clear:SetScript("OnClick", function(self)
+        if not self.armed then
+            self.armed = true; self:SetText("Sure?")
+            C_Timer.After(3, function() self.armed = nil; self:SetText("Clear") end)
+            return
+        end
+        self.armed = nil; self:SetText("Clear")
+        ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render()
+    end)
+    box:Hide()
+    return box
+end
+
+local function PaintOptions()
+    local o, c = optionsView, ns.db.cleanup
+    o.blizz:Set(ns.db.useBlizzard)
+    for key, cb in pairs(o.checks) do cb:Set(c[key]) end
+    o.hours:SetText(tostring(c.staleHours or 3))
+    local n = ns.Cleanup.Count()
+    o.count:SetText(("Blacklist: %d leader%s"):format(n, n == 1 and "" or "s"))
 end
 
 local function Build()
@@ -297,10 +380,26 @@ local function Build()
     Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(frame)
 
-    local title = frame:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-    title:SetPoint("TOPLEFT", PAD, -7)
-    title:SetText("Filter")
-    title:SetTextColor(MINT[1], MINT[2], MINT[3])
+    -- Header tabs: Filter (the filter being edited) and Options.
+    local prev
+    for _, t in ipairs({ { "filter", "Filter" }, { "options", "Options" } }) do
+        local b = CreateFrame("Button", nil, frame)
+        b:SetHeight(26)
+        b.text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+        b.text:SetPoint("LEFT")
+        b.text:SetText(t[2])
+        b:SetWidth(b.text:GetStringWidth())
+        b.under = b:CreateTexture(nil, "OVERLAY")
+        b.under:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+        b.under:SetHeight(2)
+        b.under:SetPoint("BOTTOMLEFT", 0, 1)
+        b.under:SetPoint("BOTTOMRIGHT", 0, 1)
+        b.view = t[1]
+        b:SetScript("OnClick", function(self) Sidecar.Show(self.view) end)
+        if prev then b:SetPoint("LEFT", prev, "RIGHT", 14, 0) else b:SetPoint("TOPLEFT", PAD, 0) end
+        headTabs[#headTabs + 1] = b
+        prev = b
+    end
     Kit.HeaderIcon(frame, Kit.CLOSE, "Close", function() frame:Hide() end):SetPoint("TOPRIGHT", -2, -1)
     local rule = frame:CreateTexture(nil, "OVERLAY")
     rule:SetColorTexture(0, 0, 0, 1)
@@ -311,6 +410,10 @@ local function Build()
     local body = CreateFrame("Frame", nil, frame)
     body:SetPoint("TOPLEFT", PAD, -34)
     body:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+    filterView = body
+    optionsView = BuildOptions(frame)
+    optionsView:SetPoint("TOPLEFT", PAD, -34)
+    optionsView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 
     nameBox = Kit.Edit(body, W - 2 * PAD, function(text)
         text = strtrim(text or "")
@@ -363,15 +466,31 @@ local function Build()
 end
 
 -- Open on a filter (the active one by default); toggles when already open on it.
-function Sidecar.Open(f)
+-- Switch the sidecar between its Filter and Options views.
+function Sidecar.Show(which)
+    view = which
+    filterView:SetShown(which == "filter")
+    optionsView:SetShown(which == "options")
+    for _, t in ipairs(headTabs) do
+        local on = t.view == which
+        t.text:SetTextColor(on and MINT[1] or 0.74, on and MINT[2] or 0.74, on and MINT[3] or 0.74)
+        t.under:SetShown(on)
+    end
+    if which == "options" then PaintOptions() else Sidecar.Paint() end
+end
+
+-- Open on a filter (the active one by default), or on Options; clicking
+-- what's already showing closes it.
+function Sidecar.Open(f, which)
     if not PVEFrame then return end
     if not frame then Build() end
+    which = which or "filter"
     f = f or Filters.Active()
-    if frame:IsShown() and editing == f then frame:Hide() return end
+    if frame:IsShown() and view == which and (which == "options" or editing == f) then frame:Hide() return end
     editing = f
     RequestRaidInfo()  -- lockouts for Match my lockout
-    Sidecar.Paint()
     frame:Show()
+    Sidecar.Show(which)
 end
 
 -- New results can bring raids the boss list hasn't shown yet.

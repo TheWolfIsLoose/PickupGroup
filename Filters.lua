@@ -19,7 +19,7 @@ ns.Filters = Filters
 local SHIPPED = {
     { id = "weekly", name = "Weekly keys", kind = "keys", room = true },
     { id = "push", name = "Push keys", kind = "keys", room = true, atLeastMine = true },
-    { id = "raid", name = "Raid", kind = "raid", room = true, difficulties = { N = true, H = true, M = true } },
+    { id = "raid", name = "Raid", kind = "raid", difficulties = { N = true, H = true, M = true } },
 }
 
 -- Classes that bring Bloodlust / a battle rez.
@@ -69,7 +69,7 @@ end
 -- Back to its starting rules: a shipped filter to how it shipped, any other
 -- to a clean one of its kind. Keeps its name and place.
 function Filters.Reset(f)
-    local base = { kind = f.kind, room = true }
+    local base = { kind = f.kind, room = f.kind == "keys" or nil }
     for _, s in ipairs(SHIPPED) do if s.id == f.id then base = s end end
     if f.kind == "raid" and not base.difficulties then base.difficulties = { N = true, H = true, M = true } end
     local id, name = f.id, f.name
@@ -171,7 +171,8 @@ end
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")
     if not f then return true end
-    if f.room and not row.fits then return false end
+    -- Full raids delist themselves, so "room" only means something for keys.
+    if f.room and not row.fits and not row.isRaid then return false end
     if row.isRaid then
         if f.difficulties and row.difficulty and not f.difficulties[row.difficulty] then return false end
         -- Raids aren't cleared in order, so each boss can be asked for alive

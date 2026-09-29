@@ -24,9 +24,8 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. **Phase 3**: v0.3.0-alpha1 (filter tabs + sidecar Filter tab)
-   installed; alpha2 (per-boss raid rules, sidecar fixes) next to test,
-   then Options + clean-up.
+1. **Phase 3**: v0.3.0-alpha8 (Options, clean-up) installed; after the
+   player's test, cut v0.3.0. Left for Phase 3: search text (rules above).
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):

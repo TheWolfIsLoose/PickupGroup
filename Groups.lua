@@ -145,7 +145,7 @@ function Groups.Read(id)
         id = id, name = info.name, leader = info.leaderName, comment = info.comment,
         score = info.leaderOverallDungeonScore, activity = name, code = Code(name),
         difficulty = DIFFICULTY[activity.difficultyID], isRaid = isRaid,
-        age = info.age, members = info.numMembers, voice = info.voiceChat,
+        age = info.age, members = info.numMembers, voice = info.voiceChat, playstyle = info.generalPlaystyle,
         friends = (info.numBNetFriends or 0) + (info.numCharFriends or 0) + (info.numGuildMates or 0),
         fits = fits,
     }
@@ -200,8 +200,10 @@ local function SafeRead(id)
     if not failed[id] then failed[id] = true; ns.LogError(row) end
 end
 
-function Groups.List()
-    local pinned, rows = {}, {}
+-- showHidden: only the rows clean-up hid (with row.hidden = why).
+-- Returns pinned, rows, and how many rows clean-up hid.
+function Groups.List(showHidden)
+    local pinned, rows, hidden = {}, {}, 0
     local _, results = C_LFGList.GetSearchResults()
     local seen = {}
     for _, id in ipairs(C_LFGList.GetApplications() or {}) do
@@ -211,7 +213,11 @@ function Groups.List()
     for _, id in ipairs(results or {}) do
         if not seen[id] then
             local row = SafeRead(id)
-            if row and (row.status or ns.Filters.Pass(row)) then rows[#rows + 1] = row end
+            if row and (row.status or ns.Filters.Pass(row)) then
+                row.hidden = ns.Cleanup.Reason(row)
+                if row.hidden then hidden = hidden + 1 end
+                if (row.hidden ~= nil) == (showHidden == true) then rows[#rows + 1] = row end
+            end
         end
     end
     table.sort(rows, function(a, b)
@@ -221,5 +227,5 @@ function Groups.List()
         end
         return (a.score or 0) > (b.score or 0)
     end)
-    return pinned, rows
+    return pinned, rows, hidden
 end

@@ -45,6 +45,7 @@ local KINDS = {
             Plain(p.leader), p.level and (" (+" .. p.level .. ")") or "")
     end },
     filter  = { "detail", function(p) return ("Filter %s: %s"):format(Plain(p.action), Plain(p.name)) end },
+    blacklist = { "activity", function(p) return ("Blacklist: %s (%s)"):format(Plain(p.name), Plain(p.why)) end },
     trace   = { "trace", function(p) return ("[%s] %s"):format(Plain(p.tag), Plain(p.text)) end },
 }
 

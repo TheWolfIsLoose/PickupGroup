@@ -20,6 +20,8 @@ local DEFAULTS = {
     trace  = true,   -- record trace steps; on by default until v1.0.0
     log    = {},
     chars  = {},
+    cleanup   = { stale = true, staleHours = 3, advert = true, carry = true, blacklist = true },
+    blacklist = {},  -- "Name-Realm" -> last seen in results (time())
 }
 local MIGRATIONS = {}  -- [n] = function(db) upgrades schema n-1 to n
 

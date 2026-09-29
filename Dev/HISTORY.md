@@ -2,6 +2,24 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha8 (2026-09-28): Options and clean-up
+
+- Sidecar header tabs: Filter / Options. The top bar's list icon now
+  opens Options.
+- Options: "Use Blizzard's group list instead" (moved from the top bar);
+  clean-up switches, all on by default: listed longer than N hours
+  (default 3), looks like an advert (no leader score + voice chat filled
+  in, dungeons only), offers a carry (playstyle), blacklisted leader.
+  Blacklist count and Clear (second click confirms).
+- `Cleanup.lua`: the rules, the account-wide blacklist (name-realm, last
+  seen; a year unseen drops off), hide-for-session; reporting a listing
+  through Blizzard's report form blacklists its leader.
+- Pane: "N hidden" in the top bar; click shows only the hidden rows, each
+  with its reason in the tooltip, and back. Right-click a row: report
+  and hide, blacklist the leader, hide until reload.
+- "Room in the raid" removed (full raids delist themselves); raid
+  compositions are left to the community (player).
+
 ## v0.3.0-alpha7 (2026-09-28)
 
 - Sidecar toggles (dungeons, difficulty, boss rules): "on" is now the

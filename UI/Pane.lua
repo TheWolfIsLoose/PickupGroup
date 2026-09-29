@@ -45,7 +45,8 @@ local OUTCOME = {
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
-local panel, pane, backButton, refresh, countText, tabBar, plusTab
+local panel, pane, backButton, refresh, countText, tabBar, plusTab, hiddenButton
+local showHidden = false
 local tabs = {}
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
@@ -116,6 +117,7 @@ local function RowTooltip(frame)
     if not row then return end
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
+    if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
     GameTooltip:AddLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), 0.85, 0.85, 0.85)
     GameTooltip:AddDoubleLine("Leader", row.leader or "?", 0.55, 0.55, 0.55, 1, 1, 1)
     if row.isRaid then
@@ -134,7 +136,8 @@ local function RowTooltip(frame)
     GameTooltip:AddDoubleLine("Listed", Clock(row.age), 0.55, 0.55, 0.55, 1, 1, 1)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Click: sign up.  Shift-click: add a note first.", 0.55, 0.55, 0.55)
+    GameTooltip:AddLine("Click Apply: sign up.  Shift-click: add a note first.", 0.55, 0.55, 0.55)
+    GameTooltip:AddLine("Right-click the row: report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
     GameTooltip:Show()
 end
 
@@ -234,6 +237,26 @@ local function BuildRow(i)
     r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
+    -- Right-click: report, blacklist or hide the leader.
+    r:RegisterForClicks("RightButtonUp")
+    r:SetScript("OnClick", function(self)
+        local row = self.row
+        if not (row and row.leader and MenuUtil) then return end
+        MenuUtil.CreateContextMenu(self, function(_, root)
+            root:CreateTitle(row.leader)
+            root:CreateButton("Report and hide", function()
+                ns.Cleanup.HideForSession(row.leader)
+                if LFGList_ReportListing then LFGList_ReportListing(row.id, row.leader) end
+                Pane.Render()
+            end)
+            root:CreateButton("Blacklist this leader", function()
+                ns.Cleanup.Blacklist(row.leader); Pane.Render()
+            end)
+            root:CreateButton("Hide until reload", function()
+                ns.Cleanup.HideForSession(row.leader); Pane.Render()
+            end)
+        end)
+    end)
     r:SetScript("OnEnter", function(self) self.hover:Show(); RowTooltip(self) end)
     r:SetScript("OnLeave", function(self) self.hover:Hide(); GameTooltip:Hide() end)
     rows[i] = r
@@ -350,7 +373,13 @@ end
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     PaintTabs()
-    pinned, results = Groups.List()
+    local hiddenCount
+    pinned, results, hiddenCount = Groups.List(showHidden)
+    if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
+    hiddenButton.text:SetText(showHidden and "|cffffb84dshowing hidden|r" or (hiddenCount > 0 and (hiddenCount .. " hidden") or ""))
+    hiddenButton.text:SetTextColor(0.55, 0.55, 0.55)
+    hiddenButton:SetWidth(math.max(1, hiddenButton.text:GetStringWidth()))
+    hiddenButton:SetShown(showHidden or hiddenCount > 0)
     -- Sign-ups that just ended stay pinned for OUTCOME_TTL with how they ended.
     local now, showing = GetTime(), {}
     for _, row in ipairs(pinned) do cache[row.id] = row; showing[row.id] = true end
@@ -444,8 +473,8 @@ local function BuildBars()
     plusTab:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
-    local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Use Blizzard's group list instead",
-        function() ns.db.useBlizzard = true; Pane.Update() end)
+    local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
+        function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
     refresh = CreateFrame("Button", nil, bar)
@@ -464,6 +493,19 @@ local function BuildBars()
     countText = Text(bar)
     countText:SetPoint("RIGHT", refresh, "LEFT", -8, 0)
     countText:SetTextColor(0.55, 0.55, 0.55)
+    -- How many rows clean-up hid; click to see only those (and back).
+    hiddenButton = CreateFrame("Button", nil, bar)
+    hiddenButton:SetHeight(BAR_H)
+    hiddenButton.text = Text(hiddenButton)
+    hiddenButton.text:SetPoint("RIGHT")
+    hiddenButton:SetPoint("RIGHT", countText, "LEFT", -8, 0)
+    hiddenButton:SetScript("OnClick", function() showHidden = not showHidden; offset = 0; Pane.Render() end)
+    hiddenButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(showHidden and "Showing what clean-up hid: click to go back" or "Hidden by clean-up: click to review")
+        GameTooltip:Show()
+    end)
+    hiddenButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local head = CreateFrame("Frame", nil, pane)
     head:SetPoint("TOPLEFT", 0, -BAR_H)
