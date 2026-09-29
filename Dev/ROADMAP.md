@@ -23,7 +23,7 @@ PickupGroup is", "Originality rules" and "Design" before anything else.
 1. **Phase 1**: the player runs the spike tests (steps in the header of
    `Dev/Spike.lua`); read the answers from the log, write them into
    Phase 1 below, then delete `Dev/Spike.lua` and its TOC line.
-3. Settle the **Open** items in Design with the player before Phase 2.
+2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
 - Repo: `TheWolfIsLoose/PickupGroup` (private); attach with add_repo
