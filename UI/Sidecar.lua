@@ -26,6 +26,7 @@ local nameBox, keysBox, raidBox, deleteBtn
 local dungeonButtons, checks, diffButtons = {}, {}, {}
 local scoreBox, bossBox
 local bossLines = {}
+local bossLabel
 local open = {}  -- raid name -> heading unfolded (this session)
 
 local function Changed()
@@ -72,6 +73,19 @@ local function PaintRaid(f)
         b:Paint(on, on and b.color or nil)
     end
     checks.raidRoom:Set(f.room)
+    -- Lockouts differ per difficulty, but boss rules don't: with several
+    -- difficulties on, the same rules judge every one of them.
+    local nDiff, nRules = 0, 0
+    for _, b in ipairs(diffButtons) do if not f.difficulties or f.difficulties[b.diff] then nDiff = nDiff + 1 end end
+    for _, raid in pairs(f.bosses or {}) do for _ in pairs(raid) do nRules = nRules + 1 end end
+    if nDiff > 1 and nRules > 0 then
+        bossLabel:SetText("Boss rules apply to every difficulty that's on, and lockouts differ by difficulty, "
+            .. "so results can't be accurate. Keep one difficulty per filter (e.g. \"Raid H\", \"Raid M\").")
+        bossLabel:SetTextColor(1, 0.72, 0.3)
+    else
+        bossLabel:SetText("Bosses in the group's lockout")
+        bossLabel:SetTextColor(0.55, 0.55, 0.55)
+    end
     -- Boss rows, pooled: a raid heading, then one row per boss.
     local y, n = 0, 0
     local function Line()
@@ -255,10 +269,13 @@ local function BuildRaid(parent)
     local cb = Kit.Check(box, "Room in the raid", function(on) editing.room = on or nil; Changed() end)
     cb:SetPoint("TOPLEFT", 0, -46)
     checks.raidRoom = cb
-    local l = Label(box, "Bosses in the group's lockout")
-    l:SetPoint("TOPLEFT", 0, -72)
+    bossLabel = Label(box, "")
+    bossLabel:SetPoint("TOPLEFT", 0, -72)
+    bossLabel:SetWidth(W - 2 * PAD)
+    bossLabel:SetJustifyH("LEFT")
+    bossLabel:SetWordWrap(true)
     bossBox = CreateFrame("Frame", nil, box)
-    bossBox:SetPoint("TOPLEFT", 0, -88)
+    bossBox:SetPoint("TOPLEFT", bossLabel, "BOTTOMLEFT", 0, -6)
     bossBox:SetPoint("RIGHT")
     bossBox:SetHeight(1)
     box:SetHeight(300)

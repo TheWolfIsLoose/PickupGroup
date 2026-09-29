@@ -297,6 +297,11 @@ show hidden, blacklist); alpha3 = per-boss raid rules, search text.
   server-side search, so it only takes effect on Enter or Refresh, never
   on each keystroke, and it waits out the Refresh countdown (player). Delete keeps at
   least one filter per category.
+- Past-season raids still listed under the current expansion are left
+  out (named list in Groups.lua; March on Quel'Danas, S1). Update it each
+  season.
+- Hint when a raid filter mixes difficulties with boss rules (results
+  can't be accurate across lockouts); one difficulty per filter.
 - The sidecar hangs off the Group Finder's right edge and covers
   Raider.IO's panel while open (Raider.IO's frame is never moved).
 

@@ -2,6 +2,16 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha6 (2026-09-28)
+
+- A raid filter with more than one difficulty on and any boss rules set
+  shows an amber hint in place of the boss-list heading: rules apply to
+  every difficulty while lockouts differ, so keep one difficulty per
+  filter (player).
+- March on Quel'Danas (a Season 1 raid, still listed under Midnight) is
+  left out of results and the boss list (player); a named list of past
+  raids in Groups.lua, edited each season.
+
 ## v0.3.0-alpha5 (2026-09-28)
 
 - Match my lockout gave different answers for the same raid as the

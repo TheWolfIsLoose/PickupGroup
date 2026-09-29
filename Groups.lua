@@ -15,6 +15,12 @@ local _, ns = ...
 local Groups = {}
 ns.Groups = Groups
 
+-- Raids Blizzard still lists under the current expansion but that belong to
+-- a past season: left out of results and the boss list.
+-- ponytail: a named list to edit each season; derive it from the journal if
+-- that grows tedious.
+local PAST_RAIDS = { ["March on Quel'Danas"] = true }
+
 local SEAT_ORDER = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
 local DIFFICULTY = { [14] = "N", [15] = "H", [16] = "M", [17] = "LFR" }
 
@@ -120,6 +126,7 @@ function Groups.Read(id)
     local activity = activityID and C_LFGList.GetActivityInfoTable(activityID) or {}
     local isRaid = (activity.maxNumPlayers or 5) > 5
     local name = BaseName(activity.fullName)
+    if isRaid and PAST_RAIDS[name] then return nil end
     local counts = C_LFGList.GetSearchResultMemberCounts(id) or {}
     local mine = Groups.MyRoles()
 
