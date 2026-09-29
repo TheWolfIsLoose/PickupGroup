@@ -5,6 +5,7 @@
 ## Version: 0.3.3
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
+## X-Curse-Project-ID: 1718475
 
 Core.lua
 Log.lua
