@@ -1,3 +1,3 @@
-## v0.3.4-alpha1
+## v0.3.3
 
-- Each filter can carry search text (Filter tab in the side panel), sent to the Group Finder search on Enter or with the next Refresh.
+- Open seats for your role are marked by a mint outline only.

@@ -2,21 +2,6 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## v0.3.4-alpha1 (2026-09-29)
-
-- Search text per filter (last Phase 3 item): a box under the name in the
-  sidecar's Filter tab (grey placeholder, `Kit.Hint`). Stored as
-  `filter.text`. Our search puts it into Blizzard's search box right
-  before `LFGListSearchPanel_DoSearch`; a post-hook on
-  `LFGListSearchPanel_SetCategory` does the same, so Blizzard's own
-  search on opening a category uses it. Enter searches when Refresh is
-  ready (else the text waits for the next Refresh); switching to a tab
-  whose text differs searches when ready. Only while the pane is in use
-  (Blizzard's box is left alone with "Use Blizzard LFG instead").
-- `Search()` now checks the Refresh wait itself (`Ready()`).
-- Release: first build for CurseForge (project 1718475, Automatic
-  Packaging from the now-public repo).
-
 ## v0.3.3 (2026-09-28)
 
 - Empty seats' role icons are always grey; the mint ring alone marks the

@@ -4,7 +4,7 @@
     filter. Edits apply as they are made (no Save step). It covers
     Raider.IO's panel while open; that frame is never moved.
 
-    Filter tab: name, search text, then per kind
+    Filter tab (alpha): name, then per kind
       keys  dungeons (this season), room for my role, needs Bloodlust,
             needs battle rez, leader at least my score, leader score floor
       raid  difficulty, bosses down at most, room
@@ -24,7 +24,7 @@ local DIFF = { { "N", { 0.12, 1, 0 } }, { "H", { 0, 0.44, 0.87 } }, { "M", { 1, 
 local frame, editing
 local nameBox, keysBox, raidBox, deleteBtn
 local dungeonButtons, checks, diffButtons = {}, {}, {}
-local scoreBox, bossBox, textBox
+local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
 local classToggles = {}
@@ -196,7 +196,6 @@ end
 function Sidecar.Paint()
     if not (frame and editing) then return end
     nameBox:SetText(editing.name or "")
-    textBox:SetText(editing.text or "")
     keysBox:SetShown(editing.kind == "keys")
     raidBox:SetShown(editing.kind == "raid")
     if editing.kind == "keys" then PaintKeys(editing) else PaintRaid(editing) end
@@ -453,30 +452,11 @@ local function Build()
     end)
     nameBox:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Search text is Blizzard's server-side search: it goes out on Enter
-    -- (once Refresh is ready) or with the next Refresh, never per keystroke.
-    textBox = Kit.Edit(body, W - 2 * PAD, function(text)
-        text = strtrim(text or "")
-        if editing then editing.text = text ~= "" and text or nil end
-    end)
-    textBox:SetPoint("TOPLEFT", 0, -26)
-    Kit.Hint(textBox, "Search text")
-    textBox:HookScript("OnEnterPressed", function()
-        if editing and editing == Filters.Active(editing.kind) then ns.Pane.Search() end
-    end)
-    textBox:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Search text")
-        GameTooltip:AddLine("Blizzard's search: words in group titles and more. Sent on Enter or with the next Refresh.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    textBox:HookScript("OnLeave", function() GameTooltip:Hide() end)
-
     keysBox = BuildKeys(body)
-    keysBox:SetPoint("TOPLEFT", 0, -56)
+    keysBox:SetPoint("TOPLEFT", 0, -30)
     keysBox:SetPoint("RIGHT")
     raidBox = BuildRaid(body)
-    raidBox:SetPoint("TOPLEFT", 0, -56)
+    raidBox:SetPoint("TOPLEFT", 0, -30)
     raidBox:SetPoint("RIGHT")
 
     deleteBtn = CreateFrame("Button", nil, body)
