@@ -5,7 +5,7 @@
     PickupGroupDB.activeFilter. Kind is "keys" (Dungeons) or "raid"
     (Raids - current). Rules run on our copy of the results only.
 
-    keys: room, lust, brez, minScore, atLeastMine, dungeons (nil = all,
+    keys: room, lust / brez ("has" | "missing"), minScore, atLeastMine, dungeons (nil = all,
           else set of dungeon names)
     raid: room, difficulties (set of N/H/M),
           bosses[raid name][boss name] = "alive" | "dead" (absent = either)
@@ -184,8 +184,15 @@ function Filters.Pass(row)
         return true
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
-    if f.lust and Brings(row.classes, LUST) then return false end
-    if f.brez and Brings(row.classes, BREZ) then return false end
+    -- "has": keep groups that bring it; "missing" (or an old true): keep
+    -- groups without it.
+    for key, set in pairs({ lust = LUST, brez = BREZ }) do
+        local want = f[key] == true and "missing" or f[key]
+        if want then
+            local has = Brings(row.classes, set)
+            if (want == "has" and not has) or (want == "missing" and has) then return false end
+        end
+    end
     local score = row.score or 0
     if (f.minScore or 0) > 0 and score < f.minScore then return false end
     if f.atLeastMine and score < (C_ChallengeMode.GetOverallDungeonScore() or 0) then return false end

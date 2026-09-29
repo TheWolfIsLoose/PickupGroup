@@ -27,6 +27,7 @@ local dungeonButtons, checks, diffButtons = {}, {}, {}
 local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
+local classToggles = {}
 local filterView, optionsView, view = nil, nil, "filter"
 local headTabs = {}
 local open = {}  -- raid name -> heading unfolded (this session)
@@ -65,6 +66,12 @@ end
 local function PaintKeys(f)
     for _, b in ipairs(dungeonButtons) do b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true) end
     for key, c in pairs(checks) do c:Set(f[key]) end
+    for key, t in pairs(classToggles) do
+        local v = f[key] == true and "missing" or f[key]
+        local look = ({ has = { "Has", MINT }, missing = { "Missing", { 1, 0.72, 0.3 } } })[v or ""] or { "Either" }
+        t:SetText(look[1])
+        t:Paint(v ~= nil, look[2])
+    end
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
 end
 
@@ -200,16 +207,20 @@ local function BuildKeys(parent)
     local y = 0
     local head = Label(box, "Dungeons")
     head:SetPoint("TOPLEFT", 0, y)
-    local all = CreateFrame("Button", nil, box)
-    all:SetSize(60, 12)
-    all:SetPoint("TOPRIGHT", 0, y)
-    local allText = Label(all, "All · None")
-    allText:SetPoint("RIGHT")
-    all:SetScript("OnClick", function()
-        -- All when any is off, else none.
-        if editing.dungeons then editing.dungeons = nil else editing.dungeons = {} end
-        Sidecar.Paint(); Changed()
-    end)
+    -- Two separate words: All turns every dungeon on, None turns them off.
+    local prevWord
+    for _, w in ipairs({ { "None", function() editing.dungeons = {} end }, { "All", function() editing.dungeons = nil end } }) do
+        local b = CreateFrame("Button", nil, box)
+        b:SetHeight(12)
+        local t = Label(b, w[1])
+        t:SetPoint("RIGHT")
+        b:SetWidth(t:GetStringWidth())
+        if prevWord then b:SetPoint("RIGHT", prevWord, "LEFT", -8, 0) else b:SetPoint("TOPRIGHT", 0, y) end
+        b:SetScript("OnClick", function() w[2](); Sidecar.Paint(); Changed() end)
+        b:SetScript("OnEnter", function() t:SetTextColor(MINT[1], MINT[2], MINT[3]) end)
+        b:SetScript("OnLeave", function() t:SetTextColor(0.55, 0.55, 0.55) end)
+        prevWord = b
+    end
     y = y - 16
     local cellW = (W - 2 * PAD - 3 * 3) / 4
     for i, d in ipairs(Filters.Dungeons()) do
@@ -233,14 +244,30 @@ local function BuildKeys(parent)
     y = y - math.ceil(#dungeonButtons / 4) * 23 - 8
 
     for _, c in ipairs({
-        { "room", "Room for my role" }, { "lust", "Needs Bloodlust" },
-        { "brez", "Needs battle rez" }, { "atLeastMine", "Leader at least my score" },
+        { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
     }) do
         local key = c[1]
         local cb = Kit.Check(box, c[2], function(on) editing[key] = on or nil; Changed() end)
         cb:SetPoint("TOPLEFT", 0, y)
         checks[key] = cb
         y = y - 20
+    end
+    -- Bloodlust / battle rez: Either -> Has -> Missing (the group has one
+    -- already, or has none and could use yours).
+    for _, c in ipairs({ { "lust", "Bloodlust in the group" }, { "brez", "Battle rez in the group" } }) do
+        local key = c[1]
+        local l = Label(box, c[2])
+        l:SetTextColor(1, 1, 1)
+        l:SetPoint("TOPLEFT", 0, y - 3)
+        local t = Toggle(box, "", 64, function()
+            local now = editing[key] == true and "missing" or editing[key]
+            editing[key] = ({ [false] = "has", has = "missing", missing = false })[now or false] or nil
+            Sidecar.Paint(); Changed()
+        end)
+        t:SetHeight(18)
+        t:SetPoint("TOPRIGHT", 0, y)
+        classToggles[key] = t
+        y = y - 22
     end
     y = y - 4
     local l = Label(box, "Leader score at least")

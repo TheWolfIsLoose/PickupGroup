@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.1 (2026-09-28)
+
+- "All · None" was one toggle; now two words, All and None (player).
+- "Needs Bloodlust / battle rez" checkboxes became "Bloodlust / Battle rez
+  in the group": Either / Has / Missing (player asked for "Has"; Missing
+  keeps the old meaning). Saved `true` reads as Missing.
+
 ## v0.3.0 (2026-09-28): Phase 3 done (alpha1-alpha8 below)
 
 - The PickupGroup button on Blizzard's panel sat far right over another
