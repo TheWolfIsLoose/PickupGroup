@@ -41,6 +41,7 @@ local function InitDB()
     for n = (db.schema or SCHEMA) + 1, SCHEMA do MIGRATIONS[n](db) end
     ApplyDefaults(db, DEFAULTS)
     db.schema = SCHEMA
+    db.probe = nil  -- leftover from a 0.3.4 dev probe
     ns.db = db
 end
 
@@ -128,26 +129,6 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
-    elseif cmd == "probe" then
-        -- Temporary (dev only): can we fill Blizzard's sign-up note? Remove once read.
-        local r = { api = {} }
-        for k in pairs(C_LFGList) do
-            local l = k:lower()
-            if l:find("comment") or l:find("note") or l:find("apply") or l:find("application") then r.api[#r.api + 1] = k end
-        end
-        table.sort(r.api)
-        local d = LFGListApplicationDialog
-        local box = d and d.Description and (d.Description.EditBox or d.Description)
-        r.box = box and (box.GetObjectType and box:GetObjectType()) or "none"
-        if box and box.SetText then
-            local ok, err = pcall(box.SetText, box, "PickupGroup test")
-            r.setText = ok and "ok" or tostring(err)
-            local ok2, text = pcall(box.GetText, box)
-            r.readBack = ok2 and tostring(text) or tostring(text)
-            pcall(box.SetText, box, "")
-        end
-        ns.db.probe = r
-        ns.Print("Probe: " .. tostring(r.setText))
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })
