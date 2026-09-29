@@ -2,6 +2,20 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.5-alpha1 (2026-09-29)
+
+- `Filters.Sync`: the active keys filter writes Blizzard's advanced
+  filter (`SaveAdvancedFilter`): activities from our dungeons (name ->
+  activity group ID via `GetAvailableActivityGroups` / 
+  `GetActivityGroupInfo`, current season; any unmapped dungeon = no
+  narrowing, logged), needs<role> when Room for my role and exactly one
+  role is picked, minimumRating = max(score floor, my score if "at least
+  mine"). Other fields kept. Written only when those change (from
+  `Pane.Render` / `Pane.Update`, so before Blizzard's search on a
+  category change). Verified: all 8 dungeons map, nothing blocked.
+- Log: `hide` and `report` kinds (they were dropped as unknown).
+- Leftover probe data cleared from saved variables.
+
 ## v0.3.4-alpha1 (2026-09-29)
 
 - Search text: Blizzard's search box refuses `SetText` from addons, so

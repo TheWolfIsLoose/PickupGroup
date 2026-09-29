@@ -1,4 +1,3 @@
-## v0.3.4-alpha1
+## v0.3.5-alpha1
 
-- Blizzard's search box is back above the results: type a key level or dungeon there and press Enter.
-- Searching uses Blizzard's refresh button; a thin mint line across the top shows when the next search is ready.
+- Your active filter now sets Blizzard's own Filter (dungeons, your role, minimum rating), so the search itself is narrowed and fewer matching groups get cut off.

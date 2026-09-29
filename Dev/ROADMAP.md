@@ -55,7 +55,9 @@ Next, in order:
    = Blizzard text search only. **Done v0.3.4-alpha1:** pane starts
    below Blizzard's search row (the player types there, not per filter);
    Blizzard's refresh searches; a mint line shows the cooldown.
-3b. **Blizzard's Filter button (player, 2026-09-29):** it stays visible
+3b. **Blizzard's Filter button (player, 2026-09-29). Built v0.3.5-alpha1:
+   our filter drives it (third option below). Tooltip line / pane note
+   still worth a try if players get confused.** it stays visible
    above the pane (the search row can't be covered cleanly). Its settings
    narrow the server's search before our filters run, so the player
    should understand how the two relate. Try in game, compare:
