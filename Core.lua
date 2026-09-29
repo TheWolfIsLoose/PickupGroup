@@ -128,32 +128,6 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
-    elseif cmd == "probe" then
-        -- Temporary (dev only): every readable field of the first listings,
-        -- to look for a key level. Remove once read.
-        local function S(v) local ok, r = pcall(tostring, v); return ok and r or "<unreadable>" end
-        local out = {}
-        local _, ids = C_LFGList.GetSearchResults()
-        for i = 1, math.min(#(ids or {}), 8) do
-            local lines = {}
-            local ok, err = pcall(function()
-                local info = C_LFGList.GetSearchResultInfo(ids[i]) or {}
-                for k, v in pairs(info) do
-                    if type(v) == "table" then
-                        for k2, v2 in pairs(v) do lines[#lines + 1] = S(k) .. "." .. S(k2) .. " = " .. S(v2) end
-                    else lines[#lines + 1] = S(k) .. " = " .. S(v) end
-                end
-                local act = info.activityIDs and info.activityIDs[1] or info.activityID
-                for k, v in pairs(act and C_LFGList.GetActivityInfoTable(act) or {}) do
-                    lines[#lines + 1] = "activity." .. S(k) .. " = " .. S(v)
-                end
-            end)
-            if not ok then lines[#lines + 1] = "error: " .. S(err) end
-            table.sort(lines)
-            out[i] = lines
-        end
-        ns.db.probe = out
-        ns.Print(("Probe: %d listings saved. /reload and say done."):format(#out))
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })
