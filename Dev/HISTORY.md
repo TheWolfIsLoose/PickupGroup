@@ -2,6 +2,21 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.4-alpha1 (2026-09-29)
+
+- Search text: Blizzard's search box refuses `SetText` from addons, so
+  per-filter saved text was dropped (tried, reverted). The pane now
+  starts below Blizzard's whole search row; the player types there.
+  Tried and rejected on looks: covering Blizzard's refresh/Filter, and a
+  four-piece pane around the box.
+- Our Refresh button removed; Blizzard's refresh searches. A 1px mint
+  line across the pane's top shrinks over the 3 s search cooldown
+  (started by any search or a failed one).
+- Probe (temporary, removed): listings carry no key level; titles are
+  protected. Readable fields noted in ROADMAP item 3.
+- First CurseForge build (project 1718475, Automatic Packaging from the
+  public repo).
+
 ## v0.3.3 (2026-09-28)
 
 - Empty seats' role icons are always grey; the mint ring alone marks the

@@ -50,8 +50,9 @@ Next, in order:
    leaderBestDungeonScoreInfo (leader's best run), leaderOverallDungeonScore,
    generalPlaystyle, comment (the listing's description, empty in all 8:
    check if spam filtering could use it), age, numMembers. So key level
-   = Blizzard text search only. Default: pane starts below Blizzard's
-   search row so the player types there (not per filter).
+   = Blizzard text search only. **Done v0.3.4-alpha1:** pane starts
+   below Blizzard's search row (the player types there, not per filter);
+   Blizzard's refresh searches; a mint line shows the cooldown.
 3b. **Blizzard's Filter button (player, 2026-09-29):** it stays visible
    above the pane (the search row can't be covered cleanly). Its settings
    narrow the server's search before our filters run, so the player
