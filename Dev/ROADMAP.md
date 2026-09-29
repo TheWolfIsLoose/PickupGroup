@@ -65,7 +65,17 @@ Next, in order:
    - one source of truth: our filter's dungeons / needs (tank, healer,
      Bloodlust, battle rez) / score written into Blizzard's advanced
      filter (`C_LFGList.SaveAdvancedFilter`), so both agree and the
-     server narrows too. Spike first: must not taint or block.
+     server narrows too. **Spike 2026-09-29: works.**
+     `SaveAdvancedFilter` from our code saved (read back 1234), restore
+     ok, nothing blocked. Fields: activities (activity group IDs),
+     difficultyNormal/Heroic/Mythic/MythicPlus, generalPlaystyle1-4,
+     needsTank/Healer/Damage, needsMyClass, hasTank/hasHealer,
+     minimumRating. The search returns at most 100 results, so narrowing
+     on the server matters: with local-only filters a busy hour can push
+     matching groups past the cap. Maps: dungeons -> activities; room for
+     my role -> needs<my role>; score floor / at least mine ->
+     minimumRating. No server field for Bloodlust / battle rez (stay
+     local).
 4. **Phase 4**: new mark (rows new since the last refresh), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
    sign-up (opt-in), friends mark, saved sign-up note. Lockout-aware raids already shipped
