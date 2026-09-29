@@ -468,7 +468,7 @@ local function BuildBars()
     local tools = bar
     if panel.SearchBox then
         tools = CreateFrame("Frame", nil, pane)
-        tools:SetPoint("TOPLEFT", panel.SearchBox, "TOPRIGHT", 6, 3)
+        tools:SetPoint("TOPLEFT", panel.SearchBox, "TOPRIGHT", 2, 1)
         tools:SetPoint("RIGHT", pane, "RIGHT")
         tools:SetPoint("BOTTOM", pane, "TOP", 0, -1)
         tools:EnableMouse(true)
