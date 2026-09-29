@@ -24,7 +24,8 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. **Phase 2**: the pane (first playable).
+1. **Phase 2**: v0.2.0-alpha1 (the pane) installed, awaiting the player's
+   first test; then alpha2 = teleport button + application log.
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):

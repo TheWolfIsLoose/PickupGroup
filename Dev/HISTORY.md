@@ -2,6 +2,23 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha1 (2026-09-28): Phase 2, first playable pane
+
+- `Groups.lua`: results as rows (name, instance code, difficulty, spec
+  tiles for dungeons, role counts and bosses down for raids, leader
+  score, application status). Dungeons listed only with an open seat for
+  a role the player signs up as; raids only with room.
+- `UI/Pane.lua`: our frame over Blizzard's search panel (Blizzard's Back
+  / Sign Up row left uncovered) on Dungeons and Raids - current. Top bar:
+  one "All groups" tab (saved filters are Phase 3), count, Refresh with a
+  3 s countdown (any search restarts it), switch to Blizzard's list (a
+  PickupGroup button on Blizzard's panel switches back). Header: apply-as
+  roles (Blizzard's own role choice). Rows: sign-ups pinned first,
+  action button (Apply, shift-click Blizzard's dialog; time left, click
+  cancels; Reapply confirms on a second click), tooltip, wheel scroll.
+- Log: sign-up, cancel, refused search.
+- Not yet: teleport button, application log (alpha2).
+
 ## v0.1.1 (2026-09-28): Phase 1 done
 
 Spike answers are in the roadmap (Phase 1). The harness is removed;

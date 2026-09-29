@@ -34,6 +34,9 @@ local KINDS = {
     end },
     setting = { "detail", function(p) return ("Setting: %s %s"):format(Plain(p.key), p.on and "on" or "off") end },
     blocked = { "activity", function(p) return ("Blizzard blocked an action: %s"):format(Plain(p.func)) end },
+    apply   = { "activity", function(p) return ("Signed up: %s, led by %s"):format(Plain(p.code), Plain(p.leader)) end },
+    cancel  = { "activity", function(p) return ("Cancelled sign-up: %s, led by %s"):format(Plain(p.code), Plain(p.leader)) end },
+    search_failed = { "detail", function(p) return "Search refused: " .. Plain(p.reason) end },
     trace   = { "trace", function(p) return ("[%s] %s"):format(Plain(p.tag), Plain(p.text)) end },
 }
 
