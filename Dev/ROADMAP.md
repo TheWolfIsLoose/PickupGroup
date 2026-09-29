@@ -367,9 +367,11 @@ New mark, best-group sort, keys that beat my best, swap a sign-up
 **Friends mark (player, 2026-09-29):** show on the row itself when
 friends or guildmates are in a listed group. Today the count exists
 (`row.friends` in Groups.lua) but only appears in the tooltip. Default:
-a small mark by the group name; tooltip names them
-(`C_LFGList.GetSearchResultFriends`). Open: separate guild vs friends,
-and whether pinned sign-ups show it too.
+Blizzard's own convention (player's screenshot): the group name turns
+Battle.net blue (`BATTLENET_FONT_COLOR`) for any friend, Battle.net
+friend or guildmate, no split. One line in Pane.lua where `r.name` is
+set (reset the colour otherwise; rows are reused). Tooltip could name
+them (`C_LFGList.GetSearchResultFriends`). Open: pinned sign-ups too.
 
 ## v1.0.0 — first release-worthy build
 
