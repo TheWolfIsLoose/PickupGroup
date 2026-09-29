@@ -35,6 +35,10 @@ Session setup (keeps usage down):
   `Interface\AddOns\PickupGroup` in the player's `_retail_` folder
   through the device bridge. A new file in the TOC needs a game
   restart, not a `/reload`.
+  Stage every build under a fresh folder (`/mnt/user-data/outputs/pg-<version>/`):
+  re-committing from a path used before can write a stale copy (it did
+  for 0.1.1 and 0.2.0-alpha2). After a commit, re-stage the installed
+  files and compare sizes or checksums with the repo.
 - Logs: after a `/reload`, read
   `WTF\Account\SAVAGEFEARLESS\SavedVariables\PickupGroup.lua`.
 - Syntax check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua`.
