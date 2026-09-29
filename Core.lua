@@ -41,6 +41,7 @@ local function InitDB()
     for n = (db.schema or SCHEMA) + 1, SCHEMA do MIGRATIONS[n](db) end
     ApplyDefaults(db, DEFAULTS)
     db.schema = SCHEMA
+    db.probe = nil  -- leftover from a 0.3.4 dev probe
     ns.db = db
 end
 

@@ -245,6 +245,7 @@ local function BuildRow(i)
             root:CreateButton("Report and hide", function()
                 ns.Cleanup.HideForSession(row.leader)
                 if LFGList_ReportListing then LFGList_ReportListing(row.id, row.leader) end
+                ns.Log.Emit("report", { name = row.leader, why = "form opened" })
                 Pane.Render()
             end)
             root:CreateButton("Blacklist this leader", function()

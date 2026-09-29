@@ -60,7 +60,10 @@ end
 
 function Cleanup.HideForSession(name)
     name = Full(name)
-    if name then session[name] = true end
+    if name then
+        session[name] = true
+        ns.Log.Emit("hide", { name = name, why = "until reload" })
+    end
 end
 
 function Cleanup.Count()
