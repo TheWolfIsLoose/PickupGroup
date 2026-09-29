@@ -28,13 +28,11 @@ Iterate in small alphas: one fix or feature per build, installed and
 verified (checksums) each time.
 
 Next, in order:
-0. **CurseForge (2026-09-29): project registered (ID 1718475, in the
-   TOC).** Repo stays private; `.github/workflows/release.yml` uploads
-   with the `CF_API_KEY` repo secret (no webhook). The first CurseForge
-   upload is the next new CHANGELOG version pushed to `main` after the
-   secret is in; before 1.0 every version is `-alphaN`. Still open: the
-   final name (display name can change, the slug can't); the zlib credit
-   if the realm library ships.
+0. **CurseForge (2026-09-29): live.** Project 1718475 (in the TOC),
+   repo made public, CurseForge's Automatic Packaging pulls each new tag
+   (StockClerk's setup). Before 1.0 every version is `-alphaN`. Still
+   open: the final name (display name can change, the slug can't); the
+   zlib credit if the realm library ships.
 1. **Party-aware room** (player): "Room for my role" must mean "room for
    my group" in a party: the group's open seats fit every party member's
    assigned role (UnitGroupRolesAssigned on party units; the leader's
@@ -76,7 +74,7 @@ past-season raids are a named list in Groups.lua (update each season);
 an open sign-up at /reload stays "pending" in the application log.
 
 Session setup (keeps usage down):
-- Repo: `TheWolfIsLoose/PickupGroup` (private); attach with add_repo
+- Repo: `TheWolfIsLoose/PickupGroup` (public); attach with add_repo
   (push access) and clone.
 - Install: write changed files straight into
   `Interface\AddOns\PickupGroup` in the player's `_retail_` folder

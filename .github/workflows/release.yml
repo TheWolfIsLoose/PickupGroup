@@ -1,11 +1,10 @@
 name: Release
 
 # On a push to main, the top `## vX.Y.Z` heading in CHANGELOG.md is the
-# version. If its tag doesn't exist yet, tag it, package it and publish:
-# GitHub Release always; CurseForge only once the TOC has
-# X-Curse-Project-ID and the CF_API_KEY secret is set (the packager skips
-# the upload otherwise). CurseForge file type follows the tag:
-# -alpha / -beta, anything else is a release.
+# version. If its tag doesn't exist yet, tag it, package it and make the
+# GitHub Release. CurseForge's own packager picks the new tag up from the
+# public repo (Automatic Packaging); this workflow never uploads there.
+# CurseForge file type follows the tag: -alpha / -beta, else release.
 
 on:
   push:
@@ -38,10 +37,9 @@ jobs:
       - name: Package and publish
         if: steps.tag.outputs.tag
         env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           curl -fsSL https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh -o /tmp/release.sh
           GITHUB_REF="refs/tags/$TAG" GITHUB_REF_NAME="$TAG" GITHUB_REF_TYPE=tag \
-            bash /tmp/release.sh -w -a
+            bash /tmp/release.sh -d -w -a

@@ -1,12 +1,12 @@
 # PickupGroup — Releasing
 
-Dev-only (`Dev/` never ships). Private repo; CI publishes
+Dev-only (`Dev/` never ships). Public repo; CI tags and publishes
 (`.github/workflows/release.yml`, packaging rules in `.pkgmeta`).
 
-Version: `vMAJOR.MINOR.PATCH`, below 1.0 while private and settling.
+Version: `vMAJOR.MINOR.PATCH`, below 1.0 while settling.
 Patch = fixes, minor = a phase or a feature, major = saved data or a
 redesign breaks. `-alphaN` / `-betaN` only for builds that need an
-in-game test first. Once CurseForge is live, every version before 1.0
+in-game test first. Every version before 1.0 (on CurseForge)
 carries `-alphaN` so it lands there as an Alpha (the packager takes the
 file type from the tag).
 
@@ -17,14 +17,12 @@ Cutting a version, in one commit:
    `Dev/ROADMAP.md`.
 3. `lua5.1 Dev/check.lua *.lua UI/*.lua` passes.
 4. Commit and push `main`. The workflow tags the CHANGELOG version,
-   packages it and publishes (GitHub Release; CurseForge once live).
+   packages it and makes the GitHub Release; CurseForge follows the tag.
    Don't tag by hand. A push whose version is already tagged publishes
    nothing, so roadmap-only commits are safe.
 
-CurseForge goes live when the final name is settled: register the
-project, add `## X-Curse-Project-ID: <id>` to the TOC, and add a
-CurseForge API token (curseforge.com/account/api-tokens) as the repo
-secret `CF_API_KEY`. Nothing else changes.
+CurseForge (project 1718475) packages each new tag itself from the
+public repo; the workflow only makes the GitHub Release.
 
 Saved data carries its own `schema` number; bump it and add one
 migration step when the saved shape changes. Never tie a migration to
