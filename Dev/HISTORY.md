@@ -2,6 +2,11 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.1.1 (2026-09-28): Phase 1 done
+
+Spike answers are in the roadmap (Phase 1). The harness is removed;
+blocked-action logging stays.
+
 ## v0.1.1-alpha1 (2026-09-28): Phase 1 test harness
 
 - `Dev/Spike.lua` (throwaway, `/pug spike`): Cover (1a), Dialog (1b),

@@ -121,8 +121,6 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
-    elseif cmd == "spike" and ns.Spike then
-        ns.Spike.Toggle()
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

@@ -34,7 +34,6 @@ local KINDS = {
     end },
     setting = { "detail", function(p) return ("Setting: %s %s"):format(Plain(p.key), p.on and "on" or "off") end },
     blocked = { "activity", function(p) return ("Blizzard blocked an action: %s"):format(Plain(p.func)) end },
-    spike   = { "activity", function(p) return "Test: " .. Plain(p.text) end },
     trace   = { "trace", function(p) return ("[%s] %s"):format(Plain(p.tag), Plain(p.text)) end },
 }
 

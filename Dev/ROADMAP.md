@@ -16,13 +16,16 @@ cheap.
 
 ## Next session: start here
 
-2026-09-28: v0.1.0 (Phase 0) confirmed in game. v0.1.1-alpha1 installs
-the Phase 1 test harness (`Dev/Spike.lua`, `/pug spike`). Read "What
-PickupGroup is", "Originality rules" and "Design" before anything else.
+2026-09-28: v0.1.0 (Phase 0) and Phase 1 (spikes, v0.1.1) done; results
+under Phase 1. Read "What PickupGroup is", "Originality rules" and
+"Design" before anything else.
 
-1. **Phase 1**: the player runs the spike tests (steps in the header of
-   `Dev/Spike.lua`); read the answers from the log, write them into
-   Phase 1 below, then delete `Dev/Spike.lua` and its TOC line.
+Testing method (player's preference): the player tests in game,
+`/reload`s and says "done"; Claude reads the log from the saved
+variables file (Session setup) rather than having it pasted.
+
+1. Settle the Open items (Design) with the player, including the spam
+   filter now that listing names can't be read.
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -198,7 +201,7 @@ leader"; play-history analytics (Raider.IO covers it); a per-player
   players, detail for support, trace behind `/pug debug`).
 - Syntax check tooling (`Dev/check.lua`).
 
-## Phase 1 — spikes (throwaway, in game)
+## Phase 1 — spikes (done 2026-09-28)
 
 1a. **Overlay**: our frame over the results area; Blizzard's list and
     search row untouched underneath; Sign Up, the sign-up dialog and
@@ -221,7 +224,16 @@ leader"; play-history analytics (Raider.IO covers it); a per-player
   "throttled"; 3 s after a throttled attempt still failed; 7.6 s and
   10.1 s later went through. The window is somewhere between ~4 and ~8 s
   after the last search. Every search fires the results event twice.
-  Round 2: our own Search button (untested so far), spaced 4 / 5 / 6 / 8 s.
+
+**Round 2 results (2026-09-28):** our own Search button, searching through
+Blizzard's search function from our click: works, nothing blocked. Gaps
+of 4.2, 2.6, 3.3, 3.2, 4.3, 3.3 s all went through; 1.6 s was throttled.
+**Refresh: allow a search about 3 s after the last one** (Default:
+Refresh counts down 3 s; after a "throttled" failure, wait the full 3 s
+again, since round 1 saw a retry 3 s after a failure refused too). The
+20 s the player expected is not needed.
+
+**Phase 1 done**: the harness (`Dev/Spike.lua`) is deleted.
 - **Found**: a listing's name comes back as a protected string (it shows
   in the log as `|Kv1|k`): it can be displayed but not read. So a spam
   filter can't match words in titles, and "search text" can only be
