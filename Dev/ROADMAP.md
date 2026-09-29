@@ -52,7 +52,8 @@ Next, in order:
    takes effect only on Enter or Refresh, waits out the countdown.
 4. **Phase 4**: new mark (rows new since the last refresh), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
-   sign-up (opt-in). Lockout-aware raids already shipped (My lockout).
+   sign-up (opt-in), friends mark. Lockout-aware raids already shipped
+   (My lockout).
 5. **Region filter (player, 2026-09-29; must ship before v1.0.0):** let
    players filter by the realm region of the people involved. Searching:
    a filter option on the leader's realm region (e.g. US East, US West,
@@ -362,6 +363,13 @@ clean-up switches, re-apply friction, blacklist entry.
 
 New mark, best-group sort, keys that beat my best, swap a sign-up
 (opt-in), lockout-aware raids.
+
+**Friends mark (player, 2026-09-29):** show on the row itself when
+friends or guildmates are in a listed group. Today the count exists
+(`row.friends` in Groups.lua) but only appears in the tooltip. Default:
+a small mark by the group name; tooltip names them
+(`C_LFGList.GetSearchResultFriends`). Open: separate guild vs friends,
+and whether pinned sign-ups show it too.
 
 ## v1.0.0 — first release-worthy build
 
