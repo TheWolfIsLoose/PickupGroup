@@ -2,6 +2,15 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha5 (2026-09-28)
+
+- Match my lockout gave different answers for the same raid as the
+  difficulty toggles changed: with Heroic and Mythic both on it took the
+  highest lockout, so a Mythic save hid the Heroic one ("left as they
+  were"). Now Normal/Heroic lockouts drive the boss rules whenever the
+  filter looks for them; the Mythic save only decides a Mythic-only
+  filter, and adds a note otherwise.
+
 ## v0.3.0-alpha4 (2026-09-28)
 
 - Match my lockout on Mythic (player: Mythic lockouts are whole, shared

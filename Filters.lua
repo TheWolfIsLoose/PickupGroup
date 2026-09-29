@@ -91,57 +91,65 @@ local function Brings(classes, set)
     return false
 end
 
--- Match my lockout: for one raid, bosses the player has killed this week
--- become Dead and the rest Alive. The lockout is the one for the difficulty
--- the filter looks for, the highest if it allows several. Returns a line
--- saying what it did.
-local DIFF_ID, RANK = { [14] = "N", [15] = "H", [16] = "M" }, { N = 1, H = 2, M = 3 }
+-- Match my lockout, for one raid. Normal and Heroic lockouts are per boss:
+-- bosses killed this week become Dead, the rest Alive, from the highest
+-- Normal/Heroic lockout the filter looks for. Mythic lockouts are whole
+-- (shared by everyone present at the first kill): only a Mythic-only
+-- filter works from the Mythic save, and with Mythic among several
+-- difficulties it adds a note. Returns a line saying what it did.
+local DIFF_ID, RANK = { [14] = "N", [15] = "H", [16] = "M" }, { N = 1, H = 2 }
 local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
-function Filters.MatchLockout(f, raidName)
-    local best, bestDiff
+
+local function Saved(raidName)
+    local out = {}  -- difficulty letter -> saved-instance index
     for i = 1, GetNumSavedInstances() do
         local name, _, _, diffID, locked, _, _, isRaid = GetSavedInstanceInfo(i)
         local d = DIFF_ID[diffID]
-        if isRaid and locked and name == raidName and d and (not f.difficulties or f.difficulties[d])
-                and (not bestDiff or RANK[d] > RANK[bestDiff]) then
-            best, bestDiff = i, d
-        end
+        if isRaid and locked and name == raidName and d then out[d] = i end
     end
-    -- Mythic lockouts are whole: a saved player can only rejoin that one
-    -- raid (and no listing says which it is); an unsaved one can take any
-    -- group's lockout.
-    local mythicOnly = f.difficulties and f.difficulties.M and not f.difficulties.H and not f.difficulties.N
-    if bestDiff == "M" or (mythicOnly and not best) then
-        f.bosses = f.bosses or {}
-        local text
-        if best then
+    return out
+end
+
+function Filters.MatchLockout(f, raidName)
+    local wants = f.difficulties or { N = true, H = true, M = true }
+    local saved = Saved(raidName)
+    f.bosses = f.bosses or {}
+    local text
+
+    if wants.M and not wants.H and not wants.N then
+        if saved.M then
             text = "You're saved to a Mythic lockout: only the group on that same lockout can take you, "
                 .. "and listings don't say which that is. Bosses left as they were."
         else
             f.bosses[raidName] = nil
             text = "Not saved on Mythic: any group can take you (you'd accept their lockout). Every boss set to Either."
         end
-        ns.Log.Emit("filter", { action = "match lockout", name = f.name .. ", " .. raidName .. ": " .. text })
-        return text
-    end
-    local killed, n = {}, 0
-    if best then
-        local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)
-        for j = 1, count or 0 do
-            local boss, _, isKilled = GetSavedInstanceEncounterInfo(best, j)
-            if boss and isKilled then killed[boss] = true; n = n + 1 end
+    else
+        local best, bestDiff
+        for d, i in pairs(saved) do
+            if RANK[d] and wants[d] and (not bestDiff or RANK[d] > RANK[bestDiff]) then best, bestDiff = i, d end
+        end
+        local killed, n = {}, 0
+        if best then
+            local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)
+            for j = 1, count or 0 do
+                local boss, _, isKilled = GetSavedInstanceEncounterInfo(best, j)
+                if boss and isKilled then killed[boss] = true; n = n + 1 end
+            end
+        end
+        f.bosses[raidName] = {}
+        for _, raid in ipairs(ns.Groups.Raids()) do
+            if raid.name == raidName then
+                for _, boss in ipairs(raid.bosses) do f.bosses[raidName][boss] = killed[boss] and "dead" or "alive" end
+            end
+        end
+        text = best
+            and ("Matched your %s lockout: %d killed set to Dead, the rest Alive."):format(DIFF_WORD[bestDiff], n)
+            or "No Normal or Heroic lockout for this raid this week: every boss set to Alive."
+        if wants.M and saved.M then
+            text = text .. " Mythic groups: you're saved on Mythic, so only your own lockout's group can take you."
         end
     end
-    f.bosses = f.bosses or {}
-    f.bosses[raidName] = {}
-    for _, raid in ipairs(ns.Groups.Raids()) do
-        if raid.name == raidName then
-            for _, boss in ipairs(raid.bosses) do f.bosses[raidName][boss] = killed[boss] and "dead" or "alive" end
-        end
-    end
-    local text = best
-        and ("Matched your %s lockout: %d killed set to Dead, the rest Alive."):format(DIFF_WORD[bestDiff], n)
-        or "No lockout for this raid this week: every boss set to Alive."
     ns.Log.Emit("filter", { action = "match lockout", name = f.name .. ", " .. raidName .. ": " .. text })
     return text
 end
