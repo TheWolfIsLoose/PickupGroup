@@ -54,6 +54,9 @@ local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
 local offset = 0
 local lastSearch, armed = 0, nil
+-- New mark: listings not in the previous search's results (leader + activity),
+-- until the next search. Nothing is marked on a category's first search.
+local seen, fresh = nil, {}
 
 local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
 
@@ -231,6 +234,10 @@ local function BuildRow(i)
     r.diff = Text(r, nil, "CENTER")
     r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
+    r.new = r:CreateTexture(nil, "OVERLAY")
+    r.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+    r.new:SetSize(3, 3)
+    r.new:SetPoint("LEFT", 1, 0)
     r.name = Text(r)
     r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
@@ -266,6 +273,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r.row, r.act.row = row, row
     r:Show()
     r.edge:SetShown(isPinned)
+    r.new:SetShown(not isPinned and fresh[row.id] == true)
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.02 or 0)
     r.name:SetText(row.name or "?")
     r.inst:SetText(row.code)
@@ -669,12 +677,28 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     if not p then return ns.Trace("pane", "no search panel") end
     p:HookScript("OnShow", Pane.Update)
     p:HookScript("OnHide", Pane.Update)
-    hooksecurefunc("LFGListSearchPanel_SetCategory", Pane.Update)
+    hooksecurefunc("LFGListSearchPanel_SetCategory", function() seen = nil; Pane.Update() end)
     -- Every search restarts the cooldown line.
     hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); if cooldown then cooldown:Show() end end)
 end)
 
-ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function() offset = 0; RenderSoon() end)
+ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
+    local now = {}
+    wipe(fresh)
+    local _, ids = C_LFGList.GetSearchResults()
+    for _, id in ipairs(ids or {}) do
+        local info = C_LFGList.GetSearchResultInfo(id)
+        local act = info and info.activityIDs and info.activityIDs[1]
+        if info and info.leaderName and act then
+            local key = info.leaderName .. "|" .. act
+            now[key] = true
+            if seen and not seen[key] then fresh[id] = true end
+        end
+    end
+    seen = now
+    offset = 0
+    RenderSoon()
+end)
 ns.On("LFG_LIST_SEARCH_RESULT_UPDATED", RenderSoon)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
