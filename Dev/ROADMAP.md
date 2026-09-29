@@ -409,16 +409,13 @@ know"; the tooltip names them and says friend or guild
 colour wins, or two marks); pinned sign-ups too; whether a
 Blizzard-matching name colour is an Options toggle.
 
-**Saved sign-up note (player, 2026-09-29):** the player predefines a
-note that is added to every sign-up automatically. Today the note sent
-is whatever is in Blizzard's sign-up note box (click Apply sends it
-as-is, shift-click opens Blizzard's dialog). Default: one note box in
-the sidecar's Options; PickupGroup puts it into Blizzard's note box
-before Apply and when the dialog opens (shift-click still lets the
-player edit that one sign-up). Needs a spike first: writing Blizzard's
-note box from our code must not taint or block the sign-up (check the
-log for a blocked action). Open: one note per account, per character, or
-per saved filter (e.g. a different note for Push keys).
+**Saved sign-up note (player, 2026-09-29): blocked by the game.** Spike
+2026-09-29: Blizzard's sign-up note box refuses `SetText` from addons
+("Call is illegal when disabled by security settings"), like the search
+box, and C_LFGList has no call to set a note (ApplyToGroup takes roles
+only; ClearApplicationTextFields exists). A note can only be typed by the
+player. Parked unless the player wants a copy-ready helper (their saved
+note selected in a box for Ctrl+C, then Ctrl+V into Blizzard's).
 
 ## v1.0.0 — first release-worthy build
 
