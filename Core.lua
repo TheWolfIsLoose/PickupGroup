@@ -69,14 +69,19 @@ local function LogError(err)
 end
 ns.LogError = LogError
 
+-- Several modules may listen to one event; each handler runs on its own, so
+-- one error doesn't stop the others.
 local handlers = {}
 local eventFrame = CreateFrame("Frame")
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     local args, n = { ... }, select("#", ...)
-    xpcall(function() handlers[event](unpack(args, 1, n)) end, LogError)
+    for _, fn in ipairs(handlers[event]) do
+        xpcall(function() fn(unpack(args, 1, n)) end, LogError)
+    end
 end)
 function ns.On(event, fn)
-    handlers[event] = fn
+    handlers[event] = handlers[event] or {}
+    table.insert(handlers[event], fn)
     eventFrame:RegisterEvent(event)
 end
 

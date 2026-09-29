@@ -2,6 +2,17 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha6 (2026-09-28)
+
+- Application log (`Applications.lua`): each sign-up saved per character
+  with instance, leader, roles, and its ending (declined, filled,
+  delisted, withdrawn, timed out, invite declined, failed, joined; a
+  finished key after joining becomes timed / depleted with its level).
+  Activity line in the log for each ending.
+- Several modules can now listen to the same game event.
+- Row tooltip opens down and to the left (player).
+- Teleport button moved to Later (player).
+
 ## v0.2.0-alpha5 (2026-09-28)
 
 - World boss listings (map 0) count as one boss: 0/1 or 1/1 (player).

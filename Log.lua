@@ -37,6 +37,13 @@ local KINDS = {
     apply   = { "activity", function(p) return ("Signed up: %s, led by %s"):format(Plain(p.code), Plain(p.leader)) end },
     cancel  = { "activity", function(p) return ("Cancelled sign-up: %s, led by %s"):format(Plain(p.code), Plain(p.leader)) end },
     search_failed = { "detail", function(p) return "Search refused: " .. Plain(p.reason) end },
+    app_end = { "activity", function(p)
+        local words = { declined = "declined", filled = "group filled up", delisted = "group delisted",
+            withdrawn = "withdrawn", timedout = "timed out", invitedeclined = "invite declined",
+            failed = "failed", joined = "joined", timed = "timed", depleted = "depleted" }
+        return ("Sign-up %s: %s, led by %s%s"):format(words[p.result] or Plain(p.result), Plain(p.code),
+            Plain(p.leader), p.level and (" (+" .. p.level .. ")") or "")
+    end },
     trace   = { "trace", function(p) return ("[%s] %s"):format(Plain(p.tag), Plain(p.text)) end },
 }
 

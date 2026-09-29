@@ -102,7 +102,9 @@ end
 local function RowTooltip(frame)
     local row = frame.row
     if not row then return end
-    GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+    -- Down and to the left, over the category buttons: Raider.IO's panel
+    -- on the right stays readable.
+    GameTooltip:SetOwner(frame, "ANCHOR_BOTTOMLEFT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
     GameTooltip:AddLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), 0.85, 0.85, 0.85)
     GameTooltip:AddDoubleLine("Leader", row.leader or "?", 0.55, 0.55, 0.55, 1, 1, 1)

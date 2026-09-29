@@ -24,8 +24,8 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. **Phase 2**: v0.2.0-alpha1 (the pane) installed, awaiting the player's
-   first test; then alpha2 = teleport button + application log.
+1. **Phase 2**: v0.2.0-alpha6 (application log, tooltip down-left)
+   installed; confirm in game, then cut v0.2.0 and start Phase 3.
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -276,7 +276,7 @@ again, since round 1 saw a retry 3 s after a failure refused too). The
 Pane over the results area, top bar (tabs, Refresh, sidecar button),
 table (columns and Comp above), action button (Apply / Cancel),
 pinned sign-ups, row tooltip, "Use Blizzard LFG instead" and the way
-back, teleport button, application log (data only).
+back, application log (data only). (Teleport moved to Later.)
 
 ## Phase 3 — filters and the sidecar
 
@@ -295,6 +295,11 @@ New mark, best-group sort, keys that beat my best, swap a sign-up
 - **Open:** whether to publish, and where.
 
 ## Later (unscheduled)
+
+- **Teleport button** (moved out of Phase 2 by the player, 2026-09-28): a
+  flourish that costs group testing time; build it when friends can help
+  test (party fills to 5/5, button shows, casts the dungeon's teleport,
+  hides inside). Everything it needs is already read (activity, members).
 
 - Share a filter as an import/export string (parked by the player).
 - Leading: listing a group and reviewing applicants, if it earns a
