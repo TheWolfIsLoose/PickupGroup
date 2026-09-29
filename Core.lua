@@ -41,6 +41,7 @@ local function InitDB()
     for n = (db.schema or SCHEMA) + 1, SCHEMA do MIGRATIONS[n](db) end
     ApplyDefaults(db, DEFAULTS)
     db.schema = SCHEMA
+    db.probe = nil  -- leftover from a 0.3.4 dev probe
     ns.db = db
 end
 
@@ -128,38 +129,6 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
-    elseif cmd == "probe" then
-        -- Temporary (dev only): can we write Blizzard's advanced filter?
-        -- Reads it, saves a test change, reads back, restores. Remove once read.
-        local function S(v) local ok, r = pcall(tostring, v); return ok and r or "<unreadable>" end
-        local function Dump(t)
-            local out = {}
-            for k, v in pairs(t or {}) do
-                if type(v) == "table" then
-                    local l = {}
-                    for _, x in pairs(v) do l[#l + 1] = S(x) end
-                    out[#out + 1] = S(k) .. " = {" .. table.concat(l, ",") .. "}"
-                else out[#out + 1] = S(k) .. " = " .. S(v) end
-            end
-            table.sort(out)
-            return out
-        end
-        local r = {}
-        local ok1, orig = pcall(C_LFGList.GetAdvancedFilter)
-        r.read = ok1 and Dump(orig) or { "error: " .. S(orig) }
-        if ok1 and orig then
-            local test = CopyTable(orig)
-            test.minimumRating = 1234
-            local ok2, err2 = pcall(C_LFGList.SaveAdvancedFilter, test)
-            r.save = ok2 and "ok" or ("error: " .. S(err2))
-            local ok3, back = pcall(C_LFGList.GetAdvancedFilter)
-            r.readBack = ok3 and Dump(back) or { "error: " .. S(back) }
-            local ok4, err4 = pcall(C_LFGList.SaveAdvancedFilter, orig)
-            r.restore = ok4 and "ok" or ("error: " .. S(err4))
-        end
-        ns.db.probe = r
-        ns.Log.Emit("probe", { save = r.save, restore = r.restore })
-        ns.Print("Probe done: " .. S(r.save) .. " / restore " .. S(r.restore))
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })
