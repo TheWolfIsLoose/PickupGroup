@@ -16,10 +16,26 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-09-29 00:05 ET: v0.3.3 installed and confirmed in game (log
-clean: no errors, nothing blocked).** Phases 0-3 done. Read "What
-PickupGroup is", "Originality rules" and "Design" first; HISTORY.md has
-every build's detail.
+**State, 2026-09-29 18:55 ET (parked for dinner).** Released:
+v0.4.0-alpha2 on `main` (GitHub prerelease with zip; CurseForge project
+1718475 picks up GitHub Releases, pending moderator approval). On `dev`,
+installed in game, **untested**: the sign-up note helper (Options "Sign-up
+note"; a strip under Blizzard's sign-up dialog with the note selected for
+Ctrl+C / Ctrl+V; the game blocks filling the note box directly).
+
+**Resume here:**
+1. Player tests the note helper (type a note in Options, shift-click
+   Apply, copy/paste, sign up, cancel; screenshot of the strip).
+2. Cut **v0.4.0 as a stable Release** (no -alpha) so CurseForge has a
+   Release file for its review (player). First update `Dev/RELEASING.md`:
+   drop the "every version before 1.0 is -alphaN" rule; stable 0.x
+   releases are allowed. CHANGELOG for v0.4.0 = everything since v0.3.3,
+   player-facing.
+3. Then: item 3c (filter drop-down vs tabs), the new-mark dot's look,
+   region filter (5), ponytail sweep (6). Party-aware room (1) is parked
+   until friends are online.
+Decided today: best-group sort parked (no key level from the API, so
+"best" can't be judged beyond leader score).
 
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
@@ -84,7 +100,7 @@ Next, in order:
    right-click/setup and "+ new" reachable either way.
 4. **Phase 4**: new mark (**built v0.4.0-alpha1; the dot works but its
    look needs another pass, player**), best-group
-   sort (show our work in its tooltip), keys that beat my best, swap a
+   sort (**parked 2026-09-29: no key level in the API**), keys that beat my best, swap a
    sign-up (opt-in), friends mark (**built v0.4.0-alpha2**), saved sign-up note. Lockout-aware raids already shipped
    (My lockout).
 5. **Region filter (player, 2026-09-29; must ship before v1.0.0):** let
@@ -133,6 +149,10 @@ Session setup (keeps usage down):
 - Style: StockClerk's `Dev/STYLE.md` (player's AddOns folder or the
   StockClerk repo). StockClerk is the player's own addon; its code and
   patterns may be reused freely.
+- Branches: work on `dev` (push freely); merge to `main` only to
+  release (any new CHANGELOG version on `main` publishes). The clone is
+  shallow single-branch: add `+refs/heads/dev:refs/remotes/origin/dev`
+  to `remote.origin.fetch` so `origin/dev` exists locally.
 - Push: `git push origin main` (a first attempt can drop; retry once).
   Tag pushes are refused by the session proxy; don't loop on them.
 
