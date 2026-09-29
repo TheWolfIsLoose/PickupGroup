@@ -2,6 +2,11 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha8 (2026-09-28)
+
+- A 1px line under the pinned sign-ups separates them from the scrolling
+  results (player).
+
 ## v0.2.0-alpha7 (2026-09-28)
 
 - A sign-up that ends stays pinned for 5 s with how it ended on its

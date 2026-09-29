@@ -331,6 +331,11 @@ function Pane.Render()
         if slot > fit then break end
         PaintRow(rows[slot] or BuildRow(slot), row, true, slot, full, raidView)
     end
+    -- A 1px line under the sign-ups separates them from the scrolling results.
+    local nPinned = math.min(#pinned, fit)
+    pane.divider:SetShown(nPinned > 0)
+    pane.divider:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + nPinned * ROW_H))
+    pane.divider:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + nPinned * ROW_H))
     for i = offset + 1, #results do
         slot = slot + 1
         if slot > fit then break end
@@ -495,6 +500,9 @@ local function Build()
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
     BuildBars()
+    pane.divider = pane:CreateTexture(nil, "OVERLAY", nil, 7)
+    pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
+    pane.divider:SetHeight(1)
     pane:EnableMouseWheel(true)
     pane:SetScript("OnMouseWheel", function(_, delta)
         offset = math.max(0, offset - delta * 3)
