@@ -29,6 +29,12 @@ variables file (Session setup) rather than having it pasted.
    blocked action); then Phase 4 (new mark, best-group sort, keys that
    beat my best, swap a sign-up). Lockout-aware raids already shipped in
    Phase 3 (My lockout).
+   **Next fix (player, 2026-09-28):** "Room for my role" only checks the
+   player's own roles. In a party it must mean "room for my group": the
+   group's open seats must fit every party member's assigned role
+   (UnitGroupRolesAssigned on party units; the leader's sign-up carries
+   the party) and the member count must fit (members + party <= 5). Same
+   for the empty-seat mint tint.
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
