@@ -364,14 +364,21 @@ clean-up switches, re-apply friction, blacklist entry.
 New mark, best-group sort, keys that beat my best, swap a sign-up
 (opt-in), lockout-aware raids.
 
-**Friends mark (player, 2026-09-29):** show on the row itself when
-friends or guildmates are in a listed group. Today the count exists
-(`row.friends` in Groups.lua) but only appears in the tooltip. Default:
-Blizzard's own convention (player's screenshot): the group name turns
-Battle.net blue (`BATTLENET_FONT_COLOR`) for any friend, Battle.net
-friend or guildmate, no split. One line in Pane.lua where `r.name` is
-set (reset the colour otherwise; rows are reused). Tooltip could name
-them (`C_LFGList.GetSearchResultFriends`). Open: pinned sign-ups too.
+**Friends mark (player, 2026-09-29):** show which listed groups have
+people the player knows. Today the count exists (`row.friends` in
+Groups.lua; split it back into friends vs guildmates) but only appears in
+the tooltip. Blizzard's cue is the group name's colour: Battle.net blue
+for friends, guild-chat green for guildmates. PickupGroup doesn't have to
+colour names, but the cue must fit the style guide: colour is never the
+only cue, marks are drawn (no font glyphs), mint is taken (new, my role),
+detail lives in the tooltip.
+Default: one small drawn "people" mark at the end of the name (the new
+dot keeps the leading slot), tinted with the colours players already know:
+blue for friends, green for guildmates. The shape says "someone you
+know"; the tooltip names them and says friend or guild
+(`C_LFGList.GetSearchResultFriends`). Open: mixed groups (one mark, which
+colour wins, or two marks); pinned sign-ups too; whether a
+Blizzard-matching name colour is an Options toggle.
 
 ## v1.0.0 — first release-worthy build
 
