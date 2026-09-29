@@ -21,6 +21,7 @@ ns.Pane = Pane
 
 local Kit, Groups = ns.Kit, ns.Groups
 local ROW_H, BAR_H, HEAD_H = 24, 26, 20
+local GAP_BOX = 3  -- open margin around Blizzard's search box (skins draw past its edge)
 local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 56, 6, 6
 local TILE = 14
 local W_DIFF = 16
@@ -47,7 +48,7 @@ local OUTCOME = {
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
-local panel, pane, backButton, refresh, countText, tabBar, plusTab, hiddenButton
+local panel, pane, body, backButton, refresh, countText, tabBar, plusTab, hiddenButton
 local showHidden = false
 local tabs = {}
 local rows, roleButtons = {}, {}
@@ -180,8 +181,8 @@ end
 local function BuildRow(i)
     local r = CreateFrame("Button", nil, pane)
     r:SetHeight(ROW_H)
-    r:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + (i - 1) * ROW_H))
-    r:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + (i - 1) * ROW_H))
+    r:SetPoint("TOPLEFT", body, 1, -(HEAD_H + (i - 1) * ROW_H))
+    r:SetPoint("TOPRIGHT", body, -1, -(HEAD_H + (i - 1) * ROW_H))
     r.stripe = r:CreateTexture(nil, "BACKGROUND", nil, -7)
     r.stripe:SetAllPoints()
     r.hover = r:CreateTexture(nil, "BACKGROUND", nil, -6)
@@ -404,7 +405,7 @@ function Pane.Render()
     local raidView = p and p.categoryID == 3
     local _, active = C_LFGList.GetNumApplications()
     local full = (active or 0) >= (MAX_LFG_LIST_APPLICATIONS or 5)
-    local fit = math.max(1, math.floor((pane:GetHeight() - BAR_H - HEAD_H) / ROW_H))
+    local fit = math.max(1, math.floor((body:GetHeight() - HEAD_H) / ROW_H))
     offset = math.max(0, math.min(offset, #results - (fit - #pinned)))
     countText:SetText(#results)
     local slot = 0
@@ -416,8 +417,8 @@ function Pane.Render()
     -- A 1px line under the sign-ups separates them from the scrolling results.
     local nPinned = math.min(#pinned, fit)
     pane.divider:SetShown(nPinned > 0)
-    pane.divider:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + nPinned * ROW_H))
-    pane.divider:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + nPinned * ROW_H))
+    pane.divider:SetPoint("TOPLEFT", body, 1, -(HEAD_H + nPinned * ROW_H))
+    pane.divider:SetPoint("TOPRIGHT", body, -1, -(HEAD_H + nPinned * ROW_H))
     for i = offset + 1, #results do
         slot = slot + 1
         if slot > fit then break end
@@ -463,17 +464,13 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
-    -- Toolbar beside Blizzard's search box, row-high: it covers Blizzard's
-    -- refresh and Filter buttons (never hidden) and holds ours instead.
+    -- Toolbar right of Blizzard's search box: covers Blizzard's refresh
+    -- and Filter buttons (never hidden) and holds ours instead.
     local tools = bar
     if panel.SearchBox then
         tools = CreateFrame("Frame", nil, pane)
-        tools:SetPoint("TOPLEFT", panel.SearchBox, "TOPRIGHT", 2, 1)
-        tools:SetPoint("RIGHT", pane, "RIGHT")
-        tools:SetPoint("BOTTOM", pane, "TOP", 0, -1)
-        tools:EnableMouse(true)
-        Kit.Fill(tools, { 0.031, 0.031, 0.031, 1 })
-        Kit.Border(tools)
+        tools:SetPoint("TOPLEFT", panel.SearchBox, "TOPRIGHT", GAP_BOX, GAP_BOX)
+        tools:SetPoint("BOTTOMRIGHT", body, "TOPRIGHT")
     end
 
     tabBar = bar
@@ -527,8 +524,8 @@ local function BuildBars()
     hiddenButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local head = CreateFrame("Frame", nil, pane)
-    head:SetPoint("TOPLEFT", 0, -BAR_H)
-    head:SetPoint("TOPRIGHT", 0, -BAR_H)
+    head:SetPoint("TOPLEFT", body)
+    head:SetPoint("TOPRIGHT", body)
     head:SetHeight(HEAD_H)
     local hrule = head:CreateTexture(nil, "OVERLAY")
     hrule:SetColorTexture(0, 0, 0, 1)
@@ -604,11 +601,14 @@ local function Build()
     panel = Panel()
     pane = CreateFrame("Frame", "PickupGroupPane", panel)
     -- Blizzard's Back / Sign Up row stays uncovered: Back is the way out.
-    -- Blizzard's search row stays uncovered: addons can't set search text,
-    -- so the player types it there (and searching by key level needs it).
+    -- Blizzard's search box stays uncovered too (addons can't set search
+    -- text, so the player types it there): the pane is four opaque pieces
+    -- around it (tab bar above, left of it, toolbar right of it, the list
+    -- below), each catching the mouse; the box's own spot is left open.
+    local box = panel.SearchBox
     pane:SetPoint("LEFT", panel, "LEFT")
-    if panel.SearchBox then
-        pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
+    if box then
+        pane:SetPoint("TOP", box, "TOP", 0, BAR_H + GAP_BOX)
     else
         pane:SetPoint("TOP", panel, "TOP", 0, -TITLE_BAND)
     end
@@ -620,11 +620,31 @@ local function Build()
         pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
     end
     pane:SetFrameLevel(panel:GetFrameLevel() + 50)
-    pane:EnableMouse(true)
-    Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
+
+    body = CreateFrame("Frame", nil, pane)
+    body:SetPoint("BOTTOMLEFT")
+    body:SetPoint("BOTTOMRIGHT")
+    if box then body:SetPoint("TOP", box, "BOTTOM", 0, -GAP_BOX) else body:SetPoint("TOP", 0, -BAR_H) end
+    local function Piece(...)
+        local f = CreateFrame("Frame", nil, pane)
+        f:SetFrameLevel(pane:GetFrameLevel())
+        f:EnableMouse(true)
+        local t = pane:CreateTexture(nil, "BACKGROUND")
+        t:SetColorTexture(0.031, 0.031, 0.031, 1)  -- opaque: nothing of Blizzard's list shows through
+        for _, pt in ipairs({ ... }) do f:SetPoint(unpack(pt)); t:SetPoint(unpack(pt)) end
+        return f
+    end
+    Piece({ "TOPLEFT", body }, { "BOTTOMRIGHT", body })
+    if box then
+        Piece({ "TOPLEFT" }, { "RIGHT" }, { "BOTTOM", box, "TOP", 0, GAP_BOX })  -- tab bar
+        Piece({ "LEFT" }, { "TOP", box, "TOP", 0, GAP_BOX }, { "BOTTOMRIGHT", box, "BOTTOMLEFT", -GAP_BOX, -GAP_BOX })
+        Piece({ "RIGHT" }, { "TOPLEFT", box, "TOPRIGHT", GAP_BOX, GAP_BOX }, { "BOTTOM", body, "TOP" })
+    else
+        Piece({ "TOPLEFT" }, { "BOTTOMRIGHT", body, "TOPRIGHT" })
+    end
     Kit.Border(pane)
     BuildBars()
-    pane.divider = pane:CreateTexture(nil, "OVERLAY", nil, 7)
+    pane.divider = body:CreateTexture(nil, "OVERLAY", nil, 7)
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
     pane.divider:SetHeight(1)
     pane:EnableMouseWheel(true)
