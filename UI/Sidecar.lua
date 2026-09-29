@@ -346,6 +346,23 @@ local function BuildOptions(parent)
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.names = names
+    y = y - 26
+    -- Sign-up note: the game won't let addons fill Blizzard's note box, so
+    -- the note is offered ready to copy whenever Blizzard's sign-up dialog opens.
+    local note = Kit.Edit(box, W - 2 * PAD, function(text)
+        text = strtrim(text or "")
+        ns.db.note = text ~= "" and text or nil
+    end)
+    note:SetPoint("TOPLEFT", 0, y)
+    Kit.Hint(note, "Sign-up note")
+    note:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Sign-up note")
+        GameTooltip:AddLine("Shown ready to copy under Blizzard's sign-up window (shift-click Apply opens it): Ctrl+C, then Ctrl+V into the note.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    note:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    box.note = note
     y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
@@ -405,6 +422,7 @@ local function PaintOptions()
     local o, c = optionsView, ns.db.cleanup
     o.blizz:Set(ns.db.useBlizzard)
     o.names:Set(ns.db.nameColors)
+    o.note:SetText(ns.db.note or "")
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
@@ -544,6 +562,40 @@ end
 function Sidecar.Hide()
     if frame then frame:Hide() end
 end
+
+-- The note, ready to copy, under Blizzard's sign-up dialog while it's open.
+EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
+    local dialog = LFGListApplicationDialog
+    if not dialog then return end
+    local strip
+    dialog:HookScript("OnShow", function()
+        if not ns.db.note then return end
+        if not strip then
+            Kit.ApplyFontFace()
+            strip = CreateFrame("Frame", nil, dialog)
+            strip:SetHeight(46)
+            strip:SetPoint("TOPLEFT", dialog, "BOTTOMLEFT", 0, -2)
+            strip:SetPoint("TOPRIGHT", dialog, "BOTTOMRIGHT", 0, -2)
+            Kit.Fill(strip, Kit.Palette.panelBg)
+            Kit.Border(strip)
+            local l = Label(strip, "|cff98ff98Pickup|rGroup note: Ctrl+C, then Ctrl+V into the note above")
+            l:SetPoint("TOPLEFT", PAD, -6)
+            strip.box = Kit.Edit(strip, 10, function() end)
+            strip.box:SetPoint("TOPLEFT", PAD, -20)
+            strip.box:SetPoint("RIGHT", -PAD, 0)
+            -- Keep the text as saved and selected, whatever gets typed.
+            strip.box:HookScript("OnTextChanged", function(self, user)
+                if user then self:SetText(ns.db.note or ""); self:HighlightText() end
+            end)
+            strip.box:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+        end
+        strip.box:SetText(ns.db.note)
+        strip:Show()
+        strip.box:SetFocus()
+        strip.box:HighlightText()
+    end)
+    dialog:HookScript("OnHide", function() if strip then strip:Hide() end end)
+end)
 
 function Sidecar.Follow(f)
     if frame and frame:IsShown() then editing = f; Sidecar.Paint() end

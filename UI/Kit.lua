@@ -191,3 +191,15 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetScript("OnHide", function(self) self:ClearFocus() end)
     return e
 end
+
+-- Grey placeholder naming the field, shown while the box is empty and unfocused.
+function Kit.Hint(e, text)
+    local h = e:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    h:SetPoint("LEFT", 6, 0)
+    h:SetTextColor(0.55, 0.55, 0.55)
+    h:SetText(text)
+    local function show() h:SetShown(e:GetText() == "" and not e:HasFocus()) end
+    e:HookScript("OnTextChanged", show)
+    e:HookScript("OnEditFocusGained", show)
+    e:HookScript("OnEditFocusLost", show)
+end
