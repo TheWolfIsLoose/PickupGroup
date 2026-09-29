@@ -16,10 +16,12 @@ cheap.
 
 ## Next session: start here
 
-2026-09-28: fresh repo, design set, no code yet. Read "What PickupGroup
-is", "Originality rules" and "Design" before anything else.
+2026-09-28: Phase 0 built as v0.1.0-alpha1 and installed (awaiting the
+player's first load: `/pug`, `/pug log`, `/pug debug`). Read "What
+PickupGroup is", "Originality rules" and "Design" before anything else.
 
-1. **Phase 0**: the foundation (TOC, core, debug log, slash commands).
+1. **Phase 0**: confirm the alpha1 load in game (log shows "installed",
+   no errors), then cut v0.1.0.
 2. **Phase 1**: three in-game spikes, each a throwaway test read back
    from the debug log.
 3. Settle the **Open** items in Design with the player before Phase 2.
@@ -33,7 +35,7 @@ Session setup (keeps usage down):
   restart, not a `/reload`.
 - Logs: after a `/reload`, read
   `WTF\Account\SAVAGEFEARLESS\SavedVariables\PickupGroup.lua`.
-- Syntax check before every build: `lua5.1 Dev/check.lua *.lua`.
+- Syntax check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua`.
   No package manager reaches Lua here: `git clone --depth 1 -b v5.1
   https://github.com/lua/lua`, then `gcc -O2 -o lua51 -DLUA_USE_POSIX
   $(ls *.c | grep -v ltests.c) -lm`.
@@ -188,7 +190,7 @@ leader"; play-history analytics (Raider.IO covers it); a per-player
 
 ---
 
-## v0.1.0 — Phase 0: foundation
+## v0.1.0 — Phase 0: foundation (built as v0.1.0-alpha1, 2026-09-28)
 
 - `PickupGroup.toc`, core namespace, saved variables `PickupGroupDB`
   with a `schema` number from day one.

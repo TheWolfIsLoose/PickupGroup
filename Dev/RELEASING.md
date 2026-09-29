@@ -12,7 +12,7 @@ Cutting a version, in one commit:
    `CHANGELOG.md` (only the version being cut; short, player-facing).
 2. Detailed notes in `Dev/HISTORY.md`; planned work stays in
    `Dev/ROADMAP.md`.
-3. `lua5.1 Dev/check.lua *.lua` passes.
+3. `lua5.1 Dev/check.lua *.lua UI/*.lua` passes.
 4. Commit, tag `vX.Y.Z` on `main`, push the branch (tags don't push
    through the session proxy; recreate them locally if needed).
 

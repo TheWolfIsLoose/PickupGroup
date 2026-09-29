@@ -1,4 +1,4 @@
--- Syntax check: lua5.1 Dev/check.lua *.lua  (Dev/ never ships)
+-- Syntax check: lua5.1 Dev/check.lua *.lua UI/*.lua  (Dev/ never ships)
 local bad = 0
 for _, f in ipairs(arg) do
   local fn, err = loadfile(f)
