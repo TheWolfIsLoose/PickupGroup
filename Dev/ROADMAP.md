@@ -24,8 +24,8 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. Settle the Open items (Design) with the player, including the spam
-   filter now that listing names can't be read.
+1. Raid progress column: group's bosses down or leader's progression
+   (Open, Design), then **Phase 2**.
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -157,17 +157,34 @@ wins.
   first build.
 - **New mark**: rows not in the previous results get a subtle mark
   (Default: a small mint dot before the name, until the next refresh).
-- **Sort**: by leader score, and a "best group" order that weighs
-  leader score, the player's possible score gain if the key is timed
-  (an estimate), and more. Weights **Open**.
+- **Sort**: by leader score, and a "best group" order. Starting weights
+  (to tune later): leader score first, then the player's possible score
+  gain if the key is timed (an estimate), then a small bonus when the
+  player's role is the only one missing. **Show our work publicly**: the
+  sort's tooltip and the public description say exactly how it ranks.
 - **Keys that beat my best**: a filter option for keys that would
   improve the player's best for that dungeon; the tooltip shows the
   player's best there.
 - **Swap a sign-up** (opt-in, Options, off by default): with all five
   in use, Apply offers to replace the weakest or oldest.
-- **Clean-up** (each an Options switch, on by default): spam and boost
-  filter, blacklist, declined groups. A switch only hides or marks the
-  row and says why in the tooltip.
+- **Clean-up** (each an Options switch, on by default; a switch only
+  hides or marks the row and says why in the tooltip). Aim: replace the
+  player's separate spam-filter addon. Listing names are unreadable
+  (Phase 1), so every rule uses readable listing data:
+  - **Stale**: hide listings older than a set age (Default 3 h, editable).
+  - **Looks like an advert** (dungeons only): leader has no Mythic+ score
+    and the voice-chat field is filled in.
+  - **Carry offered**: hide listings whose playstyle offers a carry.
+  - **Blacklist** (account-wide, by leader name-realm): "Report and hide"
+    in a row's menu opens Blizzard's own report dialog and blacklists
+    the leader; reporting a listing through Blizzard's UI also adds the
+    leader. "Hide for this session" keeps it off until /reload.
+    Housekeeping: entries not seen for a year drop off.
+  - **Declined groups**: see re-applying below.
+  - **Show hidden**: the top bar's count shows how many rows clean-up
+    hid; clicking it shows only those, to review or undo.
+  Our table filters its own copy of the results; Blizzard's results
+  list is never rewritten.
 - **Re-applying is never blocked**: declined or withdrawn groups can be
   applied to again, with friction, and without reopening the Group
   Finder. Default: the row stays, dimmed, marked "Declined"; the
@@ -182,13 +199,18 @@ wins.
 leader"; play-history analytics (Raider.IO covers it); a per-player
 "acceptance odds" cue.
 
-**Open:**
-- Sidecar attached to the Group Finder vs filter setup inside the pane
-  (player leans sidecar).
-- "Best group" sort weights.
-- Raid rows' score column (leader score means little for raids; item
-  level?).
-- Apply-as roles: Default in the action column's header.
+**Settled 2026-09-28:**
+- Sidecar attached to the Group Finder's right edge (Decided).
+- Apply-as roles in the action column's header (Decided, until a case
+  shows it doesn't work).
+- Raid rows show raid progress in place of leader score (Decided);
+  **Open**: the group's bosses down (e.g. 3/8 H, from the listing) or
+  the leader's own progression (only with Raider.IO loaded).
+
+**Blizzard's own rows, for reference** (player screenshots 2026-09-28):
+three lines per group (title, activity with difficulty, playstyle in
+colour); dungeons show role icons tinted by class, raids show counts per
+role; roughly 5-6 groups visible. Ours is one 24 px line per group.
 
 ---
 
