@@ -66,6 +66,19 @@ function Filters.New(kind)
     return f
 end
 
+-- Back to its starting rules: a shipped filter to how it shipped, any other
+-- to a clean one of its kind. Keeps its name and place.
+function Filters.Reset(f)
+    local base = { kind = f.kind, room = true }
+    for _, s in ipairs(SHIPPED) do if s.id == f.id then base = s end end
+    if f.kind == "raid" and not base.difficulties then base.difficulties = { N = true, H = true, M = true } end
+    local id, name = f.id, f.name
+    wipe(f)
+    for k, v in pairs(CopyTable(base)) do f[k] = v end
+    f.id, f.name = id, name
+    ns.Log.Emit("filter", { action = "reset", name = name })
+end
+
 -- Never the last filter of its kind.
 function Filters.Delete(f)
     if #Filters.List(f.kind) <= 1 then return false end

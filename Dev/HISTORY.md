@@ -2,6 +2,15 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha7 (2026-09-28)
+
+- Sidecar toggles (dungeons, difficulty, boss rules): "on" is now the
+  choice's colour as text plus a 1px ring of it on the neutral fill;
+  mint-on-green and amber-on-green were hard to tell apart (player).
+- Reset button beside Delete: the filter back to its starting rules
+  (shipped ones as shipped, others clean), name kept; second click
+  confirms (player).
+
 ## v0.3.0-alpha6 (2026-09-28)
 
 - A raid filter with more than one difficulty on and any boss rules set

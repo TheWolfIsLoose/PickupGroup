@@ -48,10 +48,13 @@ local function Toggle(parent, text, w, onClick)
     b:SetNormalFontObject("PickupGroupFontSmall")
     b:SetHighlightFontObject("PickupGroupFontSmall")
     b:SetText(text)
+    -- On: the choice's colour as text and a 1px ring on a neutral fill, so
+    -- every colour reads (no colour-on-green). Off: dim grey, black ring.
     function b:Paint(on, color)
-        Kit.Fill(self, on and { 0.12, 0.23, 0.14, 1 } or Kit.Palette.bgMedium)
-        local c = color or (on and MINT or { 0.55, 0.55, 0.55 })
-        self:GetFontString():SetTextColor(c[1], c[2], c[3], on and 1 or 0.5)
+        local c = on and (color or MINT) or { 0.55, 0.55, 0.55 }
+        self:GetFontString():SetTextColor(c[1], c[2], c[3], on and 1 or 0.45)
+        local ring = on and c or Kit.Palette.border
+        for _, t in ipairs(self._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
     end
     b:SetScript("OnClick", onClick)
     return b
@@ -336,6 +339,25 @@ local function Build()
             editing = Filters.Active(editing.kind)
             Sidecar.Paint(); Changed()
         end
+    end)
+    -- Reset: the filter back to its starting rules (name kept); a second
+    -- click confirms.
+    local resetBtn = CreateFrame("Button", nil, body)
+    resetBtn:SetSize(72, 22)
+    resetBtn:SetPoint("LEFT", deleteBtn, "RIGHT", 6, 0)
+    Kit.Button(resetBtn)
+    resetBtn:SetText("Reset")
+    resetBtn:SetScript("OnClick", function(self)
+        if not self.armed then
+            self.armed = true
+            self:SetText("Sure?")
+            C_Timer.After(3, function() self.armed = nil; self:SetText("Reset") end)
+            return
+        end
+        self.armed = nil
+        self:SetText("Reset")
+        Filters.Reset(editing)
+        Sidecar.Paint(); Changed()
     end)
     frame:Hide()
 end
