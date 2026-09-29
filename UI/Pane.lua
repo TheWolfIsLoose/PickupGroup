@@ -1,8 +1,9 @@
 --[[
     PickupGroup - UI/Pane.lua
     The pane: our own frame laid over Blizzard's search panel on Premade
-    Groups > Dungeons and Raids - Midnight. Blizzard's frames are never
-    hidden, moved or written; the pane just covers them.
+    Groups > Dungeons and Raids - Midnight, below Blizzard's search row
+    (search text is typed there). Blizzard's frames are never hidden,
+    moved or written; the pane just covers them.
 
       top bar   tab . count . Refresh . Blizzard-list switch
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
@@ -589,7 +590,14 @@ local function Build()
     panel = Panel()
     pane = CreateFrame("Frame", "PickupGroupPane", panel)
     -- Blizzard's Back / Sign Up row stays uncovered: Back is the way out.
-    pane:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -TITLE_BAND)
+    -- Blizzard's search row stays uncovered: addons can't set search text,
+    -- so the player types it there (and searching by key level needs it).
+    pane:SetPoint("LEFT", panel, "LEFT")
+    if panel.SearchBox then
+        pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
+    else
+        pane:SetPoint("TOP", panel, "TOP", 0, -TITLE_BAND)
+    end
     -- Down to just above Blizzard's Back button, so no sliver of the list shows.
     if panel.BackButton then
         pane:SetPoint("RIGHT", panel, "RIGHT")
