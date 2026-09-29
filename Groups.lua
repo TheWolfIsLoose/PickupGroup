@@ -122,7 +122,10 @@ function Groups.Read(id)
         fits = fits,
     }
     row.status, row.pending, row.remaining = Application(id)
-    if row.status == "none" then row.status = nil end
+    if row.status == "none" then
+        -- WoW forgets an ended sign-up once a search re-issues the listing.
+        row.status = ns.Applications and ns.Applications.LastEnding(info.leaderName, activityID) or nil
+    end
 
     if isRaid then
         row.counts = { TANK = counts.TANK or 0, HEALER = counts.HEALER or 0, DAMAGER = counts.DAMAGER or 0 }

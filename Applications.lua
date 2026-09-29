@@ -32,10 +32,33 @@ local ENDING = {
 -- if the log shows many stuck pending.
 local open = {}  -- result ID -> entry
 
+-- A group is known by leader and activity: a new search gives the same
+-- listing a new result ID, and WoW then forgets the sign-up's ending.
+local ended   -- key -> latest ended entry (built from the saved list once)
+local function Key(leader, activityID) return tostring(leader) .. "|" .. tostring(activityID) end
+local REMEMBER = 3600
+local BACK_TO_WOW = {
+    declined = "declined", filled = "declined_full", delisted = "declined_delisted", withdrawn = "cancelled",
+    timedout = "timedout", invitedeclined = "invitedeclined", failed = "failed",
+}
+
 local function List()
     local c = ns.CharDB()
     c.apps = c.apps or {}
     return c.apps
+end
+
+-- How this player's last sign-up to the group ended, as WoW's status word,
+-- if it ended within the hour; nil otherwise.
+function Applications.LastEnding(leader, activityID)
+    if not ended then
+        ended = {}
+        for _, e in ipairs(List()) do
+            if e.ended then ended[Key(e.leader, e.activityID)] = e end
+        end
+    end
+    local e = ended[Key(leader, activityID)]
+    if e and time() - e.ended < REMEMBER then return BACK_TO_WOW[e.result] end
 end
 
 local function RoleText()
@@ -64,11 +87,13 @@ local function Start(id)
 end
 
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
-    if new == "applied" and not open[id] then Start(id) end
+    -- A sign-up the game refuses at once goes straight to "failed".
+    if not open[id] and (new == "applied" or ENDING[new]) then Start(id) end
     local e, result = open[id], ENDING[new]
     if not (e and result) then return end
     e.result, e.ended = result, time()
     open[id] = nil
+    if ended then ended[Key(e.leader, e.activityID)] = e end
     ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = result })
 end)
 

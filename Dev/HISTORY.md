@@ -2,6 +2,17 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha9 (2026-09-28)
+
+From the alpha8 log and screenshots:
+- A group you were declined from, withdrew from, or passed on kept its
+  dimmed Reapply only until the next search: a search gives the listing
+  a new result ID and WoW forgets the sign-up. Endings are now
+  remembered by leader and activity for an hour.
+- A sign-up WoW refused at once ("failed", never "applied") left no
+  trace: it now shows its outcome for 5 s and enters the application log.
+- Action column 48 -> 56 px: "Withdrawn" overflowed the button.
+
 ## v0.2.0-alpha8 (2026-09-28)
 
 - A 1px line under the pinned sign-ups separates them from the scrolling

@@ -19,7 +19,7 @@ ns.Pane = Pane
 
 local Kit, Groups = ns.Kit, ns.Groups
 local ROW_H, BAR_H, HEAD_H = 24, 26, 20
-local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 48, 6, 6
+local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 56, 6, 6
 local TILE = 14
 local W_DIFF = 16
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
@@ -558,8 +558,9 @@ ns.On("LFG_LIST_SEARCH_RESULT_UPDATED", RenderSoon)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
     local o = OUTCOME[new]
-    if o and cache[id] then
-        recent[id] = { row = cache[id], label = o[1], color = o[2], untilT = GetTime() + OUTCOME_TTL }
+    local row = cache[id] or (o and Groups.Read(id))
+    if o and row then
+        recent[id] = { row = row, label = o[1], color = o[2], untilT = GetTime() + OUTCOME_TTL }
         C_Timer.After(OUTCOME_TTL + 0.1, RenderSoon)
     end
     RenderSoon()
