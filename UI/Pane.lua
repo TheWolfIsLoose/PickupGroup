@@ -104,10 +104,27 @@ local function OnAction(btn, mouse)
     end
 end
 
+-- The active filter's search text goes into Blizzard's search box, which
+-- Blizzard's search reads. Only while our pane is in use.
+local function UseText()
+    local p = Panel()
+    if p and p.SearchBox and not ns.db.useBlizzard and Eligible() then
+        p.SearchBox:SetText(ns.Filters.Active().text or "")
+    end
+end
+
+local function Ready() return GetTime() - lastSearch >= REFRESH_WAIT end
+
+-- Searches only from a click or key press (the game requires it), and not
+-- before the client will take it: a search too soon just fails.
 local function Search()
     local p = Panel()
-    if p and LFGListSearchPanel_DoSearch then LFGListSearchPanel_DoSearch(p) end
+    if not (p and LFGListSearchPanel_DoSearch and Ready()) then return end
+    UseText()
+    ns.Trace("pane", "search:", p.SearchBox and p.SearchBox:GetText() or "")
+    LFGListSearchPanel_DoSearch(p)
 end
+Pane.Search = Search
 
 -- ---------------------------------------------------------------------------
 -- Tooltips
@@ -353,6 +370,8 @@ local function PaintTabs()
                 if button == "RightButton" then return ns.Sidecar.Open(self.filter) end
                 Filters.SetActive(self.filter)
                 offset = 0
+                local box = panel.SearchBox
+                if box and (self.filter.text or "") ~= box:GetText() then Search() end
                 Pane.Render()
                 ns.Sidecar.Follow(self.filter)
             end)
@@ -572,7 +591,7 @@ end
 -- count down their time left.
 local function Tick()
     if not (pane and pane:IsShown()) then return end
-    local wait = REFRESH_WAIT - (GetTime() - lastSearch)
+    local wait = REFRESH_WAIT - (GetTime() - lastSearch)  -- see Ready()
     refresh:SetEnabled(wait <= 0)
     refresh:SetText(wait > 0 and tostring(math.ceil(wait)) or "Refresh")
     for _, r in ipairs(rows) do
@@ -659,7 +678,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     if not p then return ns.Trace("pane", "no search panel") end
     p:HookScript("OnShow", Pane.Update)
     p:HookScript("OnHide", Pane.Update)
-    hooksecurefunc("LFGListSearchPanel_SetCategory", Pane.Update)
+    hooksecurefunc("LFGListSearchPanel_SetCategory", function() Pane.Update(); UseText() end)
     -- Every search, ours or Blizzard's, restarts the Refresh wait.
     hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); Tick() end)
 end)
