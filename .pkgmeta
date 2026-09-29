@@ -1,0 +1,16 @@
+# BigWigsMods packager config, used by .github/workflows/release.yml.
+# Keep comments on their own lines: an inline `# ...` breaks that entry.
+
+package-as: PickupGroup
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - README.md
+  - Dev
+  - .github
+  - .gitignore
+  - .gitattributes
+  - .pkgmeta

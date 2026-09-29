@@ -28,14 +28,18 @@ Iterate in small alphas: one fix or feature per build, installed and
 verified (checksums) each time.
 
 Next, in order:
-0. **CurseForge early (player, 2026-09-29):** register the project and
-   hook the repo to CurseForge's packager (webhook) so alphas ship there
-   while we develop, shortening the road to v1.0.0. Check first: the
-   packager against a private GitHub repo (token or make it public),
-   the project name (PickupGroup is a working name: CurseForge slugs are
-   sticky), `.pkgmeta` and the `## Version` / `@project-version@` switch
-   (StockClerk's setup is the model), and the zlib credit if the realm
-   library ships by then.
+0. **CurseForge (player, 2026-09-29): packaging ready, registration
+   waits for the final name.** Decided: repo stays private and CI
+   uploads with a CurseForge API token (no webhook); the project is
+   registered only once the 1.0 name is settled (slugs are sticky).
+   Done: `.pkgmeta`, `.github/workflows/release.yml` (every push to
+   `main` with a new CHANGELOG version tags, packages and makes a GitHub
+   Release; CurseForge upload switches on by itself once the TOC has
+   `X-Curse-Project-ID` and the `CF_API_KEY` secret exists). The TOC keeps
+   a literal `## Version` (the local install is a plain copy, so a
+   packager token would show raw in game). Go-live steps are in
+   `Dev/RELEASING.md`. Still open: the final name; the zlib credit if the
+   realm library ships.
 1. **Party-aware room** (player): "Room for my role" must mean "room for
    my group" in a party: the group's open seats fit every party member's
    assigned role (UnitGroupRolesAssigned on party units; the leader's

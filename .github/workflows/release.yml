@@ -1,0 +1,47 @@
+name: Release
+
+# On a push to main, the top `## vX.Y.Z` heading in CHANGELOG.md is the
+# version. If its tag doesn't exist yet, tag it, package it and publish:
+# GitHub Release always; CurseForge only once the TOC has
+# X-Curse-Project-ID and the CF_API_KEY secret is set (the packager skips
+# the upload otherwise). CurseForge file type follows the tag:
+# -alpha / -beta, anything else is a release.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Tag the CHANGELOG version
+        id: tag
+        run: |
+          TAG=$(grep -m1 -oE '^## v[0-9][^ ]*' CHANGELOG.md | cut -c4-)
+          if [ -z "$TAG" ] || git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Nothing new to release (${TAG:-no version heading})."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Package and publish
+        if: steps.tag.outputs.tag
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          curl -fsSL https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh -o /tmp/release.sh
+          GITHUB_REF="refs/tags/$TAG" GITHUB_REF_NAME="$TAG" GITHUB_REF_TYPE=tag \
+            bash /tmp/release.sh -w -a
