@@ -21,6 +21,11 @@ local Kit, Groups = ns.Kit, ns.Groups
 local ROW_H, BAR_H, HEAD_H = 24, 26, 20
 local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 48, 6, 6
 local TILE = 14
+local W_DIFF = 16
+-- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
+-- M legendary orange (epic purple skipped: too dark to read here).
+local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 }, LFR = { 0.7, 0.7, 0.7 } }
+local TITLE_BAND = 30  -- Blizzard's window title and close button stay uncovered
 local BOTTOM_ROW = 30  -- height left for Blizzard's Back / Sign Up buttons
 local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
@@ -210,10 +215,12 @@ local function BuildRow(i)
     r.inst:SetWidth(W_INST)
     r.inst:SetPoint("RIGHT", r.comp, "LEFT", -GAP, 0)
     r.inst:SetTextColor(0.84, 0.84, 0.84)
+    r.diff = Text(r, nil, "CENTER")
+    r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
     r.name = Text(r)
     r.name:SetPoint("LEFT", PAD, 0)
-    r.name:SetPoint("RIGHT", r.inst, "LEFT", -GAP, 0)
+    r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
     r:SetScript("OnEnter", function(self) self.hover:Show(); RowTooltip(self) end)
     r:SetScript("OnLeave", function(self) self.hover:Hide(); GameTooltip:Hide() end)
@@ -221,13 +228,17 @@ local function BuildRow(i)
     return r
 end
 
-local function PaintRow(r, row, isPinned, index, full)
+local function PaintRow(r, row, isPinned, index, full, raidView)
     r.row, r.act.row = row, row
     r:Show()
     r.edge:SetShown(isPinned)
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.02 or 0)
     r.name:SetText(row.name or "?")
-    r.inst:SetText(row.code .. ((row.isRaid and row.difficulty) and (" " .. row.difficulty) or ""))
+    r.inst:SetText(row.code)
+    r.diff:SetWidth(raidView and W_DIFF or 1)
+    local dc = DIFF_COLOR[row.difficulty or ""]
+    r.diff:SetText(raidView and (row.difficulty or "") or "")
+    if dc then r.diff:SetTextColor(dc[1], dc[2], dc[3]) end
     r:SetAlpha(OVER[row.status] and 0.5 or 1)
 
     for t, tile in ipairs(r.tiles) do
@@ -280,6 +291,8 @@ end
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     pinned, results = Groups.List()
+    local p = Panel()
+    local raidView = p and p.categoryID == 3
     local _, active = C_LFGList.GetNumApplications()
     local full = (active or 0) >= (MAX_LFG_LIST_APPLICATIONS or 5)
     local fit = math.max(1, math.floor((pane:GetHeight() - BAR_H - HEAD_H) / ROW_H))
@@ -289,17 +302,17 @@ function Pane.Render()
     for _, row in ipairs(pinned) do
         slot = slot + 1
         if slot > fit then break end
-        PaintRow(rows[slot] or BuildRow(slot), row, true, slot, full)
+        PaintRow(rows[slot] or BuildRow(slot), row, true, slot, full, raidView)
     end
     for i = offset + 1, #results do
         slot = slot + 1
         if slot > fit then break end
-        PaintRow(rows[slot] or BuildRow(slot), results[i], false, slot, full)
+        PaintRow(rows[slot] or BuildRow(slot), results[i], false, slot, full, raidView)
     end
     for i = slot + 1, #rows do rows[i]:Hide(); rows[i].row = nil end
-    local p = Panel()
-    pane.instHead:SetText(p and p.categoryID == 3 and "Raid" or "Dungeon")
-    pane.scoreHead:SetText(p and p.categoryID == 3 and "Bosses" or "Score")
+    pane.instHead:SetText(raidView and "Raid" or "Dungeon")
+    pane.scoreHead:SetText(raidView and "Bosses" or "Score")
+    pane.diffHead:SetWidth(raidView and W_DIFF or 1)
 end
 
 -- A pending render collapses bursts of result updates.
@@ -415,6 +428,8 @@ local function BuildBars()
     comp:SetPoint("RIGHT", pane.scoreHead, "LEFT", -GAP, 0)
     pane.instHead = Head("Dungeon", W_INST)
     pane.instHead:SetPoint("RIGHT", comp, "LEFT", -GAP, 0)
+    pane.diffHead = Head("", W_DIFF)
+    pane.diffHead:SetPoint("RIGHT", pane.instHead, "LEFT", 0, 0)
     local name = Head("Name")
     name:SetPoint("LEFT", PAD, 0)
 end
@@ -440,11 +455,11 @@ local function Build()
     panel = Panel()
     pane = CreateFrame("Frame", "PickupGroupPane", panel)
     -- Blizzard's Back / Sign Up row stays uncovered: Back is the way out.
-    pane:SetPoint("TOPLEFT", panel, "TOPLEFT")
+    pane:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -TITLE_BAND)
     pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
     pane:SetFrameLevel(panel:GetFrameLevel() + 50)
     pane:EnableMouse(true)
-    Kit.Fill(pane, Kit.Palette.bgDark)
+    Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
     BuildBars()
     pane:EnableMouseWheel(true)

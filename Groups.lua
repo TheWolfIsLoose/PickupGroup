@@ -53,15 +53,19 @@ end
 
 -- Bosses in a raid instance, from the Encounter Journal (no journal state
 -- is changed: the instance is passed, never selected). Cached by map.
-local bossCount = {}
+local bossCount, traced = {}, {}
 local function TotalBosses(mapID)
     if not mapID then return nil end
     if bossCount[mapID] == nil then
-        local n, instance = 0, EJ_GetInstanceForMap and EJ_GetInstanceForMap(mapID)
+        local n = 0
+        local instance = C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap
+            and C_EncounterJournal.GetInstanceForGameMap(mapID)
+        if not (instance and instance > 0) and EJ_GetInstanceForMap then instance = EJ_GetInstanceForMap(mapID) end
         if instance and instance > 0 then
             while EJ_GetEncounterInfoByIndex(n + 1, instance) do n = n + 1 end
         end
         bossCount[mapID] = n > 0 and n or false
+        ns.Trace("raid", "map", mapID, "journal instance", tostring(instance), "bosses", n)
     end
     return bossCount[mapID] or nil
 end
@@ -107,11 +111,13 @@ function Groups.Read(id)
         fits = fits,
     }
     row.status, row.pending, row.remaining = Application(id)
+    if row.status == "none" then row.status = nil end
 
     if isRaid then
         row.counts = { TANK = counts.TANK or 0, HEALER = counts.HEALER or 0, DAMAGER = counts.DAMAGER or 0 }
         local killed = C_LFGList.GetSearchResultEncounterInfo(id)
         row.down, row.total = killed and #killed or 0, TotalBosses(activity.mapID)
+        if not traced[id] then traced[id] = true; ns.Trace("raid", "result", id, "killed", killed and #killed or "nil") end
     else
         -- Seats in tank, healer, damage order; each member takes the first
         -- free seat of their role.

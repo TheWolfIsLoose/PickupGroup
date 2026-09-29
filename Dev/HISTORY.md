@@ -2,6 +2,19 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha2 (2026-09-28): first-look fixes
+
+From the player's screenshots of alpha1:
+- The pane starts below Blizzard's window title band (the tab clashed
+  with "Dungeons & Raids" and the switch icon sat on the close button).
+- Opaque fill: Blizzard's list no longer shows through.
+- Raids: difficulty in its own column before the raid code, in loot
+  colours (N green, H blue, M orange; purple skipped for readability).
+- WoW reports "none" for no sign-up; it counted as a status, so groups
+  without a seat for the player showed with "-". They're now left out.
+- Raid boss totals: tries the journal lookup by game map, then by map;
+  traced to the log (alpha1 showed no totals).
+
 ## v0.2.0-alpha1 (2026-09-28): Phase 2, first playable pane
 
 - `Groups.lua`: results as rows (name, instance code, difficulty, spec
