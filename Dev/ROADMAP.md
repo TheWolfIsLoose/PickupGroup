@@ -38,9 +38,11 @@ Next, in order:
    assigned role (UnitGroupRolesAssigned on party units; the leader's
    sign-up carries the party) and members + party <= 5. The mint ring on
    empty seats follows the same rule. Needs a party test (friends).
-2. **Untested in game**: the row right-click menu (Report and hide,
-   Blacklist, Hide until reload) and auto-blacklist on Blizzard's report
-   form. Check the log for a blocked action from LFGList_ReportListing.
+2. **Row menu: verified 2026-09-29** (Blacklist logged; Report opens
+   Blizzard's form; Hide until reload hides; nothing blocked).
+   Auto-blacklist on a submitted report is untested by choice (the
+   player won't file a false report): taken on faith, watch the log for
+   `blacklist ... why = reported` from real use.
 3. **Search text** (last Phase 3 item). **Found 2026-09-29:** Blizzard's
    search box refuses `SetText` from addons ("Call is illegal when
    disabled by security settings"), so saved per-filter text can't be
