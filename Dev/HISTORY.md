@@ -2,6 +2,18 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha3 (2026-09-28)
+
+- Match my lockout (player): a button on each raid heading sets bosses
+  the player killed this week to Dead and the rest to Alive, from the
+  lockout for the difficulty the filter looks for (the highest if
+  several); no lockout = every boss Alive. Says what it did in a tooltip
+  and the log.
+- Raid headings fold (click): open by default are raids with rules set,
+  else the one with the most bosses; a folded heading shows how many
+  rules it holds. Player agency over which raids show, without a
+  separate selector; also keeps the list clear of Delete.
+
 ## v0.3.0-alpha2 (2026-09-28)
 
 From the alpha1 test (log: no errors; filter edits sent no searches):

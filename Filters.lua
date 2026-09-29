@@ -91,6 +91,44 @@ local function Brings(classes, set)
     return false
 end
 
+-- Match my lockout: for one raid, bosses the player has killed this week
+-- become Dead and the rest Alive. The lockout is the one for the difficulty
+-- the filter looks for, the highest if it allows several. Returns a line
+-- saying what it did.
+local DIFF_ID, RANK = { [14] = "N", [15] = "H", [16] = "M" }, { N = 1, H = 2, M = 3 }
+local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
+function Filters.MatchLockout(f, raidName)
+    local best, bestDiff
+    for i = 1, GetNumSavedInstances() do
+        local name, _, _, diffID, locked, _, _, isRaid = GetSavedInstanceInfo(i)
+        local d = DIFF_ID[diffID]
+        if isRaid and locked and name == raidName and d and (not f.difficulties or f.difficulties[d])
+                and (not bestDiff or RANK[d] > RANK[bestDiff]) then
+            best, bestDiff = i, d
+        end
+    end
+    local killed, n = {}, 0
+    if best then
+        local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)
+        for j = 1, count or 0 do
+            local boss, _, isKilled = GetSavedInstanceEncounterInfo(best, j)
+            if boss and isKilled then killed[boss] = true; n = n + 1 end
+        end
+    end
+    f.bosses = f.bosses or {}
+    f.bosses[raidName] = {}
+    for _, raid in ipairs(ns.Groups.Raids()) do
+        if raid.name == raidName then
+            for _, boss in ipairs(raid.bosses) do f.bosses[raidName][boss] = killed[boss] and "dead" or "alive" end
+        end
+    end
+    local text = best
+        and ("Matched your %s lockout: %d killed set to Dead, the rest Alive."):format(DIFF_WORD[bestDiff], n)
+        or "No lockout for this raid this week: every boss set to Alive."
+    ns.Log.Emit("filter", { action = "match lockout", name = f.name .. ", " .. raidName .. ": " .. text })
+    return text
+end
+
 -- Does a row pass the active filter of its kind?
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")

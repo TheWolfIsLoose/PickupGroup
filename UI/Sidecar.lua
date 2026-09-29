@@ -26,6 +26,7 @@ local nameBox, keysBox, raidBox, deleteBtn
 local dungeonButtons, checks, diffButtons = {}, {}, {}
 local scoreBox, bossBox
 local bossLines = {}
+local open = {}  -- raid name -> heading unfolded (this session)
 
 local function Changed()
     ns.Pane.Render()
@@ -77,14 +78,25 @@ local function PaintRaid(f)
         n = n + 1
         local l = bossLines[n]
         if not l then
-            l = CreateFrame("Frame", nil, bossBox)
+            l = CreateFrame("Button", nil, bossBox)
             l:SetHeight(18)
+            -- A raid heading folds its bosses away.
+            l:SetScript("OnClick", function(self)
+                if self.raid then open[self.raid] = not open[self.raid]; PaintRaid(editing) end
+            end)
             l.text = l:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
             l.text:SetPoint("LEFT")
             l.text:SetPoint("RIGHT", -60, 0)
             l.text:SetJustifyH("LEFT")
             l.text:SetWordWrap(false)
             l.want = Toggle(l, "", 56, function(self)
+                if self.lockout then
+                    local text = Filters.MatchLockout(editing, self.raid)
+                    open[self.raid] = true
+                    Sidecar.Paint(); Changed()
+                    GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
+                    return
+                end
                 local rules = editing.bosses or {}
                 editing.bosses = rules
                 rules[self.raid] = rules[self.raid] or {}
@@ -93,6 +105,15 @@ local function PaintRaid(f)
             end)
             l.want:SetHeight(16)
             l.want:SetPoint("RIGHT")
+            l.want:HookScript("OnEnter", function(self)
+                if not self.lockout then return end
+                GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                GameTooltip:SetText("Match my lockout", 1, 1, 1)
+                GameTooltip:AddLine("Bosses you've killed this week: Dead. Bosses you still need: Alive. "
+                    .. "Uses your lockout for the difficulty this filter looks for (the highest, if several).", 0.8, 0.8, 0.8, true)
+                GameTooltip:Show()
+            end)
+            l.want:HookScript("OnLeave", function() GameTooltip:Hide() end)
             bossLines[n] = l
         end
         l:ClearAllPoints()
@@ -102,13 +123,30 @@ local function PaintRaid(f)
         y = y - 18
         return l
     end
-    for _, raid in ipairs(ns.Groups.Raids()) do
+    local raids = ns.Groups.Raids()
+    -- Open by default: raids with rules set, else the one with the most bosses.
+    local biggest
+    for _, raid in ipairs(raids) do
+        if not biggest or #raid.bosses > #biggest.bosses then biggest = raid end
+    end
+    for _, raid in ipairs(raids) do
+        local rules = editing.bosses and editing.bosses[raid.name]
+        local set = 0
+        for _ in pairs(rules or {}) do set = set + 1 end
+        if open[raid.name] == nil then open[raid.name] = set > 0 or raid == biggest end
         local h = Line()
-        h.text:SetText(raid.name)
-        h.text:SetTextColor(0.55, 0.55, 0.55)
-        h.want:Hide()
-        for _, boss in ipairs(raid.bosses) do
+        h.raid = raid.name
+        h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
+            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " set)") or ""))
+        h.text:SetTextColor(0.7, 0.7, 0.7)
+        h.want.lockout, h.want.raid, h.want.boss = true, raid.name, nil
+        h.want:SetText("My lockout")
+        h.want:Paint(false)
+        h.want:Show()
+        for _, boss in ipairs(open[raid.name] and raid.bosses or {}) do
             local l = Line()
+            l.raid = nil
+            l.want.lockout = nil
             l.text:SetText(boss)
             l.text:SetTextColor(1, 1, 1)
             local want = editing.bosses and editing.bosses[raid.name] and editing.bosses[raid.name][boss] or false
@@ -122,6 +160,7 @@ local function PaintRaid(f)
     for i = n + 1, #bossLines do bossLines[i]:Hide() end
     if n == 0 then
         local l = Line()
+        l.raid = nil
         l.text:SetText("Bosses show here once raids are in the results.")
         l.text:SetTextColor(0.55, 0.55, 0.55)
         l.want:Hide()
@@ -290,6 +329,7 @@ function Sidecar.Open(f)
     f = f or Filters.Active()
     if frame:IsShown() and editing == f then frame:Hide() return end
     editing = f
+    RequestRaidInfo()  -- lockouts for Match my lockout
     Sidecar.Paint()
     frame:Show()
 end
