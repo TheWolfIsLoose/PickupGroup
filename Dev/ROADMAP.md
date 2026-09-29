@@ -24,8 +24,7 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. Raid progress column: group's bosses down or leader's progression
-   (Open, Design), then **Phase 2**.
+1. **Phase 2**: the pane (first playable).
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -203,9 +202,13 @@ leader"; play-history analytics (Raider.IO covers it); a per-player
 - Sidecar attached to the Group Finder's right edge (Decided).
 - Apply-as roles in the action column's header (Decided, until a case
   shows it doesn't work).
-- Raid rows show raid progress in place of leader score (Decided);
-  **Open**: the group's bosses down (e.g. 3/8 H, from the listing) or
-  the leader's own progression (only with Raider.IO loaded).
+- Raid rows show the group's progress in place of leader score: bosses
+  down in that listing (e.g. 3/8 H), from WoW's own listing data
+  (Decided).
+- **No dependencies (Decided):** PickupGroup never needs another addon.
+  Information another addon provides (e.g. the leader's own raid
+  progression from Raider.IO) may pass through into rows or tooltips
+  when that addon is loaded: nice to have, never required.
 
 **Blizzard's own rows, for reference** (player screenshots 2026-09-28):
 three lines per group (title, activity with difficulty, playstyle in
