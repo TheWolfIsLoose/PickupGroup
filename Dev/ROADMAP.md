@@ -24,8 +24,11 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. **Phase 3**: v0.3.0-alpha8 (Options, clean-up) installed; after the
-   player's test, cut v0.3.0. Left for Phase 3: search text (rules above).
+1. **v0.3.0 done (Phase 3), 2026-09-28.** Open threads: search text
+   (rules under Phase 3); Report and hide untested (check the log for a
+   blocked action); then Phase 4 (new mark, best-group sort, keys that
+   beat my best, swap a sign-up). Lockout-aware raids already shipped in
+   Phase 3 (My lockout).
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -278,7 +281,7 @@ table (columns and Comp above), action button (Apply / Cancel),
 pinned sign-ups, row tooltip, "Use Blizzard LFG instead" and the way
 back, application log (data only). (Teleport moved to Later.)
 
-## Phase 3 — filters and the sidecar
+## Phase 3 — filters and the sidecar (done: v0.3.0, 2026-09-28)
 
 Plan (2026-09-28): alpha1 = saved filters as tabs + the sidecar's Filter
 tab; alpha2 = Options tab ("Use Blizzard LFG instead", clean-up switches,

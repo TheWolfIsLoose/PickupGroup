@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0 (2026-09-28): Phase 3 done (alpha1-alpha8 below)
+
+- The PickupGroup button on Blizzard's panel sat far right over another
+  addon's icon: the category name's frame is wider than its text, so the
+  button now sits just after the text.
+- Player test of alpha8: everything else fine.
+
 ## v0.3.0-alpha8 (2026-09-28): Options and clean-up
 
 - Sidecar header tabs: Filter / Options. The top bar's list icon now

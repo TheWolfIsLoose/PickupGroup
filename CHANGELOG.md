@@ -1,6 +1,6 @@
-## v0.2.0
+## v0.3.0
 
-- PickupGroup now lives inside the Group Finder on Dungeons and Raids: a compact list with spec icons, leader score or raid progress, and one-click sign-ups (shift-click to add a note).
-- Your sign-ups stay pinned on top with their time left; when one ends you see how (declined, filled, delisted...) for a few seconds.
-- Groups you were declined from stay marked, and you can sign up again with a second click.
-- Refresh counts down until the game allows the next search.
+- Saved filters as tabs: Weekly keys, Push keys and Raid to start, plus your own. Right-click a tab to set it up.
+- Filter setup panel: dungeons, room for your role, needs Bloodlust or battle rez, leader score; for raids, difficulty and each boss alive or dead, with a "My lockout" button.
+- Clean-up: hides stale listings, likely adverts, carry offers and blacklisted leaders. See what was hidden, and right-click any group to report, blacklist or hide its leader.
+- Options: switch to Blizzard's own list and back.

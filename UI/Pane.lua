@@ -634,6 +634,12 @@ function Pane.Update()
     local eligible = Eligible()
     pane:SetShown(eligible and not ns.db.useBlizzard)
     backButton:SetShown(eligible and ns.db.useBlizzard == true)
+    -- The category name's frame is wider than its text: sit just after the text.
+    local name = panel.CategoryName
+    if backButton:IsShown() and name then
+        backButton:ClearAllPoints()
+        backButton:SetPoint("LEFT", name, "LEFT", name:GetStringWidth() + 10, 0)
+    end
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
     if pane:IsShown() then ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
