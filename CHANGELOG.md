@@ -1,3 +1,3 @@
-## v0.3.2
+## v0.3.3
 
-- Open seats for your role now have a mint outline, so groups you fit stand out.
+- Open seats for your role are marked by a mint outline only.

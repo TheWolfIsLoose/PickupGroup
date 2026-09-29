@@ -2,6 +2,11 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.3 (2026-09-28)
+
+- Empty seats' role icons are always grey; the mint ring alone marks the
+  player's open seats (player).
+
 ## v0.3.2 (2026-09-28)
 
 - Open seats for the player's role get a 1px mint ring on the tile (the

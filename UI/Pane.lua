@@ -284,8 +284,8 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             if s.icon then tile.icon:SetTexture(s.icon) end
             tile.role:SetShown(not s.filled)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
-            tile.role:SetDesaturated(not s.mine)
-            if s.mine then tile.role:SetVertexColor(MINT[1], MINT[2], MINT[3]) else tile.role:SetVertexColor(0.6, 0.6, 0.6) end
+            tile.role:SetDesaturated(true)
+            tile.role:SetVertexColor(0.6, 0.6, 0.6)
             -- An open seat for the player's role gets a mint 1px ring (the
             -- style guide's "on" mark); every other tile keeps a black one.
             local ring = (s.mine and not s.filled) and MINT or Kit.Palette.border
