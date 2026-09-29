@@ -2,6 +2,11 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.2 (2026-09-28)
+
+- Open seats for the player's role get a 1px mint ring on the tile (the
+  mint-tinted role icon alone was almost unnoticeable; player).
+
 ## v0.3.1 (2026-09-28)
 
 - "All · None" was one toggle; now two words, All and None (player).

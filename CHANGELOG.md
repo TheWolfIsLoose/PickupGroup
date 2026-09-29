@@ -1,4 +1,3 @@
-## v0.3.1
+## v0.3.2
 
-- Dungeon filters: "All" and "None" are separate choices.
-- Bloodlust and battle rez are now "Either / Has / Missing": look for groups that already bring one, or groups that could use yours.
+- Open seats for your role now have a mint outline, so groups you fit stand out.
