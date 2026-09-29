@@ -2,6 +2,15 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha7 (2026-09-28)
+
+- A sign-up that ends stays pinned for 5 s with how it ended on its
+  button (Declined amber; Filled, Delisted, Withdrawn, Expired, Passed
+  grey; Joined mint), then drops off (player).
+- Row tooltip back to the right of the row (down-left covered the pane).
+- alpha6 log confirmed: application log endings recorded correctly
+  (withdrawn, invite passed, delisted, filled).
+
 ## v0.2.0-alpha6 (2026-09-28)
 
 - Application log (`Applications.lua`): each sign-up saved per character

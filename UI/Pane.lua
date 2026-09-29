@@ -34,6 +34,17 @@ local MINT = Kit.Palette.brand
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
 
+-- How a sign-up ended, as its button shows it for OUTCOME_TTL seconds.
+local OUTCOME_TTL = 5
+local AMBER, GREY, WHITE = { 1, 0.72, 0.3 }, { 0.6, 0.6, 0.6 }, { 1, 1, 1 }
+local OUTCOME = {
+    declined = { "Declined", AMBER }, declined_full = { "Filled", GREY },
+    declined_delisted = { "Delisted", GREY }, cancelled = { "Withdrawn", GREY },
+    timedout = { "Expired", GREY }, invitedeclined = { "Passed", GREY },
+    failed = { "Failed", AMBER }, inviteaccepted = { "Joined", MINT },
+}
+local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
+
 local panel, pane, backButton, refresh, countText
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
@@ -102,9 +113,7 @@ end
 local function RowTooltip(frame)
     local row = frame.row
     if not row then return end
-    -- Down and to the left, over the category buttons: Raider.IO's panel
-    -- on the right stays readable.
-    GameTooltip:SetOwner(frame, "ANCHOR_BOTTOMLEFT")
+    GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
     GameTooltip:AddLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), 0.85, 0.85, 0.85)
     GameTooltip:AddDoubleLine("Leader", row.leader or "?", 0.55, 0.55, 0.55, 1, 1, 1)
@@ -273,7 +282,10 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
 
     local act, label, enabled = r.act, "Apply", true
     act.full = full
-    if row.status == "applied" then
+    local ink = isPinned and MINT or WHITE
+    if row.outcome then
+        label, enabled, ink = row.outcome.label, false, row.outcome.color
+    elseif row.status == "applied" then
         label = Clock(row.remaining)
     elseif row.status == "invited" then
         label = "Invited"
@@ -286,13 +298,26 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     end
     act:SetText(label)
     act:SetEnabled(enabled)
-    act:GetFontString():SetTextColor(isPinned and MINT[1] or 1, isPinned and MINT[2] or 1, isPinned and MINT[3] or 1,
-        enabled and 1 or 0.4)
+    act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     pinned, results = Groups.List()
+    -- Sign-ups that just ended stay pinned for OUTCOME_TTL with how they ended.
+    local now, showing = GetTime(), {}
+    for _, row in ipairs(pinned) do cache[row.id] = row; showing[row.id] = true end
+    for id, o in pairs(recent) do
+        if o.untilT <= now then
+            recent[id] = nil
+        elseif not showing[id] then
+            local row = CopyTable(o.row)
+            row.status, row.outcome = nil, o
+            pinned[#pinned + 1] = row
+            showing[id] = true
+        end
+    end
+    for i = #results, 1, -1 do if showing[results[i].id] then table.remove(results, i) end end
     local p = Panel()
     local raidView = p and p.categoryID == 3
     local _, active = C_LFGList.GetNumApplications()
@@ -524,6 +549,11 @@ ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function() offset = 0; RenderSoon() en
 ns.On("LFG_LIST_SEARCH_RESULT_UPDATED", RenderSoon)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
+    local o = OUTCOME[new]
+    if o and cache[id] then
+        recent[id] = { row = cache[id], label = o[1], color = o[2], untilT = GetTime() + OUTCOME_TTL }
+        C_Timer.After(OUTCOME_TTL + 0.1, RenderSoon)
+    end
     RenderSoon()
 end)
 ns.On("LFG_LIST_SEARCH_FAILED", function(reason)
