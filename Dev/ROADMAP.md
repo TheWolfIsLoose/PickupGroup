@@ -16,26 +16,38 @@ cheap.
 
 ## Next session: start here
 
-2026-09-28: v0.1.0 (Phase 0) and Phase 1 (spikes, v0.1.1) done; results
-under Phase 1. Read "What PickupGroup is", "Originality rules" and
-"Design" before anything else.
+**State, 2026-09-29 00:05 ET: v0.3.3 installed and confirmed in game (log
+clean: no errors, nothing blocked).** Phases 0-3 done. Read "What
+PickupGroup is", "Originality rules" and "Design" first; HISTORY.md has
+every build's detail.
 
 Testing method (player's preference): the player tests in game,
-`/reload`s and says "done"; Claude reads the log from the saved
-variables file (Session setup) rather than having it pasted.
+`/reload`s and says "done"; Claude reads the log from the saved variables
+file (Session setup), never asks for a paste. Screenshots for layout.
+Iterate in small alphas: one fix or feature per build, installed and
+verified (checksums) each time.
 
-1. **v0.3.0 done (Phase 3), 2026-09-28.** Open threads: search text
-   (rules under Phase 3); Report and hide untested (check the log for a
-   blocked action); then Phase 4 (new mark, best-group sort, keys that
-   beat my best, swap a sign-up). Lockout-aware raids already shipped in
-   Phase 3 (My lockout).
-   **Next fix (player, 2026-09-28):** "Room for my role" only checks the
-   player's own roles. In a party it must mean "room for my group": the
-   group's open seats must fit every party member's assigned role
-   (UnitGroupRolesAssigned on party units; the leader's sign-up carries
-   the party) and the member count must fit (members + party <= 5). Same
-   for the empty-seat mint tint.
-2. Settle the **Open** items in Design with the player before Phase 2.
+Next, in order:
+1. **Party-aware room** (player): "Room for my role" must mean "room for
+   my group" in a party: the group's open seats fit every party member's
+   assigned role (UnitGroupRolesAssigned on party units; the leader's
+   sign-up carries the party) and members + party <= 5. The mint ring on
+   empty seats follows the same rule. Needs a party test (friends).
+2. **Untested in game**: the row right-click menu (Report and hide,
+   Blacklist, Hide until reload) and auto-blacklist on Blizzard's report
+   form. Check the log for a blocked action from LFGList_ReportListing.
+3. **Search text** (last Phase 3 item): Blizzard's server-side search;
+   takes effect only on Enter or Refresh, waits out the countdown.
+4. **Phase 4**: new mark (rows new since the last refresh), best-group
+   sort (show our work in its tooltip), keys that beat my best, swap a
+   sign-up (opt-in). Lockout-aware raids already shipped (My lockout).
+5. Later: teleport button (needs a party to test), filter sharing,
+   leading (on hold), final name before 1.0.
+
+Known limits (by design, noted to the player): boss rules apply to every
+difficulty in a filter (amber hint shown; one difficulty per filter);
+past-season raids are a named list in Groups.lua (update each season);
+an open sign-up at /reload stays "pending" in the application log.
 
 Session setup (keeps usage down):
 - Repo: `TheWolfIsLoose/PickupGroup` (private); attach with add_repo
