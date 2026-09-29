@@ -2,7 +2,7 @@
 ## Title: PickupGroup
 ## Notes: Premade groups inside the Group Finder: saved filters, a compact results table, one-click sign-ups.
 ## Author: Jakerator
-## Version: 0.1.0-alpha1
+## Version: 0.1.1-alpha1
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
 
@@ -10,3 +10,6 @@ Core.lua
 Log.lua
 UI\Kit.lua
 UI\LogPopup.lua
+
+# Phase 1 tests (throwaway)
+Dev\Spike.lua

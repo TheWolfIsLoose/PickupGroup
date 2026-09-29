@@ -16,14 +16,13 @@ cheap.
 
 ## Next session: start here
 
-2026-09-28: Phase 0 built as v0.1.0-alpha1 and installed (awaiting the
-player's first load: `/pug`, `/pug log`, `/pug debug`). Read "What
+2026-09-28: v0.1.0 (Phase 0) confirmed in game. v0.1.1-alpha1 installs
+the Phase 1 test harness (`Dev/Spike.lua`, `/pug spike`). Read "What
 PickupGroup is", "Originality rules" and "Design" before anything else.
 
-1. **Phase 0**: confirm the alpha1 load in game (log shows "installed",
-   no errors), then cut v0.1.0.
-2. **Phase 1**: three in-game spikes, each a throwaway test read back
-   from the debug log.
+1. **Phase 1**: the player runs the spike tests (steps in the header of
+   `Dev/Spike.lua`); read the answers from the log, write them into
+   Phase 1 below, then delete `Dev/Spike.lua` and its TOC line.
 3. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -190,7 +189,7 @@ leader"; play-history analytics (Raider.IO covers it); a per-player
 
 ---
 
-## v0.1.0 — Phase 0: foundation (built as v0.1.0-alpha1, 2026-09-28)
+## v0.1.0 — Phase 0: foundation (done 2026-09-28)
 
 - `PickupGroup.toc`, core namespace, saved variables `PickupGroupDB`
   with a `schema` number from day one.

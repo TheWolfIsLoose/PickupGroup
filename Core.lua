@@ -96,6 +96,13 @@ ns.On("ADDON_LOADED", function(name)
     SlashCmdList.PICKUPGROUP = function(msg) ns.OnSlash(msg) end
 end)
 
+-- A protected call our code made that the game refused (taint).
+local function Blocked(who, func)
+    if who == addonName then ns.Log.Emit("blocked", { func = func }) end
+end
+ns.On("ADDON_ACTION_BLOCKED", Blocked)
+ns.On("ADDON_ACTION_FORBIDDEN", Blocked)
+
 -- ---------------------------------------------------------------------------
 -- /pug
 -- ---------------------------------------------------------------------------
@@ -114,6 +121,8 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
+    elseif cmd == "spike" and ns.Spike then
+        ns.Spike.Toggle()
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })
