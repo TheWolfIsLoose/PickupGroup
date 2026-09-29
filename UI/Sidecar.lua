@@ -110,7 +110,8 @@ local function PaintRaid(f)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText("Match my lockout", 1, 1, 1)
                 GameTooltip:AddLine("Bosses you've killed this week: Dead. Bosses you still need: Alive. "
-                    .. "Uses your lockout for the difficulty this filter looks for (the highest, if several).", 0.8, 0.8, 0.8, true)
+                    .. "Uses your lockout for the difficulty this filter looks for (the highest, if several). "
+                    .. "Mythic lockouts are whole, so on Mythic it tells you whether any group can take you.", 0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end)
             l.want:HookScript("OnLeave", function() GameTooltip:Hide() end)

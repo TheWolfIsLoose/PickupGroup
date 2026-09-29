@@ -107,6 +107,23 @@ function Filters.MatchLockout(f, raidName)
             best, bestDiff = i, d
         end
     end
+    -- Mythic lockouts are whole: a saved player can only rejoin that one
+    -- raid (and no listing says which it is); an unsaved one can take any
+    -- group's lockout.
+    local mythicOnly = f.difficulties and f.difficulties.M and not f.difficulties.H and not f.difficulties.N
+    if bestDiff == "M" or (mythicOnly and not best) then
+        f.bosses = f.bosses or {}
+        local text
+        if best then
+            text = "You're saved to a Mythic lockout: only the group on that same lockout can take you, "
+                .. "and listings don't say which that is. Bosses left as they were."
+        else
+            f.bosses[raidName] = nil
+            text = "Not saved on Mythic: any group can take you (you'd accept their lockout). Every boss set to Either."
+        end
+        ns.Log.Emit("filter", { action = "match lockout", name = f.name .. ", " .. raidName .. ": " .. text })
+        return text
+    end
     local killed, n = {}, 0
     if best then
         local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)

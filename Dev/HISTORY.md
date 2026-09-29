@@ -2,6 +2,14 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha4 (2026-09-28)
+
+- Match my lockout on Mythic (player: Mythic lockouts are whole, shared
+  by the 20 present at the first kill; unsaved players accept the
+  group's): saved = only that one raid can take you and listings don't
+  say which, so bosses are left alone and it says so; unsaved = every
+  boss Either (any group works).
+
 ## v0.3.0-alpha3 (2026-09-28)
 
 - Match my lockout (player): a button on each raid heading sets bosses
