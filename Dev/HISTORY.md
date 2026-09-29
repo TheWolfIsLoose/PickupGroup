@@ -2,6 +2,18 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha2 (2026-09-28)
+
+From the alpha1 test (log: no errors; filter edits sent no searches):
+- Raid filters: each boss can be set Either / Alive / Dead, since raids
+  aren't cleared in order (player). Boss names come from the journal
+  for every raid seen in the results; a listing's killed bosses come
+  from its lockout info. "Bosses down at most" is gone (replaced).
+- The sidecar closes when the pane goes (leaving the search) and follows
+  the category when it stays.
+- The sidecar is opaque and sits above Raider.IO's panel (its text
+  showed through).
+
 ## v0.3.0-alpha1 (2026-09-28): Phase 3, saved filters + sidecar
 
 - `Filters.lua`: account-wide saved filters per kind (keys / raid),

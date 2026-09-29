@@ -53,34 +53,53 @@ local function Code(name)
 end
 Groups.Code = Code
 
--- Bosses in a raid instance, from the Encounter Journal (no journal state
--- is changed: the instance is passed, never selected). Cached by map.
-local bossCount, traced = {}, {}
+-- Bosses in a raid instance, from the Encounter Journal, cached by map.
+-- bossNames[map] lists them in journal order; raids[raid name] = map for
+-- every raid seen in results (the sidecar's per-boss rules list these).
+local bossCount, bossNames, raids = {}, {}, {}
 local function TotalBosses(mapID)
     if not mapID then return nil end
     if mapID == 0 then return 1 end  -- world boss listings (map 0): one boss
     if bossCount[mapID] == nil then
-        local n = 0
+        local n, names = 0, {}
         local instance = C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap
             and C_EncounterJournal.GetInstanceForGameMap(mapID)
         if not (instance and instance > 0) and EJ_GetInstanceForMap then instance = EJ_GetInstanceForMap(mapID) end
         if instance and instance > 0 then
-            while EJ_GetEncounterInfoByIndex(n + 1, instance) do n = n + 1 end
+            while true do
+                local name = EJ_GetEncounterInfoByIndex(n + 1, instance)
+                if not name then break end
+                n = n + 1; names[n] = name
+            end
             -- Without the instance selected the journal answers nothing. Select
             -- it, count, and put the journal back (never while it's open).
             if n == 0 and not (EncounterJournal and EncounterJournal:IsShown()) then
                 local before = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
                 -- Some instances the journal refuses to select (it throws).
                 if pcall(EJ_SelectInstance, instance) then
-                    while EJ_GetEncounterInfoByIndex(n + 1) do n = n + 1 end
+                    while true do
+                        local name = EJ_GetEncounterInfoByIndex(n + 1)
+                        if not name then break end
+                        n = n + 1; names[n] = name
+                    end
                 end
                 if before and before > 0 then pcall(EJ_SelectInstance, before) end
             end
         end
-        bossCount[mapID] = n > 0 and n or false
+        bossCount[mapID], bossNames[mapID] = n > 0 and n or false, names
         ns.Trace("raid", "map", mapID, "journal instance", tostring(instance), "bosses", n)
     end
     return bossCount[mapID] or nil
+end
+
+-- Raids seen in results, each { name, bosses = { names in journal order } }.
+function Groups.Raids()
+    local out = {}
+    for name, mapID in pairs(raids) do
+        if bossNames[mapID] and #bossNames[mapID] > 0 then out[#out + 1] = { name = name, bosses = bossNames[mapID] } end
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
+    return out
 end
 
 -- The roles the player signs up as (Blizzard's own role choice).
@@ -133,7 +152,9 @@ function Groups.Read(id)
         row.counts = { TANK = counts.TANK or 0, HEALER = counts.HEALER or 0, DAMAGER = counts.DAMAGER or 0 }
         local killed = C_LFGList.GetSearchResultEncounterInfo(id)
         row.down, row.total = killed and #killed or 0, TotalBosses(activity.mapID)
-        if not traced[id] then traced[id] = true; ns.Trace("raid", "result", id, "killed", killed and #killed or "nil") end
+        row.killed = {}
+        for _, boss in ipairs(killed or {}) do row.killed[boss] = true end
+        if activity.mapID and activity.mapID ~= 0 then raids[name] = activity.mapID end
     else
         -- Seats in tank, healer, damage order; each member takes the first
         -- free seat of their role.

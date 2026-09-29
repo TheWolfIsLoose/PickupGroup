@@ -24,7 +24,8 @@ local DIFF = { { "N", { 0.12, 1, 0 } }, { "H", { 0, 0.44, 0.87 } }, { "M", { 1, 
 local frame, editing
 local nameBox, keysBox, raidBox, deleteBtn
 local dungeonButtons, checks, diffButtons = {}, {}, {}
-local scoreBox, downBox
+local scoreBox, bossBox
+local bossLines = {}
 
 local function Changed()
     ns.Pane.Render()
@@ -60,13 +61,71 @@ local function PaintKeys(f)
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
 end
 
+-- Each boss cycles Either -> Alive -> Dead: raids aren't cleared in order.
+local WANT_NEXT = { [false] = "alive", alive = "dead", dead = false }
+local WANT_LOOK = { [false] = { "Either", { 0.55, 0.55, 0.55 } }, alive = { "Alive", MINT }, dead = { "Dead", { 1, 0.72, 0.3 } } }
+
 local function PaintRaid(f)
     for _, b in ipairs(diffButtons) do
         local on = not f.difficulties or f.difficulties[b.diff]
         b:Paint(on, on and b.color or nil)
     end
     checks.raidRoom:Set(f.room)
-    downBox:SetText(f.maxDown and tostring(f.maxDown) or "")
+    -- Boss rows, pooled: a raid heading, then one row per boss.
+    local y, n = 0, 0
+    local function Line()
+        n = n + 1
+        local l = bossLines[n]
+        if not l then
+            l = CreateFrame("Frame", nil, bossBox)
+            l:SetHeight(18)
+            l.text = l:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+            l.text:SetPoint("LEFT")
+            l.text:SetPoint("RIGHT", -60, 0)
+            l.text:SetJustifyH("LEFT")
+            l.text:SetWordWrap(false)
+            l.want = Toggle(l, "", 56, function(self)
+                local rules = editing.bosses or {}
+                editing.bosses = rules
+                rules[self.raid] = rules[self.raid] or {}
+                rules[self.raid][self.boss] = WANT_NEXT[rules[self.raid][self.boss] or false] or nil
+                Sidecar.Paint(); Changed()
+            end)
+            l.want:SetHeight(16)
+            l.want:SetPoint("RIGHT")
+            bossLines[n] = l
+        end
+        l:ClearAllPoints()
+        l:SetPoint("TOPLEFT", 0, y)
+        l:SetPoint("RIGHT")
+        l:Show()
+        y = y - 18
+        return l
+    end
+    for _, raid in ipairs(ns.Groups.Raids()) do
+        local h = Line()
+        h.text:SetText(raid.name)
+        h.text:SetTextColor(0.55, 0.55, 0.55)
+        h.want:Hide()
+        for _, boss in ipairs(raid.bosses) do
+            local l = Line()
+            l.text:SetText(boss)
+            l.text:SetTextColor(1, 1, 1)
+            local want = editing.bosses and editing.bosses[raid.name] and editing.bosses[raid.name][boss] or false
+            l.want.raid, l.want.boss = raid.name, boss
+            l.want:SetText(WANT_LOOK[want][1])
+            l.want:Paint(want ~= false, WANT_LOOK[want][2])
+            l.want:Show()
+        end
+        y = y - 4
+    end
+    for i = n + 1, #bossLines do bossLines[i]:Hide() end
+    if n == 0 then
+        local l = Line()
+        l.text:SetText("Bosses show here once raids are in the results.")
+        l.text:SetTextColor(0.55, 0.55, 0.55)
+        l.want:Hide()
+    end
 end
 
 function Sidecar.Paint()
@@ -156,14 +215,13 @@ local function BuildRaid(parent)
     local cb = Kit.Check(box, "Room in the raid", function(on) editing.room = on or nil; Changed() end)
     cb:SetPoint("TOPLEFT", 0, -46)
     checks.raidRoom = cb
-    local l = Label(box, "Bosses down at most")
-    l:SetPoint("TOPLEFT", 0, -74)
-    downBox = Kit.Edit(box, 56, function(text)
-        editing.maxDown = tonumber(text)
-        Changed()
-    end, true)
-    downBox:SetPoint("TOPRIGHT", 0, -70)
-    box:SetHeight(96)
+    local l = Label(box, "Bosses in the group's lockout")
+    l:SetPoint("TOPLEFT", 0, -72)
+    bossBox = CreateFrame("Frame", nil, box)
+    bossBox:SetPoint("TOPLEFT", 0, -88)
+    bossBox:SetPoint("RIGHT")
+    bossBox:SetHeight(1)
+    box:SetHeight(300)
     return box
 end
 
@@ -173,10 +231,10 @@ local function Build()
     frame:SetWidth(W)
     frame:SetPoint("TOPLEFT", PVEFrame, "TOPRIGHT", 1, 0)
     frame:SetPoint("BOTTOMLEFT", PVEFrame, "BOTTOMRIGHT", 1, 0)
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("DIALOG")  -- above Raider.IO's panel, which it covers
     frame:SetToplevel(true)
     frame:EnableMouse(true)
-    Kit.Fill(frame, Kit.Palette.panelBg)
+    Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(frame)
 
     local title = frame:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
@@ -234,6 +292,15 @@ function Sidecar.Open(f)
     editing = f
     Sidecar.Paint()
     frame:Show()
+end
+
+-- New results can bring raids the boss list hasn't shown yet.
+function Sidecar.RefreshBosses()
+    if frame and frame:IsShown() and editing and editing.kind == "raid" then PaintRaid(editing) end
+end
+
+function Sidecar.Hide()
+    if frame then frame:Hide() end
 end
 
 function Sidecar.Follow(f)

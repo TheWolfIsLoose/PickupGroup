@@ -7,7 +7,8 @@
 
     keys: room, lust, brez, minScore, atLeastMine, dungeons (nil = all,
           else set of dungeon names)
-    raid: room, difficulties (set of N/H/M), maxDown (nil = any)
+    raid: room, difficulties (set of N/H/M),
+          bosses[raid name][boss name] = "alive" | "dead" (absent = either)
 --]]
 
 local _, ns = ...
@@ -97,7 +98,12 @@ function Filters.Pass(row)
     if f.room and not row.fits then return false end
     if row.isRaid then
         if f.difficulties and row.difficulty and not f.difficulties[row.difficulty] then return false end
-        if f.maxDown and (row.down or 0) > f.maxDown then return false end
+        -- Raids aren't cleared in order, so each boss can be asked for alive
+        -- or dead in the listing.
+        for boss, want in pairs(f.bosses and f.bosses[row.activity] or {}) do
+            local dead = row.killed and row.killed[boss]
+            if (want == "alive" and dead) or (want == "dead" and not dead) then return false end
+        end
         return true
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end

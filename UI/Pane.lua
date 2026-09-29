@@ -389,6 +389,7 @@ function Pane.Render()
         PaintRow(rows[slot] or BuildRow(slot), results[i], false, slot, full, raidView)
     end
     for i = slot + 1, #rows do rows[i]:Hide(); rows[i].row = nil end
+    ns.Sidecar.RefreshBosses()
     pane.instHead:SetText(raidView and "Raid" or "Dungeon")
     pane.scoreHead:SetText(raidView and "Bosses" or "Score")
     pane.diffHead:SetWidth(raidView and W_DIFF or 1)
@@ -591,6 +592,9 @@ function Pane.Update()
     local eligible = Eligible()
     pane:SetShown(eligible and not ns.db.useBlizzard)
     backButton:SetShown(eligible and ns.db.useBlizzard == true)
+    -- The sidecar belongs to the pane: it closes when the pane goes and
+    -- follows the category when it stays.
+    if pane:IsShown() then ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
     ns.Trace("pane", "update: category", tostring(panel.categoryID), "filters", tostring(panel.filters),
         "shown", tostring(pane:IsShown()))
 end

@@ -25,7 +25,8 @@ Testing method (player's preference): the player tests in game,
 variables file (Session setup) rather than having it pasted.
 
 1. **Phase 3**: v0.3.0-alpha1 (filter tabs + sidecar Filter tab)
-   installed, awaiting the player's test; then alpha2 (Options, clean-up).
+   installed; alpha2 (per-boss raid rules, sidecar fixes) next to test,
+   then Options + clean-up.
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -290,7 +291,11 @@ show hidden, blacklist); alpha3 = per-boss raid rules, search text.
   role, needs Bloodlust (no Shaman/Mage/Hunter/Evoker in the group),
   needs battle rez (no Druid/Death Knight/Warlock/Paladin), leader score
   floor, leader at least my score. Raid: difficulty, bosses down at most,
-  room. Edits apply as you make them (no Save step); Delete keeps at
+  room, each boss alive / dead / either (alpha2). Edits apply as you make
+  them (no Save step): the rules run on results already in hand and never
+  send a search. **Rule for search text (alpha3):** it's Blizzard's
+  server-side search, so it only takes effect on Enter or Refresh, never
+  on each keystroke, and it waits out the Refresh countdown (player). Delete keeps at
   least one filter per category.
 - The sidecar hangs off the Group Finder's right edge and covers
   Raider.IO's panel while open (Raider.IO's frame is never moved).
