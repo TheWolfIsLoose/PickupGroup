@@ -55,7 +55,7 @@ end
 -- is changed: the instance is passed, never selected). Cached by map.
 local bossCount, traced = {}, {}
 local function TotalBosses(mapID)
-    if not mapID then return nil end
+    if not mapID or mapID == 0 then return nil end  -- world bosses list map 0
     if bossCount[mapID] == nil then
         local n = 0
         local instance = C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap
@@ -67,9 +67,11 @@ local function TotalBosses(mapID)
             -- it, count, and put the journal back (never while it's open).
             if n == 0 and not (EncounterJournal and EncounterJournal:IsShown()) then
                 local before = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
-                EJ_SelectInstance(instance)
-                while EJ_GetEncounterInfoByIndex(n + 1) do n = n + 1 end
-                if before and before > 0 then EJ_SelectInstance(before) end
+                -- Some instances the journal refuses to select (it throws).
+                if pcall(EJ_SelectInstance, instance) then
+                    while EJ_GetEncounterInfoByIndex(n + 1) do n = n + 1 end
+                end
+                if before and before > 0 then pcall(EJ_SelectInstance, before) end
             end
         end
         bossCount[mapID] = n > 0 and n or false
@@ -155,17 +157,25 @@ Groups.OUT = OUT
 
 -- pinned: the player's sign-ups; rows: everything else that passes, by
 -- leader score (raids: bosses down, then age).
+-- A listing that errors is left out and logged once, never the whole list.
+local failed = {}
+local function SafeRead(id)
+    local ok, row = pcall(Groups.Read, id)
+    if ok then return row end
+    if not failed[id] then failed[id] = true; ns.LogError(row) end
+end
+
 function Groups.List()
     local pinned, rows = {}, {}
     local _, results = C_LFGList.GetSearchResults()
     local seen = {}
     for _, id in ipairs(C_LFGList.GetApplications() or {}) do
-        local row = Groups.Read(id)
+        local row = SafeRead(id)
         if row and OUT[row.status] then pinned[#pinned + 1] = row; seen[id] = true end
     end
     for _, id in ipairs(results or {}) do
         if not seen[id] then
-            local row = Groups.Read(id)
+            local row = SafeRead(id)
             if row and (row.fits or row.status) then rows[#rows + 1] = row end
         end
     end

@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha4 (2026-09-28)
+
+- Fix: alpha3's journal select threw on a world boss listing (map 0,
+  journal instance 1206), which blanked the whole raid list. Map 0 is
+  skipped, the select is guarded, and any listing that errors is now
+  left out and logged once instead of emptying the list.
+
 ## v0.2.0-alpha3 (2026-09-28)
 
 - The switch back from Blizzard's list moved to the panel's header,
