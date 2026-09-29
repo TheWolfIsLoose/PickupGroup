@@ -463,6 +463,19 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
+    -- Toolbar beside Blizzard's search box, row-high: it covers Blizzard's
+    -- refresh and Filter buttons (never hidden) and holds ours instead.
+    local tools = bar
+    if panel.SearchBox then
+        tools = CreateFrame("Frame", nil, pane)
+        tools:SetPoint("TOPLEFT", panel.SearchBox, "TOPRIGHT", 6, 3)
+        tools:SetPoint("RIGHT", pane, "RIGHT")
+        tools:SetPoint("BOTTOM", pane, "TOP", 0, -1)
+        tools:EnableMouse(true)
+        Kit.Fill(tools, { 0.031, 0.031, 0.031, 1 })
+        Kit.Border(tools)
+    end
+
     tabBar = bar
     plusTab = CreateFrame("Button", nil, bar)
     plusTab:SetSize(16, BAR_H)
@@ -479,13 +492,13 @@ local function BuildBars()
     plusTab:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
-    local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
+    local list = Kit.HeaderIcon(tools, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
-    refresh = CreateFrame("Button", nil, bar)
+    refresh = CreateFrame("Button", nil, tools)
     refresh:SetSize(58, 18)
-    local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
+    local setup = Kit.HeaderIcon(tools, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
         "Set up this filter (right-click a tab works too)", function() ns.Sidecar.Open() end)
     setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
     refresh:SetPoint("RIGHT", setup, "LEFT", -4, 0)
@@ -497,7 +510,7 @@ local function BuildBars()
     refresh:SetScript("OnClick", Search)
 
     countText = Text(bar)
-    countText:SetPoint("RIGHT", refresh, "LEFT", -8, 0)
+    if tools == bar then countText:SetPoint("RIGHT", refresh, "LEFT", -8, 0) else countText:SetPoint("RIGHT", -8, 0) end
     countText:SetTextColor(0.55, 0.55, 0.55)
     -- How many rows clean-up hid; click to see only those (and back).
     hiddenButton = CreateFrame("Button", nil, bar)
@@ -610,16 +623,6 @@ local function Build()
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
-    -- Blizzard's refresh and Filter buttons are covered (never hidden):
-    -- our Refresh and filters replace them. The search box stays open.
-    if panel.RefreshButton then
-        local cover = CreateFrame("Frame", nil, pane)
-        cover:SetPoint("TOPLEFT", panel.RefreshButton, "TOPLEFT", -4, 4)
-        cover:SetPoint("RIGHT", pane, "RIGHT")
-        cover:SetPoint("BOTTOM", pane, "TOP")
-        cover:EnableMouse(true)
-        Kit.Fill(cover, { 0.031, 0.031, 0.031, 1 })
-    end
     BuildBars()
     pane.divider = pane:CreateTexture(nil, "OVERLAY", nil, 7)
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
