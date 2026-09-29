@@ -52,6 +52,17 @@ Next, in order:
    check if spam filtering could use it), age, numMembers. So key level
    = Blizzard text search only. Default: pane starts below Blizzard's
    search row so the player types there (not per filter).
+3b. **Blizzard's Filter button (player, 2026-09-29):** it stays visible
+   above the pane (the search row can't be covered cleanly). Its settings
+   narrow the server's search before our filters run, so the player
+   should understand how the two relate. Try in game, compare:
+   - a line added to its tooltip (HookScript, never SetScript);
+   - a quiet note in the pane when Blizzard's filter is narrowing
+     results (`C_LFGList.GetAdvancedFilter()`), naming what it limits;
+   - one source of truth: our filter's dungeons / needs (tank, healer,
+     Bloodlust, battle rez) / score written into Blizzard's advanced
+     filter (`C_LFGList.SaveAdvancedFilter`), so both agree and the
+     server narrows too. Spike first: must not taint or block.
 4. **Phase 4**: new mark (rows new since the last refresh), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
    sign-up (opt-in), friends mark, saved sign-up note. Lockout-aware raids already shipped
