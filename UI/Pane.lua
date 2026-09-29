@@ -45,7 +45,8 @@ local OUTCOME = {
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
-local panel, pane, backButton, refresh, countText
+local panel, pane, backButton, refresh, countText, tabBar, plusTab
+local tabs = {}
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
 local offset = 0
@@ -301,8 +302,54 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
+-- One tab per saved filter of the kind in view; the active one in mint and
+-- underlined. Left-click switches, right-click opens its setup.
+local function PaintTabs()
+    local Filters = ns.Filters
+    local kind = Filters.Kind()
+    local active = Filters.Active(kind)
+    local prev
+    for i, f in ipairs(Filters.List(kind)) do
+        local t = tabs[i]
+        if not t then
+            t = CreateFrame("Button", nil, tabBar)
+            t:SetHeight(BAR_H)
+            t:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+            t.text = Text(t, "PickupGroupFont")
+            t.text:SetPoint("LEFT")
+            t.under = t:CreateTexture(nil, "OVERLAY")
+            t.under:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+            t.under:SetHeight(2)
+            t.under:SetPoint("BOTTOMLEFT", 0, 1)
+            t.under:SetPoint("BOTTOMRIGHT", 0, 1)
+            t:SetScript("OnClick", function(self, button)
+                if button == "RightButton" then return ns.Sidecar.Open(self.filter) end
+                Filters.SetActive(self.filter)
+                offset = 0
+                Pane.Render()
+                ns.Sidecar.Follow(self.filter)
+            end)
+            tabs[i] = t
+        end
+        t.filter = f
+        t.text:SetText(f.name)
+        t:SetWidth(t.text:GetStringWidth())
+        local on = f == active
+        t.text:SetTextColor(on and MINT[1] or 0.74, on and MINT[2] or 0.74, on and MINT[3] or 0.74)
+        t.under:SetShown(on)
+        t:ClearAllPoints()
+        if prev then t:SetPoint("LEFT", prev, "RIGHT", 12, 0) else t:SetPoint("LEFT", 8, 0) end
+        t:Show()
+        prev = t
+    end
+    for i = #Filters.List(kind) + 1, #tabs do tabs[i]:Hide() end
+    plusTab:ClearAllPoints()
+    plusTab:SetPoint("LEFT", prev or tabBar, prev and "RIGHT" or "LEFT", prev and 6 or 8, 0)
+end
+
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
+    PaintTabs()
     pinned, results = Groups.List()
     -- Sign-ups that just ended stay pinned for OUTCOME_TTL with how they ended.
     local now, showing = GetTime(), {}
@@ -380,15 +427,20 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
-    local tab = Text(bar, "PickupGroupFont")
-    tab:SetPoint("LEFT", 8, 0)
-    tab:SetText("All groups")
-    tab:SetTextColor(MINT[1], MINT[2], MINT[3])
-    local under = bar:CreateTexture(nil, "OVERLAY")
-    under:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-    under:SetHeight(2)
-    under:SetPoint("BOTTOMLEFT", tab, "BOTTOMLEFT", 0, -6)
-    under:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 0, -6)
+    tabBar = bar
+    plusTab = CreateFrame("Button", nil, bar)
+    plusTab:SetSize(16, BAR_H)
+    Kit.Glyph(plusTab, { { 9, 2, 0 }, { 2, 9, 0 } })
+    plusTab:SetScript("OnClick", function()
+        local f = ns.Filters.New(ns.Filters.Kind())
+        offset = 0
+        Pane.Render()
+        ns.Sidecar.Open(f)
+    end)
+    plusTab:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM"); GameTooltip:SetText("New filter"); GameTooltip:Show()
+    end)
+    plusTab:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
     local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Use Blizzard's group list instead",
@@ -397,7 +449,10 @@ local function BuildBars()
 
     refresh = CreateFrame("Button", nil, bar)
     refresh:SetSize(58, 18)
-    refresh:SetPoint("RIGHT", list, "LEFT", -4, 0)
+    local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
+        "Set up this filter (right-click a tab works too)", function() ns.Sidecar.Open() end)
+    setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
+    refresh:SetPoint("RIGHT", setup, "LEFT", -4, 0)
     Kit.Button(refresh)
     refresh:SetNormalFontObject("PickupGroupFontSmall")
     refresh:SetHighlightFontObject("PickupGroupFontSmall")

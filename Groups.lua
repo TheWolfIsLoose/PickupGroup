@@ -42,6 +42,7 @@ end
 local function BaseName(full)
     return (full or "?"):gsub("%s*%(.-%)%s*$", "")
 end
+Groups.BaseName = BaseName
 local codes = {}
 local function Code(name)
     if not codes[name] then
@@ -50,6 +51,7 @@ local function Code(name)
     end
     return codes[name]
 end
+Groups.Code = Code
 
 -- Bosses in a raid instance, from the Encounter Journal (no journal state
 -- is changed: the instance is passed, never selected). Cached by map.
@@ -137,7 +139,7 @@ function Groups.Read(id)
         -- free seat of their role.
         local tiles = {}
         for i, role in ipairs(SEAT_ORDER) do tiles[i] = { role = role, mine = mine[role] } end
-        row.specs = {}
+        row.specs, row.classes = {}, {}
         for m = 1, info.numMembers or 0 do
             local p = C_LFGList.GetSearchResultPlayerInfo(id, m)
             if p then
@@ -148,6 +150,7 @@ function Groups.Read(id)
                     end
                 end
                 row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename }
+                if p.classFilename then row.classes[p.classFilename] = true end
             end
         end
         row.tiles = tiles
@@ -180,7 +183,7 @@ function Groups.List()
     for _, id in ipairs(results or {}) do
         if not seen[id] then
             local row = SafeRead(id)
-            if row and (row.fits or row.status) then rows[#rows + 1] = row end
+            if row and (row.status or ns.Filters.Pass(row)) then rows[#rows + 1] = row end
         end
     end
     table.sort(rows, function(a, b)

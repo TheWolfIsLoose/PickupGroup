@@ -24,7 +24,8 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. **Phase 3**: filters and the sidecar (plan under Phase 3).
+1. **Phase 3**: v0.3.0-alpha1 (filter tabs + sidecar Filter tab)
+   installed, awaiting the player's test; then alpha2 (Options, clean-up).
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):

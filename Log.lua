@@ -44,6 +44,7 @@ local KINDS = {
         return ("Sign-up %s: %s, led by %s%s"):format(words[p.result] or Plain(p.result), Plain(p.code),
             Plain(p.leader), p.level and (" (+" .. p.level .. ")") or "")
     end },
+    filter  = { "detail", function(p) return ("Filter %s: %s"):format(Plain(p.action), Plain(p.name)) end },
     trace   = { "trace", function(p) return ("[%s] %s"):format(Plain(p.tag), Plain(p.text)) end },
 }
 

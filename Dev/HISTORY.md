@@ -2,6 +2,21 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.3.0-alpha1 (2026-09-28): Phase 3, saved filters + sidecar
+
+- `Filters.lua`: account-wide saved filters per kind (keys / raid),
+  active one remembered per kind. Shipped: Weekly keys, Push keys
+  (leader at least my score), Raid. Rules on our copy of the results:
+  room for my role, dungeons, needs Bloodlust / battle rez (by classes in
+  the group), leader score floor, leader at least my score; raid:
+  difficulty, bosses down at most, room.
+- Pane: one tab per filter (left-click switches, right-click sets it up),
+  + for a new filter, a setup icon in the top bar.
+- `UI/Sidecar.lua`: the Filter tab on the Group Finder's right edge
+  (covers Raider.IO while open); edits apply at once; Delete keeps one
+  filter per kind.
+- Kit: checkbox and text box.
+
 ## v0.2.0 (2026-09-28): Phase 2 done (alpha1-alpha9 below)
 
 ## v0.2.0-alpha9 (2026-09-28)

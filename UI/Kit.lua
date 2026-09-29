@@ -146,3 +146,48 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     btn:SetScript("OnClick", onClick)
     return btn
 end
+
+-- Checkbox: 12px flat well, mint square when on; the label is part of the
+-- click area. box:Set(on), box:Get(); onChange(on) after a click.
+function Kit.Check(parent, label, onChange)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetHeight(16)
+    local well = CreateFrame("Frame", nil, b)
+    well:SetSize(12, 12)
+    well:SetPoint("LEFT")
+    Kit.Fill(well, { 0, 0, 0, 0.55 })
+    Kit.Border(well)
+    local mark = well:CreateTexture(nil, "OVERLAY")
+    mark:SetSize(6, 6)
+    mark:SetPoint("CENTER")
+    mark:SetColorTexture(Palette.brand[1], Palette.brand[2], Palette.brand[3], 1)
+    local text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    text:SetPoint("LEFT", well, "RIGHT", 6, 0)
+    text:SetText(label)
+    b:SetWidth(18 + text:GetStringWidth() + 4)
+    local on = false
+    function b:Set(v) on = v and true or false; mark:SetShown(on) end
+    function b:Get() return on end
+    b:SetScript("OnClick", function(self) self:Set(not on); onChange(on) end)
+    b:Set(false)
+    return b
+end
+
+-- Text box: sunken well + black ring. onCommit(text) on Enter or losing
+-- focus. Clears focus when hidden (a hidden focused box eats every key).
+function Kit.Edit(parent, width, onCommit, numeric)
+    local e = CreateFrame("EditBox", nil, parent)
+    e:SetSize(width, 20)
+    e:SetAutoFocus(false)
+    e:SetFontObject("PickupGroupFontSmall")
+    e:SetTextInsets(6, 6, 0, 0)
+    if numeric then e:SetNumeric(true) end
+    Kit.Fill(e, { 0, 0, 0, 0.55 })
+    Kit.Border(e)
+    local function commit(self) onCommit(self:GetText()) end
+    e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    e:SetScript("OnEditFocusLost", commit)
+    e:SetScript("OnHide", function(self) self:ClearFocus() end)
+    return e
+end
