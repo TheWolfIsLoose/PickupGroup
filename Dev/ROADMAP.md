@@ -78,6 +78,10 @@ Next, in order:
      my role -> needs<my role>; score floor / at least mine ->
      minimumRating. No server field for Bloodlust / battle rez (stay
      local).
+3c. **Filter picker (player, 2026-09-29, revisit):** saved filters may
+   work better as a drop-down selector than as tabs across the top bar
+   (room, many filters, long names). Decide with the player; keep
+   right-click/setup and "+ new" reachable either way.
 4. **Phase 4**: new mark (**built v0.4.0-alpha1; the dot works but its
    look needs another pass, player**), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
