@@ -41,8 +41,17 @@ Next, in order:
 2. **Untested in game**: the row right-click menu (Report and hide,
    Blacklist, Hide until reload) and auto-blacklist on Blizzard's report
    form. Check the log for a blocked action from LFGList_ReportListing.
-3. **Search text** (last Phase 3 item): Blizzard's server-side search;
-   takes effect only on Enter or Refresh, waits out the countdown.
+3. **Search text** (last Phase 3 item). **Found 2026-09-29:** Blizzard's
+   search box refuses `SetText` from addons ("Call is illegal when
+   disabled by security settings"), so saved per-filter text can't be
+   sent: only text the player types works (v0.3.4-alpha1 tried it;
+   reverted). Probe of 8 M+ listings: no key level field at all; titles
+   are protected (`|Kt..|k`). Readable: requiredDungeonScore,
+   leaderBestDungeonScoreInfo (leader's best run), leaderOverallDungeonScore,
+   generalPlaystyle, comment (the listing's description, empty in all 8:
+   check if spam filtering could use it), age, numMembers. So key level
+   = Blizzard text search only. Default: pane starts below Blizzard's
+   search row so the player types there (not per filter).
 4. **Phase 4**: new mark (rows new since the last refresh), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
    sign-up (opt-in), friends mark, saved sign-up note. Lockout-aware raids already shipped
