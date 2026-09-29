@@ -2,7 +2,8 @@
     PickupGroup - UI/Pane.lua
     The pane: our own frame laid over Blizzard's search panel on Premade
     Groups > Dungeons and Raids - Midnight, below Blizzard's search row
-    (search text is typed there). Blizzard's frames are never hidden,
+    (search text is typed there; its refresh and Filter buttons are
+    covered). Blizzard's frames are never hidden,
     moved or written; the pane just covers them.
 
       top bar   tab . count . Refresh . Blizzard-list switch
@@ -609,6 +610,16 @@ local function Build()
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
+    -- Blizzard's refresh and Filter buttons are covered (never hidden):
+    -- our Refresh and filters replace them. The search box stays open.
+    if panel.RefreshButton then
+        local cover = CreateFrame("Frame", nil, pane)
+        cover:SetPoint("TOPLEFT", panel.RefreshButton, "TOPLEFT", -4, 4)
+        cover:SetPoint("RIGHT", pane, "RIGHT")
+        cover:SetPoint("BOTTOM", pane, "TOP")
+        cover:EnableMouse(true)
+        Kit.Fill(cover, { 0.031, 0.031, 0.031, 1 })
+    end
     BuildBars()
     pane.divider = pane:CreateTexture(nil, "OVERLAY", nil, 7)
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
