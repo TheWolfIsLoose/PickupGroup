@@ -81,7 +81,7 @@ Next, in order:
 4. **Phase 4**: new mark (**built v0.4.0-alpha1; the dot works but its
    look needs another pass, player**), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
-   sign-up (opt-in), friends mark, saved sign-up note. Lockout-aware raids already shipped
+   sign-up (opt-in), friends mark (**built v0.4.0-alpha2**), saved sign-up note. Lockout-aware raids already shipped
    (My lockout).
 5. **Region filter (player, 2026-09-29; must ship before v1.0.0):** let
    players filter by the realm region of the people involved. Searching:

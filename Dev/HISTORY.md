@@ -2,6 +2,19 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.4.0-alpha2 (2026-09-29)
+
+- Friends / guild mark: drawn "people" glyph (Kit.Glyph) at the right
+  end of the name column; Battle.net blue for friends (Battle.net +
+  character), guild chat green (ChatTypeInfo.GUILD) for guildmates; both
+  when both (player). Not on pinned sign-ups (player). Tooltip gives
+  both counts in those colours. `row.friends` no longer includes
+  guildmates; `row.guild` added.
+- Options: "Colour names for friends / guild" (`db.nameColors`):
+  Blizzard-style name colour (green if a guildmate, else blue) replaces
+  the marks (player).
+- Checked visually with a temporary fake-marks command (removed).
+
 ## v0.4.0-alpha1 (2026-09-29)
 
 - Phase 4 starts. New mark: a 3px mint dot at the row's left edge for

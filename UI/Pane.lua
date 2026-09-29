@@ -297,9 +297,6 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r.new:SetShown(not isPinned and fresh[row.id] == true)
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.02 or 0)
     r.name:SetText(row.name or "?")
-    if ns.fakeMarks and not isPinned then  -- temporary dev check (/pug marks)
-        row.friends, row.guild = (index % 3 ~= 2) and 1 or 0, (index % 3 ~= 1) and 1 or 0
-    end
     local byName, marks, ink = ns.db.nameColors and not isPinned, {}, { 1, 1, 1 }
     if byName then
         ink = row.guild > 0 and GuildColor() or row.friends > 0 and FRIEND or ink

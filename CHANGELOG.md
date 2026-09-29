@@ -1,3 +1,4 @@
-## v0.4.0-alpha1
+## v0.4.0-alpha2
 
-- Groups that are new since your last search get a small mint dot.
+- Groups with friends (blue) or guildmates (green) get a small mark by the name.
+- Options: colour group names instead, like Blizzard's list.
