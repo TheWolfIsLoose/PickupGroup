@@ -24,8 +24,7 @@ Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved
 variables file (Session setup) rather than having it pasted.
 
-1. **Phase 2**: v0.2.0-alpha6 (application log, tooltip down-left)
-   installed; confirm in game, then cut v0.2.0 and start Phase 3.
+1. **Phase 3**: filters and the sidecar (plan under Phase 3).
 2. Settle the **Open** items in Design with the player before Phase 2.
 
 Session setup (keeps usage down):
@@ -271,7 +270,7 @@ again, since round 1 saw a retry 3 s after a failure refused too). The
   impact on Clean-up: spam filtering has to use what is readable
   (leader, activity, members, age...), to be checked.
 
-## Phase 2 — the pane (first playable)
+## Phase 2 — the pane (done: v0.2.0, 2026-09-28)
 
 Pane over the results area, top bar (tabs, Refresh, sidecar button),
 table (columns and Comp above), action button (Apply / Cancel),
@@ -279,6 +278,21 @@ pinned sign-ups, row tooltip, "Use Blizzard LFG instead" and the way
 back, application log (data only). (Teleport moved to Later.)
 
 ## Phase 3 — filters and the sidecar
+
+Plan (2026-09-28): alpha1 = saved filters as tabs + the sidecar's Filter
+tab; alpha2 = Options tab ("Use Blizzard LFG instead", clean-up switches,
+show hidden, blacklist); alpha3 = per-boss raid rules, search text.
+- Filters are account-wide, per category (keys / raid); the active one is
+  remembered per category. Shipped: Weekly keys (room for my role), Push
+  keys (room for my role, leader score at least mine), Raid (room).
+- Keys options: dungeons (this season's, from the game), room for my
+  role, needs Bloodlust (no Shaman/Mage/Hunter/Evoker in the group),
+  needs battle rez (no Druid/Death Knight/Warlock/Paladin), leader score
+  floor, leader at least my score. Raid: difficulty, bosses down at most,
+  room. Edits apply as you make them (no Save step); Delete keeps at
+  least one filter per category.
+- The sidecar hangs off the Group Finder's right edge and covers
+  Raider.IO's panel while open (Raider.IO's frame is never moved).
 
 Filter setup (keys and raid), save / delete / new tab, Options tab,
 clean-up switches, re-apply friction, blacklist entry.

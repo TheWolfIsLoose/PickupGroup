@@ -2,6 +2,8 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0 (2026-09-28): Phase 2 done (alpha1-alpha9 below)
+
 ## v0.2.0-alpha9 (2026-09-28)
 
 From the alpha8 log and screenshots:
