@@ -42,7 +42,6 @@ local function InitDB()
     ApplyDefaults(db, DEFAULTS)
     db.schema = SCHEMA
     db.probe = nil  -- leftover from a 0.3.4 dev probe
-    db.probe = nil  -- leftover from 0.3.4 dev probes
     ns.db = db
 end
 
