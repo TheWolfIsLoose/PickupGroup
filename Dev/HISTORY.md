@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha5 (2026-09-28)
+
+- World boss listings (map 0) count as one boss: 0/1 or 1/1 (player).
+
 ## v0.2.0-alpha4 (2026-09-28)
 
 - Fix: alpha3's journal select threw on a world boss listing (map 0,

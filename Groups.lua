@@ -55,7 +55,8 @@ end
 -- is changed: the instance is passed, never selected). Cached by map.
 local bossCount, traced = {}, {}
 local function TotalBosses(mapID)
-    if not mapID or mapID == 0 then return nil end  -- world bosses list map 0
+    if not mapID then return nil end
+    if mapID == 0 then return 1 end  -- world boss listings (map 0): one boss
     if bossCount[mapID] == nil then
         local n = 0
         local instance = C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap
