@@ -41,7 +41,16 @@ Next, in order:
 4. **Phase 4**: new mark (rows new since the last refresh), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
    sign-up (opt-in). Lockout-aware raids already shipped (My lockout).
-5. Later: teleport button (needs a party to test), filter sharing,
+5. **Region filter (player, 2026-09-29; must ship before v1.0.0):** let
+   players filter by the realm region of the people involved. Searching:
+   a filter option on the leader's realm region (e.g. US East, US West,
+   Oceanic, Brazil, Latin America; per the player's region), shown as
+   toggles like dungeons, with the region in the row tooltip. Leading:
+   the same idea for applicants, designed with the leader side. The game
+   has no call for another realm's region: it needs realm data, either
+   a bundled third-party realm library (kept with its license and
+   credit) or our own realm table. Decide which before building.
+6. Later: teleport button (needs a party to test), filter sharing,
    leading (on hold), final name before 1.0.
 
 Known limits (by design, noted to the player): boss rules apply to every
@@ -335,6 +344,7 @@ New mark, best-group sort, keys that beat my best, swap a sign-up
 
 ## v1.0.0 — first release-worthy build
 
+- **Must have:** the region filter (see Next session, item 5).
 - **Open**: final name.
 - **Decided:** debug (trace) logging defaults to off.
 - **Open:** whether to publish, and where.
