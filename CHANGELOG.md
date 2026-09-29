@@ -1,3 +1,3 @@
-## v0.3.5-alpha1
+## v0.4.0-alpha1
 
-- Your active filter now sets Blizzard's own Filter (dungeons, your role, minimum rating), so the search itself is narrowed and fewer matching groups get cut off.
+- Groups that are new since your last search get a small mint dot.

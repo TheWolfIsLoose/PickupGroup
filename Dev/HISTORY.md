@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.4.0-alpha1 (2026-09-29)
+
+- Phase 4 starts. New mark: a 3px mint dot at the row's left edge for
+  listings (leader + activity) not in the previous search's results,
+  until the next search. None on a category's first search; not on
+  pinned sign-ups. Works in game; the dot's look to be revisited.
+
 ## v0.3.5-alpha1 (2026-09-29)
 
 - `Filters.Sync`: the active keys filter writes Blizzard's advanced

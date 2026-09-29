@@ -78,7 +78,8 @@ Next, in order:
      my role -> needs<my role>; score floor / at least mine ->
      minimumRating. No server field for Bloodlust / battle rez (stay
      local).
-4. **Phase 4**: new mark (rows new since the last refresh), best-group
+4. **Phase 4**: new mark (**built v0.4.0-alpha1; the dot works but its
+   look needs another pass, player**), best-group
    sort (show our work in its tooltip), keys that beat my best, swap a
    sign-up (opt-in), friends mark, saved sign-up note. Lockout-aware raids already shipped
    (My lockout).
