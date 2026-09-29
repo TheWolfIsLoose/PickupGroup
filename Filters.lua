@@ -167,6 +167,57 @@ function Filters.MatchLockout(f, raidName)
     return text
 end
 
+-- Blizzard's advanced filter narrows the search on the server (a search
+-- returns at most 100 groups, so narrowing there matters). The active keys
+-- filter drives it: dungeons, room for my role (only with one role picked),
+-- score floor. Written only when those change; ours wins over edits made in
+-- Blizzard's menu. Bloodlust / battle rez have no server field: local only.
+local groupIDs  -- dungeon name -> activity group ID (current season)
+local function GroupIDs()
+    if groupIDs then return groupIDs end
+    local out, n = {}, 0
+    local flags = bit.bor(Enum.LFGListFilter.CurrentSeason, Enum.LFGListFilter.PvE)
+    for _, id in ipairs(C_LFGList.GetAvailableActivityGroups(2, flags) or {}) do
+        local name = C_LFGList.GetActivityGroupInfo(id)
+        if name then out[name] = id; n = n + 1 end
+    end
+    if n > 0 then groupIDs = out end  -- not ready yet at login: try again later
+    return out
+end
+
+local lastSync
+function Filters.Sync()
+    if Filters.Kind() ~= "keys" or not C_LFGList.SaveAdvancedFilter then return end
+    local f = Filters.Active("keys")
+    if not f then return end
+    local ids, acts, all, missing = GroupIDs(), {}, {}, nil
+    for _, d in ipairs(Filters.Dungeons()) do
+        local id = ids[d.name]
+        if id then all[#all + 1] = id else missing = d.name end
+        if id and (not f.dungeons or f.dungeons[d.name]) then acts[#acts + 1] = id end
+    end
+    -- A dungeon we can't map would be dropped by the server: don't narrow.
+    if missing then acts = all end
+    local need
+    if f.room then
+        local r, n = ns.Groups.MyRoles(), 0
+        for role, on in pairs(r) do if on then need, n = role, n + 1 end end
+        if n ~= 1 then need = nil end
+    end
+    local rating = math.max(f.minScore or 0, f.atLeastMine and C_ChallengeMode.GetOverallDungeonScore() or 0)
+    local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating
+    if key == lastSync then return end
+    local adv = C_LFGList.GetAdvancedFilter()
+    if not adv then return end
+    adv.activities = acts
+    adv.needsTank, adv.needsHealer, adv.needsDamage = need == "TANK", need == "HEALER", need == "DAMAGER"
+    adv.minimumRating = rating
+    C_LFGList.SaveAdvancedFilter(adv)
+    lastSync = key
+    ns.Log.Emit("filter", { action = "blizzard filter", name = f.name .. ": " .. key
+        .. (missing and (" (unmapped: " .. missing .. ")") or "") })
+end
+
 -- Does a row pass the active filter of its kind?
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")

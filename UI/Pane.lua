@@ -375,6 +375,7 @@ end
 
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
+    ns.Filters.Sync()  -- before Blizzard's search on a category change, too
     PaintTabs()
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
@@ -655,7 +656,7 @@ function Pane.Update()
     end
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
-    if pane:IsShown() then ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
+    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
     ns.Trace("pane", "update: category", tostring(panel.categoryID), "filters", tostring(panel.filters),
         "shown", tostring(pane:IsShown()))
 end
