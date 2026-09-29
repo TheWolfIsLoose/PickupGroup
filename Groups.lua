@@ -63,6 +63,14 @@ local function TotalBosses(mapID)
         if not (instance and instance > 0) and EJ_GetInstanceForMap then instance = EJ_GetInstanceForMap(mapID) end
         if instance and instance > 0 then
             while EJ_GetEncounterInfoByIndex(n + 1, instance) do n = n + 1 end
+            -- Without the instance selected the journal answers nothing. Select
+            -- it, count, and put the journal back (never while it's open).
+            if n == 0 and not (EncounterJournal and EncounterJournal:IsShown()) then
+                local before = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+                EJ_SelectInstance(instance)
+                while EJ_GetEncounterInfoByIndex(n + 1) do n = n + 1 end
+                if before and before > 0 then EJ_SelectInstance(before) end
+            end
         end
         bossCount[mapID] = n > 0 and n or false
         ns.Trace("raid", "map", mapID, "journal instance", tostring(instance), "bosses", n)

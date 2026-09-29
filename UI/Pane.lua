@@ -456,7 +456,13 @@ local function Build()
     pane = CreateFrame("Frame", "PickupGroupPane", panel)
     -- Blizzard's Back / Sign Up row stays uncovered: Back is the way out.
     pane:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -TITLE_BAND)
-    pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
+    -- Down to just above Blizzard's Back button, so no sliver of the list shows.
+    if panel.BackButton then
+        pane:SetPoint("RIGHT", panel, "RIGHT")
+        pane:SetPoint("BOTTOM", panel.BackButton, "TOP", 0, 2)
+    else
+        pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
+    end
     pane:SetFrameLevel(panel:GetFrameLevel() + 50)
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
@@ -472,8 +478,13 @@ local function Build()
 
     -- The way back from Blizzard's list: a button on Blizzard's panel.
     backButton = CreateFrame("Button", nil, panel)
-    backButton:SetSize(84, 20)
-    backButton:SetPoint("BOTTOM", panel, "BOTTOM", 0, 6)
+    -- In the panel's header, just after its category name.
+    backButton:SetSize(84, 18)
+    if panel.CategoryName then
+        backButton:SetPoint("LEFT", panel.CategoryName, "RIGHT", 10, 0)
+    else
+        backButton:SetPoint("TOP", panel, "TOP", 0, -34)
+    end
     backButton:SetFrameLevel(panel:GetFrameLevel() + 50)
     Kit.Button(backButton)
     backButton:SetNormalFontObject("PickupGroupFontSmall")

@@ -2,6 +2,17 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.2.0-alpha3 (2026-09-28)
+
+- The switch back from Blizzard's list moved to the panel's header,
+  after the category name (it crowded Back / Sign Up).
+- The pane ends just above Blizzard's Back button (a sliver of the list
+  showed below the last row).
+- Raid boss totals: the journal instance is found (log), but its
+  bosses only answer with the instance selected; select, count, restore.
+- Note: raids sort fewest bosses down first, so a screen of 0s is fresh
+  runs, not a bug (the log shows kills of 1-8 on other listings).
+
 ## v0.2.0-alpha2 (2026-09-28): first-look fixes
 
 From the player's screenshots of alpha1:
