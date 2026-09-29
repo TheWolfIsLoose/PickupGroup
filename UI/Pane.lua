@@ -2,11 +2,11 @@
     PickupGroup - UI/Pane.lua
     The pane: our own frame laid over Blizzard's search panel on Premade
     Groups > Dungeons and Raids - Midnight, below Blizzard's search row
-    (search text is typed there; its refresh and Filter buttons are
-    covered). Blizzard's frames are never hidden,
+    (search text is typed there). Blizzard's frames are never hidden,
     moved or written; the pane just covers them.
 
-      top bar   tab . count . Refresh . Blizzard-list switch
+      top bar   tab . count . setup . options; a mint line across the top
+                shrinks over the search cooldown (Blizzard's refresh searches)
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
       rows      sign-ups pinned first (mint edge), then results; wheel scrolls
 
@@ -21,7 +21,6 @@ ns.Pane = Pane
 
 local Kit, Groups = ns.Kit, ns.Groups
 local ROW_H, BAR_H, HEAD_H = 24, 26, 20
-local GAP_BOX = 3  -- open margin around Blizzard's search box (skins draw past its edge)
 local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 56, 6, 6
 local TILE = 14
 local W_DIFF = 16
@@ -48,7 +47,7 @@ local OUTCOME = {
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
-local panel, pane, body, backButton, refresh, countText, tabBar, plusTab, hiddenButton
+local panel, pane, backButton, cooldown, countText, tabBar, plusTab, hiddenButton
 local showHidden = false
 local tabs = {}
 local rows, roleButtons = {}, {}
@@ -107,10 +106,6 @@ local function OnAction(btn, mouse)
     end
 end
 
-local function Search()
-    local p = Panel()
-    if p and LFGListSearchPanel_DoSearch then LFGListSearchPanel_DoSearch(p) end
-end
 
 -- ---------------------------------------------------------------------------
 -- Tooltips
@@ -181,8 +176,8 @@ end
 local function BuildRow(i)
     local r = CreateFrame("Button", nil, pane)
     r:SetHeight(ROW_H)
-    r:SetPoint("TOPLEFT", body, 1, -(HEAD_H + (i - 1) * ROW_H))
-    r:SetPoint("TOPRIGHT", body, -1, -(HEAD_H + (i - 1) * ROW_H))
+    r:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + (i - 1) * ROW_H))
+    r:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + (i - 1) * ROW_H))
     r.stripe = r:CreateTexture(nil, "BACKGROUND", nil, -7)
     r.stripe:SetAllPoints()
     r.hover = r:CreateTexture(nil, "BACKGROUND", nil, -6)
@@ -405,7 +400,7 @@ function Pane.Render()
     local raidView = p and p.categoryID == 3
     local _, active = C_LFGList.GetNumApplications()
     local full = (active or 0) >= (MAX_LFG_LIST_APPLICATIONS or 5)
-    local fit = math.max(1, math.floor((body:GetHeight() - HEAD_H) / ROW_H))
+    local fit = math.max(1, math.floor((pane:GetHeight() - BAR_H - HEAD_H) / ROW_H))
     offset = math.max(0, math.min(offset, #results - (fit - #pinned)))
     countText:SetText(#results)
     local slot = 0
@@ -417,8 +412,8 @@ function Pane.Render()
     -- A 1px line under the sign-ups separates them from the scrolling results.
     local nPinned = math.min(#pinned, fit)
     pane.divider:SetShown(nPinned > 0)
-    pane.divider:SetPoint("TOPLEFT", body, 1, -(HEAD_H + nPinned * ROW_H))
-    pane.divider:SetPoint("TOPRIGHT", body, -1, -(HEAD_H + nPinned * ROW_H))
+    pane.divider:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + nPinned * ROW_H))
+    pane.divider:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + nPinned * ROW_H))
     for i = offset + 1, #results do
         slot = slot + 1
         if slot > fit then break end
@@ -464,15 +459,6 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
-    -- Toolbar right of Blizzard's search box: covers Blizzard's refresh
-    -- and Filter buttons (never hidden) and holds ours instead.
-    local tools = bar
-    if panel.SearchBox then
-        tools = CreateFrame("Frame", nil, pane)
-        tools:SetPoint("TOPLEFT", panel.SearchBox, "TOPRIGHT", GAP_BOX, GAP_BOX)
-        tools:SetPoint("BOTTOMRIGHT", body, "TOPRIGHT")
-    end
-
     tabBar = bar
     plusTab = CreateFrame("Button", nil, bar)
     plusTab:SetSize(16, BAR_H)
@@ -489,25 +475,16 @@ local function BuildBars()
     plusTab:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
-    local list = Kit.HeaderIcon(tools, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
+    local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
-    refresh = CreateFrame("Button", nil, tools)
-    refresh:SetSize(58, 18)
-    local setup = Kit.HeaderIcon(tools, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
+    local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
         "Set up this filter (right-click a tab works too)", function() ns.Sidecar.Open() end)
     setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
-    refresh:SetPoint("RIGHT", setup, "LEFT", -4, 0)
-    Kit.Button(refresh)
-    refresh:SetNormalFontObject("PickupGroupFontSmall")
-    refresh:SetHighlightFontObject("PickupGroupFontSmall")
-    refresh:SetDisabledFontObject("PickupGroupFontSmall")
-    refresh:SetText("Refresh")
-    refresh:SetScript("OnClick", Search)
 
     countText = Text(bar)
-    if tools == bar then countText:SetPoint("RIGHT", refresh, "LEFT", -8, 0) else countText:SetPoint("RIGHT", -8, 0) end
+    countText:SetPoint("RIGHT", setup, "LEFT", -8, 0)
     countText:SetTextColor(0.55, 0.55, 0.55)
     -- How many rows clean-up hid; click to see only those (and back).
     hiddenButton = CreateFrame("Button", nil, bar)
@@ -524,8 +501,8 @@ local function BuildBars()
     hiddenButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local head = CreateFrame("Frame", nil, pane)
-    head:SetPoint("TOPLEFT", body)
-    head:SetPoint("TOPRIGHT", body)
+    head:SetPoint("TOPLEFT", 0, -BAR_H)
+    head:SetPoint("TOPRIGHT", 0, -BAR_H)
     head:SetHeight(HEAD_H)
     local hrule = head:CreateTexture(nil, "OVERLAY")
     hrule:SetColorTexture(0, 0, 0, 1)
@@ -580,13 +557,9 @@ local function BuildBars()
     name:SetPoint("LEFT", PAD, 0)
 end
 
--- Refresh counts down until the client will take the next search; sign-ups
--- count down their time left.
+-- Sign-ups count down their time left.
 local function Tick()
     if not (pane and pane:IsShown()) then return end
-    local wait = REFRESH_WAIT - (GetTime() - lastSearch)
-    refresh:SetEnabled(wait <= 0)
-    refresh:SetText(wait > 0 and tostring(math.ceil(wait)) or "Refresh")
     for _, r in ipairs(rows) do
         local row = r:IsShown() and r.row
         if row and row.status == "applied" and row.remaining then
@@ -601,14 +574,11 @@ local function Build()
     panel = Panel()
     pane = CreateFrame("Frame", "PickupGroupPane", panel)
     -- Blizzard's Back / Sign Up row stays uncovered: Back is the way out.
-    -- Blizzard's search box stays uncovered too (addons can't set search
-    -- text, so the player types it there): the pane is four opaque pieces
-    -- around it (tab bar above, left of it, toolbar right of it, the list
-    -- below), each catching the mouse; the box's own spot is left open.
-    local box = panel.SearchBox
+    -- Blizzard's search row stays uncovered: addons can't set search text,
+    -- so the player types it there (and searching by key level needs it).
     pane:SetPoint("LEFT", panel, "LEFT")
-    if box then
-        pane:SetPoint("TOP", box, "TOP", 0, BAR_H + GAP_BOX)
+    if panel.SearchBox then
+        pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
     else
         pane:SetPoint("TOP", panel, "TOP", 0, -TITLE_BAND)
     end
@@ -620,31 +590,27 @@ local function Build()
         pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
     end
     pane:SetFrameLevel(panel:GetFrameLevel() + 50)
-
-    body = CreateFrame("Frame", nil, pane)
-    body:SetPoint("BOTTOMLEFT")
-    body:SetPoint("BOTTOMRIGHT")
-    if box then body:SetPoint("TOP", box, "BOTTOM", 0, -GAP_BOX) else body:SetPoint("TOP", 0, -BAR_H) end
-    local function Piece(...)
-        local f = CreateFrame("Frame", nil, pane)
-        f:SetFrameLevel(pane:GetFrameLevel())
-        f:EnableMouse(true)
-        local t = pane:CreateTexture(nil, "BACKGROUND")
-        t:SetColorTexture(0.031, 0.031, 0.031, 1)  -- opaque: nothing of Blizzard's list shows through
-        for _, pt in ipairs({ ... }) do f:SetPoint(unpack(pt)); t:SetPoint(unpack(pt)) end
-        return f
-    end
-    Piece({ "TOPLEFT", body }, { "BOTTOMRIGHT", body })
-    if box then
-        Piece({ "TOPLEFT" }, { "RIGHT" }, { "BOTTOM", box, "TOP", 0, GAP_BOX })  -- tab bar
-        Piece({ "LEFT" }, { "TOP", box, "TOP", 0, GAP_BOX }, { "BOTTOMRIGHT", box, "BOTTOMLEFT", -GAP_BOX, -GAP_BOX })
-        Piece({ "RIGHT" }, { "TOPLEFT", box, "TOPRIGHT", GAP_BOX, GAP_BOX }, { "BOTTOM", body, "TOP" })
-    else
-        Piece({ "TOPLEFT" }, { "BOTTOMRIGHT", body, "TOPRIGHT" })
-    end
+    pane:EnableMouse(true)
+    Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
+    -- Search cooldown: a 1px mint line across the top that shrinks to
+    -- nothing while the client won't take another search (Blizzard's
+    -- refresh does the searching).
+    local line = pane:CreateTexture(nil, "OVERLAY", nil, 7)
+    line:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+    line:SetHeight(1)
+    line:SetPoint("TOPLEFT")
+    cooldown = CreateFrame("Frame", nil, pane)
+    cooldown:Hide()
+    cooldown:SetScript("OnHide", function() line:Hide() end)
+    cooldown:SetScript("OnUpdate", function(self)
+        local left = REFRESH_WAIT - (GetTime() - lastSearch)
+        if left <= 0 then return self:Hide() end
+        line:SetWidth(math.max(1, pane:GetWidth() * left / REFRESH_WAIT))
+        line:Show()
+    end)
     BuildBars()
-    pane.divider = body:CreateTexture(nil, "OVERLAY", nil, 7)
+    pane.divider = pane:CreateTexture(nil, "OVERLAY", nil, 7)
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
     pane.divider:SetHeight(1)
     pane:EnableMouseWheel(true)
@@ -702,8 +668,8 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     p:HookScript("OnShow", Pane.Update)
     p:HookScript("OnHide", Pane.Update)
     hooksecurefunc("LFGListSearchPanel_SetCategory", Pane.Update)
-    -- Every search, ours or Blizzard's, restarts the Refresh wait.
-    hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); Tick() end)
+    -- Every search restarts the cooldown line.
+    hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); if cooldown then cooldown:Show() end end)
 end)
 
 ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function() offset = 0; RenderSoon() end)
@@ -721,4 +687,5 @@ end)
 ns.On("LFG_LIST_SEARCH_FAILED", function(reason)
     ns.Log.Emit("search_failed", { reason = reason })
     lastSearch = GetTime()
+    if cooldown then cooldown:Show() end
 end)
