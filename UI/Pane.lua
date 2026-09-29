@@ -58,6 +58,16 @@ local lastSearch, armed = 0, nil
 -- until the next search. Nothing is marked on a category's first search.
 local seen, fresh = nil, {}
 
+-- Friends / guild mark: a drawn "people" glyph at the end of the name
+-- column, in the colours WoW players know (Battle.net blue, guild chat
+-- green). Options can colour the name instead, as Blizzard does.
+local FRIEND = { 0.51, 0.77, 1 }
+local PEOPLE = { { 4, 4, 3 }, { 8, 3, -3 } }
+local function GuildColor()
+    local c = ChatTypeInfo and ChatTypeInfo.GUILD
+    return c and { c.r, c.g, c.b } or { 0.25, 1, 0.25 }
+end
+
 local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
 
 local function Eligible()
@@ -133,7 +143,11 @@ local function RowTooltip(frame)
             GameTooltip:AddLine(("%s %s"):format(s.spec or "", s.class or ""), c and c.r or 1, c and c.g or 1, c and c.b or 1)
         end
     end
-    if row.friends > 0 then GameTooltip:AddDoubleLine("Friends in group", row.friends, 0.55, 0.55, 0.55, MINT[1], MINT[2], MINT[3]) end
+    if row.friends > 0 then GameTooltip:AddDoubleLine("Friends in group", row.friends, 0.55, 0.55, 0.55, FRIEND[1], FRIEND[2], FRIEND[3]) end
+    if row.guild > 0 then
+        local g = GuildColor()
+        GameTooltip:AddDoubleLine("Guildmates in group", row.guild, 0.55, 0.55, 0.55, g[1], g[2], g[3])
+    end
     GameTooltip:AddDoubleLine("Listed", Clock(row.age), 0.55, 0.55, 0.55, 1, 1, 1)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:AddLine(" ")
@@ -238,6 +252,13 @@ local function BuildRow(i)
     r.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
     r.new:SetSize(3, 3)
     r.new:SetPoint("LEFT", 1, 0)
+    for _, key in ipairs({ "friendMark", "guildMark" }) do
+        local m = CreateFrame("Frame", nil, r)
+        m:SetSize(10, 12)
+        m.tint = Kit.Glyph(m, PEOPLE)
+        m:Hide()
+        r[key] = m
+    end
     r.name = Text(r)
     r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
@@ -276,6 +297,25 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r.new:SetShown(not isPinned and fresh[row.id] == true)
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.02 or 0)
     r.name:SetText(row.name or "?")
+    if ns.fakeMarks and not isPinned then  -- temporary dev check (/pug marks)
+        row.friends, row.guild = (index % 3 ~= 2) and 1 or 0, (index % 3 ~= 1) and 1 or 0
+    end
+    local byName, marks, ink = ns.db.nameColors and not isPinned, {}, { 1, 1, 1 }
+    if byName then
+        ink = row.guild > 0 and GuildColor() or row.friends > 0 and FRIEND or ink
+    elseif not isPinned then
+        if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
+        if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
+    end
+    r.name:SetTextColor(ink[1], ink[2], ink[3])
+    r.friendMark:Hide(); r.guildMark:Hide()
+    local anchor, x = r.diff, -GAP
+    for i = #marks, 1, -1 do
+        marks[i]:SetPoint("RIGHT", anchor, "LEFT", x, 0)
+        marks[i]:Show()
+        anchor, x = marks[i], -1
+    end
+    r.name:SetPoint("RIGHT", anchor, "LEFT", anchor == r.diff and -GAP or -3, 0)
     r.inst:SetText(row.code)
     r.diff:SetWidth(raidView and W_DIFF or 1)
     local dc = DIFF_COLOR[row.difficulty or ""]

@@ -146,7 +146,7 @@ function Groups.Read(id)
         score = info.leaderOverallDungeonScore, activity = name, code = Code(name),
         difficulty = DIFFICULTY[activity.difficultyID], isRaid = isRaid,
         age = info.age, members = info.numMembers, voice = info.voiceChat, playstyle = info.generalPlaystyle,
-        friends = (info.numBNetFriends or 0) + (info.numCharFriends or 0) + (info.numGuildMates or 0),
+        friends = (info.numBNetFriends or 0) + (info.numCharFriends or 0), guild = info.numGuildMates or 0,
         fits = fits,
     }
     row.status, row.pending, row.remaining = Application(id)

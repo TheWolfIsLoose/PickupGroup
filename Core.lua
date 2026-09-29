@@ -129,6 +129,9 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
+    elseif cmd == "marks" then  -- temporary dev check: fake friends / guild on rows
+        ns.fakeMarks = not ns.fakeMarks
+        ns.Pane.Render()
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

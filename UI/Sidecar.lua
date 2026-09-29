@@ -332,6 +332,21 @@ local function BuildOptions(parent)
     hint:SetPoint("TOPLEFT", 0, y)
     hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
     y = y - 32
+    local names = Kit.Check(box, "Colour names for friends / guild", function(on)
+        ns.db.nameColors = on or nil
+        ns.Log.Emit("setting", { key = "nameColors", on = on })
+        ns.Pane.Render()
+    end)
+    names:SetPoint("TOPLEFT", 0, y)
+    names:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Colour names for friends / guild")
+        GameTooltip:AddLine("Like Blizzard's list: group names turn green with a guildmate in, blue with a friend. Replaces the marks.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    names:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    box.names = names
+    y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
     head:SetPoint("TOPLEFT", 0, y)
@@ -389,6 +404,7 @@ end
 local function PaintOptions()
     local o, c = optionsView, ns.db.cleanup
     o.blizz:Set(ns.db.useBlizzard)
+    o.names:Set(ns.db.nameColors)
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
