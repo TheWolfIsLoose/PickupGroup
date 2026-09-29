@@ -28,6 +28,14 @@ Iterate in small alphas: one fix or feature per build, installed and
 verified (checksums) each time.
 
 Next, in order:
+0. **CurseForge early (player, 2026-09-29):** register the project and
+   hook the repo to CurseForge's packager (webhook) so alphas ship there
+   while we develop, shortening the road to v1.0.0. Check first: the
+   packager against a private GitHub repo (token or make it public),
+   the project name (PickupGroup is a working name: CurseForge slugs are
+   sticky), `.pkgmeta` and the `## Version` / `@project-version@` switch
+   (StockClerk's setup is the model), and the zlib credit if the realm
+   library ships by then.
 1. **Party-aware room** (player): "Room for my role" must mean "room for
    my group" in a party: the group's open seats fit every party member's
    assigned role (UnitGroupRolesAssigned on party units; the leader's
@@ -50,7 +58,16 @@ Next, in order:
    has no call for another realm's region: it needs realm data, either
    a bundled third-party realm library (kept with its license and
    credit) or our own realm table. Decide which before building.
-6. Later: teleport button (needs a party to test), filter sharing,
+   **Leaning (2026-09-29):** LibRealmInfo by Phanx (zlib;
+   github.com/phanx-wow/LibRealmInfo; region, locale and US timezone tags
+   PST/MST/CST/EST/AEST/BRT...). Last release Jan 2021, so realms added
+   since are missing: bundle it fresh from its GitHub (not the archived
+   fork's copy), add our own small override table, and log any leader
+   realm it can't place so gaps get filled.
+6. **Ponytail sweep** (player: Claude's call on timing): after Phase 4
+   lands and before v1.0.0, in a session with plenty of usage; whole
+   codebase, one pass, then a test build.
+7. Later: teleport button (needs a party to test), filter sharing,
    leading (on hold), final name before 1.0.
 
 Known limits (by design, noted to the player): boss rules apply to every
