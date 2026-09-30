@@ -20,8 +20,10 @@ Cutting a version, in one commit:
    Don't tag by hand. A push whose version is already tagged publishes
    nothing, so roadmap-only commits are safe.
 
-CurseForge (project 1718475) packages each new tag itself from the
-public repo; the workflow only makes the GitHub Release.
+CurseForge (project 1718475) packages each new tag itself: the repo has
+CurseForge's webhook (GitHub Settings > Webhooks, push events; same as
+StockClerk's, with this project's ID) and Automatic Packaging is on in
+CurseForge's Source tab. The workflow makes the GitHub Release.
 
 Saved data carries its own `schema` number; bump it and add one
 migration step when the saved shape changes. Never tie a migration to
