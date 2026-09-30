@@ -173,7 +173,7 @@ function Kit.Check(parent, label, onChange)
     return b
 end
 
--- Text box: sunken well + black ring. onCommit(text) on Enter or losing
+-- Text box: light well + black ring. onCommit(text) on Enter or losing
 -- focus. Clears focus when hidden (a hidden focused box eats every key).
 function Kit.Edit(parent, width, onCommit, numeric)
     local e = CreateFrame("EditBox", nil, parent)
@@ -182,7 +182,7 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetFontObject("PickupGroupFontSmall")
     e:SetTextInsets(6, 6, 0, 0)
     if numeric then e:SetNumeric(true) end
-    Kit.Fill(e, { 0, 0, 0, 0.55 })
+    Kit.Fill(e, { 1, 1, 1, 0.08 })  -- lifted: a black well vanished on the panel
     Kit.Border(e)
     local function commit(self) onCommit(self:GetText()) end
     e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)

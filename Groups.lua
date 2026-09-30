@@ -121,7 +121,9 @@ end
 
 function Groups.Read(id)
     local info = C_LFGList.GetSearchResultInfo(id)
-    if not info or info.isDelisted then return nil end
+    -- In a running key (and other restricted content) listings are secret:
+    -- untestable, so skip them rather than error once per listing.
+    if not info or issecretvalue(info.isDelisted) or info.isDelisted then return nil end
     local activityID = info.activityIDs and info.activityIDs[1] or info.activityID
     local activity = activityID and C_LFGList.GetActivityInfoTable(activityID) or {}
     local isRaid = (activity.maxNumPlayers or 5) > 5

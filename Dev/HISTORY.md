@@ -2,6 +2,21 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## dev, 2026-09-30 (unreleased, installed, untested)
+
+- Bloodlust / battle rez: the Either / Has / Missing toggle confused the
+  player; now paired checkboxes "Group has / needs Bloodlust" and "Group
+  has / needs battle rez" (player chose two checkboxes each). Ticking one
+  clears its pair; saved values unchanged ("has" / "missing").
+- Fix (tester): inside a running key, listings are secret values;
+  `Groups.Read` tested `info.isDelisted` and errored once per listing
+  (SafeRead's pcall caught it, but LogError forwards every error to
+  Blizzard's handler: count 56). `Groups.Read` now returns nil when
+  `issecretvalue(info.isDelisted)`, covering every caller.
+- Text boxes (Kit.Edit): light fill (white 8%) instead of black 55%; the
+  score box vanished on the panel (tester). Score box shows "Any" when
+  empty; its label is white like the other filter labels.
+
 ## v0.4.0-alpha2 (2026-09-29)
 
 - Friends / guild mark: drawn "people" glyph (Kit.Glyph) at the right

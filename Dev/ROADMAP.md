@@ -16,26 +16,77 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-09-29 18:55 ET (parked for dinner).** Released:
-v0.4.0-alpha2 on `main` (GitHub prerelease with zip; CurseForge project
-1718475 picks up GitHub Releases, pending moderator approval). On `dev`,
-installed in game, **untested**: the sign-up note helper (Options "Sign-up
-note"; a strip under Blizzard's sign-up dialog with the note selected for
-Ctrl+C / Ctrl+V; the game blocks filling the note box directly).
+**State, 2026-09-30 18:30 ET: DESIGN PAUSE. No more code until the player
+and Claude have re-ideated what PickupGroup should do.** Resume with the
+conversation below, not with a build.
+
+On `dev` (installed in game, **untested**, not released): the sign-up
+note helper (single note, from 2026-09-29) plus three changes from
+2026-09-30 (see HISTORY "dev, 2026-09-30"): Bloodlust / battle rez as
+paired checkboxes, the secret-value crash fix, lighter text boxes.
+`main` = v0.4.0-alpha2. The stable v0.4.0 cut for CurseForge review is
+on hold with everything else.
+
+**Why the pause (player, 2026-09-30):** each design step hits a game wall
+(no key level anywhere, titles protected, search box locked, listings
+secret inside a running key). The player built the premise from another
+addon that does far too much; with key-level filtering gone, filters
+alone make PickupGroup "nice skinning over a narrow rule set". Ideate
+before spending more time on code.
+
+**Where the conversation stands (none of this is decided):**
+- **Multiple dungeon filters look hollow.** Weekly vs Push differ by one
+  checkbox; key level (the real axis) lives in Blizzard's search box,
+  which addons can't fill. Raids still differ meaningfully (difficulty,
+  bosses). Candidate: one filter per category, no tabs / drop-down (3c
+  becomes moot).
+- **Rejected as search axes (player):** playstyle and leader's best in
+  the dungeon. Players don't search by them; may be used case by case.
+- **Liked (player): pre-written sign-up notes per search type.** Claude's
+  sketch: a note per saved filter (or search type), a default note in
+  Options, the copy strip opens with the active one selected, small
+  buttons to swap to another. Open: should a plain Apply click open
+  Blizzard's dialog when a note exists (so it's always offered), or stay
+  shift-click only? Depends on how "search type" ends up defined if
+  filters collapse.
+- **Raider.IO / Archon (optional, never required, no internet):**
+  - Raider.IO's documented API `RaiderIO.GetProfile(name, realm)`: score,
+    main's score (alt detection), per-dungeon best level + chests
+    (+1/+2/+3 = timed / 20% / 40% under: a coarse "pace"), timed-key
+    counts (5+/10+/15+/20+), roles, previous season, raid progress with
+    kills per boss. No Pace / ILVL Pace, no run history, no rankings in
+    game (the website has them; player showed the site's per-run table).
+    Exact run times only for the player's own characters (R.IO client).
+  - Archon `ArchonTooltip.GetProfile(name, realm)`: Warcraft Logs
+    **raid** parses only (best average per difficulty/spec, per boss).
+    No M+. Regional DB is load-on-demand.
+  - Searching: listings expose only the leader's name, so lookups describe
+    the leader only; Raider.IO already shows it on hover. Leading: every
+    applicant has name-realm and the leader knows their own key
+    (`C_MythicPlus.GetOwnedKeystoneLevel`), so an applicant pane (best in
+    this dungeon with chests, main's score, sort / "timed this at your
+    level") is where lookups pay off. Blizzard's own
+    `GetApplicantDungeonScoreForListing` covers best level + timed
+    without any addon. Leading is on hold in this roadmap: this would
+    reopen it.
+- **Claude's reframe on the table:** "less friction + memory" rather than
+  "better filters": application management (pinned sign-ups, outcomes,
+  re-apply), the player's own key history (application log), clean-up
+  replacing LFGSpamFilter, server-side narrowing (100-result cap), and
+  an applicant pane for leading. Shelving is a legitimate outcome too.
+- **Pending probe (player will revisit):** a throwaway `/pug` command that
+  calls both lookups on the target and a live applicant and logs the
+  result, then gets reverted.
 
 **Resume here:**
-1. Player tests the note helper (type a note in Options, shift-click
-   Apply, copy/paste, sign up, cancel; screenshot of the strip).
-2. Cut **v0.4.0 as a stable Release** (no -alpha) so CurseForge has a
-   Release file for its review (player). First update `Dev/RELEASING.md`:
-   drop the "every version before 1.0 is -alphaN" rule; stable 0.x
-   releases are allowed. CHANGELOG for v0.4.0 = everything since v0.3.3,
-   player-facing.
-3. Then: item 3c (filter drop-down vs tabs), the new-mark dot's look,
-   region filter (5), ponytail sweep (6). Party-aware room (1) is parked
-   until friends are online.
-Decided today: best-group sort parked (no key level from the API, so
-"best" can't be judged beyond leader score).
+1. Re-ideate scope with the player: what PickupGroup is for, given the
+   walls above. Start from the notes-per-search-type idea (liked) and the
+   reframe; no code.
+2. Only after that: re-plan phases, then test the untested `dev` changes
+   (note helper, checkboxes, crash fix, text boxes) and cut a release.
+3. Tester feedback (friend "Tyler", 2026-09-30, on the released alpha): Lua
+   error once a key starts (fixed on dev); black score box hard to see
+   (fixed on dev).
 
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
