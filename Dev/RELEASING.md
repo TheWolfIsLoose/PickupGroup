@@ -6,9 +6,8 @@ Dev-only (`Dev/` never ships). Public repo; CI tags and publishes
 Version: `vMAJOR.MINOR.PATCH`, below 1.0 while settling.
 Patch = fixes, minor = a phase or a feature, major = saved data or a
 redesign breaks. `-alphaN` / `-betaN` only for builds that need an
-in-game test first. Every version before 1.0 (on CurseForge)
-carries `-alphaN` so it lands there as an Alpha (the packager takes the
-file type from the tag).
+in-game test first. Stable 0.x releases are fine (CurseForge's review
+needs a Release file; v0.4.0 was the first).
 
 Cutting a version, in one commit:
 1. `## Version` in `PickupGroup.toc` and the `## vX.Y.Z` heading in

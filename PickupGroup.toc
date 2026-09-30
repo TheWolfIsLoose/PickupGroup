@@ -2,7 +2,7 @@
 ## Title: PickupGroup
 ## Notes: Premade groups inside the Group Finder: saved filters, a compact results table, one-click sign-ups.
 ## Author: Jakerator
-## Version: 0.4.0-alpha2
+## Version: 0.4.0
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
 ## X-Curse-Project-ID: 1718475
