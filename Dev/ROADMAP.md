@@ -16,10 +16,76 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-09-29 00:05 ET: v0.3.3 installed and confirmed in game (log
-clean: no errors, nothing blocked).** Phases 0-3 done. Read "What
-PickupGroup is", "Originality rules" and "Design" first; HISTORY.md has
-every build's detail.
+**State, 2026-09-30 18:30 ET: DESIGN PAUSE. No more code until the player
+and Claude have re-ideated what PickupGroup should do.** Resume with the
+conversation below, not with a build.
+
+**Released 2026-09-30: v0.4.0 (stable) on `main`** for the tester via
+CurseForge: v0.4.0-alpha2 plus three fixes (Bloodlust / battle rez as
+paired checkboxes, the secret-value crash fix, lighter text boxes).
+On `dev` only (installed, **untested**): the sign-up note helper.
+Watch for tester feedback on v0.4.0.
+
+**Why the pause (player, 2026-09-30):** each design step hits a game wall
+(no key level anywhere, titles protected, search box locked, listings
+secret inside a running key). The player built the premise from another
+addon that does far too much; with key-level filtering gone, filters
+alone make PickupGroup "nice skinning over a narrow rule set". Ideate
+before spending more time on code.
+
+**Where the conversation stands (none of this is decided):**
+- **Multiple dungeon filters look hollow.** Weekly vs Push differ by one
+  checkbox; key level (the real axis) lives in Blizzard's search box,
+  which addons can't fill. Raids still differ meaningfully (difficulty,
+  bosses). Candidate: one filter per category, no tabs / drop-down (3c
+  becomes moot).
+- **Rejected as search axes (player):** playstyle and leader's best in
+  the dungeon. Players don't search by them; may be used case by case.
+- **Liked (player): pre-written sign-up notes per search type.** Claude's
+  sketch: a note per saved filter (or search type), a default note in
+  Options, the copy strip opens with the active one selected, small
+  buttons to swap to another. Open: should a plain Apply click open
+  Blizzard's dialog when a note exists (so it's always offered), or stay
+  shift-click only? Depends on how "search type" ends up defined if
+  filters collapse.
+- **Raider.IO / Archon (optional, never required, no internet):**
+  - Raider.IO's documented API `RaiderIO.GetProfile(name, realm)`: score,
+    main's score (alt detection), per-dungeon best level + chests
+    (+1/+2/+3 = timed / 20% / 40% under: a coarse "pace"), timed-key
+    counts (5+/10+/15+/20+), roles, previous season, raid progress with
+    kills per boss. No Pace / ILVL Pace, no run history, no rankings in
+    game (the website has them; player showed the site's per-run table).
+    Exact run times only for the player's own characters (R.IO client).
+  - Archon `ArchonTooltip.GetProfile(name, realm)`: Warcraft Logs
+    **raid** parses only (best average per difficulty/spec, per boss).
+    No M+. Regional DB is load-on-demand.
+  - Searching: listings expose only the leader's name, so lookups describe
+    the leader only; Raider.IO already shows it on hover. Leading: every
+    applicant has name-realm and the leader knows their own key
+    (`C_MythicPlus.GetOwnedKeystoneLevel`), so an applicant pane (best in
+    this dungeon with chests, main's score, sort / "timed this at your
+    level") is where lookups pay off. Blizzard's own
+    `GetApplicantDungeonScoreForListing` covers best level + timed
+    without any addon. Leading is on hold in this roadmap: this would
+    reopen it.
+- **Claude's reframe on the table:** "less friction + memory" rather than
+  "better filters": application management (pinned sign-ups, outcomes,
+  re-apply), the player's own key history (application log), clean-up
+  replacing LFGSpamFilter, server-side narrowing (100-result cap), and
+  an applicant pane for leading. Shelving is a legitimate outcome too.
+- **Pending probe (player will revisit):** a throwaway `/pug` command that
+  calls both lookups on the target and a live applicant and logs the
+  result, then gets reverted.
+
+**Resume here:**
+1. Re-ideate scope with the player: what PickupGroup is for, given the
+   walls above. Start from the notes-per-search-type idea (liked) and the
+   reframe; no code.
+2. Only after that: re-plan phases; the note helper (dev) waits on the
+   notes-per-search-type design.
+3. Tester feedback (friend "Tyler", 2026-09-30, on v0.4.0-alpha2): Lua
+   error once a key starts; black score box hard to see. Both fixed in
+   v0.4.0.
 
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
@@ -78,9 +144,13 @@ Next, in order:
      my role -> needs<my role>; score floor / at least mine ->
      minimumRating. No server field for Bloodlust / battle rez (stay
      local).
+3c. **Filter picker (player, 2026-09-29, revisit):** saved filters may
+   work better as a drop-down selector than as tabs across the top bar
+   (room, many filters, long names). Decide with the player; keep
+   right-click/setup and "+ new" reachable either way.
 4. **Phase 4**: new mark (**built v0.4.0-alpha1; the dot works but its
    look needs another pass, player**), best-group
-   sort (show our work in its tooltip), keys that beat my best, swap a
+   sort (**parked 2026-09-29: no key level in the API**), keys that beat my best, swap a
    sign-up (opt-in), friends mark (**built v0.4.0-alpha2**), saved sign-up note. Lockout-aware raids already shipped
    (My lockout).
 5. **Region filter (player, 2026-09-29; must ship before v1.0.0):** let
@@ -129,6 +199,10 @@ Session setup (keeps usage down):
 - Style: StockClerk's `Dev/STYLE.md` (player's AddOns folder or the
   StockClerk repo). StockClerk is the player's own addon; its code and
   patterns may be reused freely.
+- Branches: work on `dev` (push freely); merge to `main` only to
+  release (any new CHANGELOG version on `main` publishes). The clone is
+  shallow single-branch: add `+refs/heads/dev:refs/remotes/origin/dev`
+  to `remote.origin.fetch` so `origin/dev` exists locally.
 - Push: `git push origin main` (a first attempt can drop; retry once).
   Tag pushes are refused by the session proxy; don't loop on them.
 

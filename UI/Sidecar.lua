@@ -5,8 +5,8 @@
     Raider.IO's panel while open; that frame is never moved.
 
     Filter tab (alpha): name, then per kind
-      keys  dungeons (this season), room for my role, needs Bloodlust,
-            needs battle rez, leader at least my score, leader score floor
+      keys  dungeons (this season), room for my role, has / needs Bloodlust,
+            has / needs battle rez, leader at least my score, leader score floor
       raid  difficulty, bosses down at most, room
     Delete keeps at least one filter per kind.
 --]]
@@ -66,11 +66,8 @@ end
 local function PaintKeys(f)
     for _, b in ipairs(dungeonButtons) do b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true) end
     for key, c in pairs(checks) do c:Set(f[key]) end
-    for key, t in pairs(classToggles) do
-        local v = f[key] == true and "missing" or f[key]
-        local look = ({ has = { "Has", MINT }, missing = { "Missing", { 1, 0.72, 0.3 } } })[v or ""] or { "Either" }
-        t:SetText(look[1])
-        t:Paint(v ~= nil, look[2])
+    for _, cb in ipairs(classToggles) do
+        cb:Set((f[cb.key] == true and "missing" or f[cb.key]) == cb.want)
     end
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
 end
@@ -252,31 +249,32 @@ local function BuildKeys(parent)
         checks[key] = cb
         y = y - 20
     end
-    -- Bloodlust / battle rez: Either -> Has -> Missing (the group has one
-    -- already, or has none and could use yours).
-    for _, c in ipairs({ { "lust", "Bloodlust in the group" }, { "brez", "Battle rez in the group" } }) do
-        local key = c[1]
-        local l = Label(box, c[2])
-        l:SetTextColor(1, 1, 1)
-        l:SetPoint("TOPLEFT", 0, y - 3)
-        local t = Toggle(box, "", 64, function()
-            local now = editing[key] == true and "missing" or editing[key]
-            editing[key] = ({ [false] = "has", has = "missing", missing = false })[now or false] or nil
+    -- Bloodlust / battle rez: "has" (the group brings it) or "needs" (it
+    -- doesn't, so yours fills the gap). Ticking one clears its pair.
+    for _, c in ipairs({
+        { "lust", "has", "Group has Bloodlust" }, { "lust", "missing", "Group needs Bloodlust" },
+        { "brez", "has", "Group has battle rez" }, { "brez", "missing", "Group needs battle rez" },
+    }) do
+        local key, want = c[1], c[2]
+        local cb = Kit.Check(box, c[3], function(on)
+            editing[key] = on and want or nil
             Sidecar.Paint(); Changed()
         end)
-        t:SetHeight(18)
-        t:SetPoint("TOPRIGHT", 0, y)
-        classToggles[key] = t
-        y = y - 22
+        cb.key, cb.want = key, want
+        cb:SetPoint("TOPLEFT", 0, y)
+        classToggles[#classToggles + 1] = cb
+        y = y - 20
     end
     y = y - 4
     local l = Label(box, "Leader score at least")
+    l:SetTextColor(1, 1, 1)
     l:SetPoint("TOPLEFT", 0, y - 4)
     scoreBox = Kit.Edit(box, 56, function(text)
         local n = tonumber(text)
         editing.minScore = (n and n > 0) and n or nil
         Changed()
     end, true)
+    Kit.Hint(scoreBox, "Any")
     scoreBox:SetPoint("TOPRIGHT", 0, y)
     box:SetHeight(-y + 24)
     return box
