@@ -2,7 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## dev, 2026-09-30 (unreleased, installed, untested)
+## v0.4.0 (2026-09-30): first stable release (CurseForge review)
+
+The three fixes below on top of v0.4.0-alpha2, cherry-picked from `dev`
+(plus `Kit.Hint`). The sign-up note helper stays on `dev` (untested).
 
 - Bloodlust / battle rez: the Either / Has / Missing toggle confused the
   player; now paired checkboxes "Group has / needs Bloodlust" and "Group

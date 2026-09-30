@@ -20,12 +20,11 @@ cheap.
 and Claude have re-ideated what PickupGroup should do.** Resume with the
 conversation below, not with a build.
 
-On `dev` (installed in game, **untested**, not released): the sign-up
-note helper (single note, from 2026-09-29) plus three changes from
-2026-09-30 (see HISTORY "dev, 2026-09-30"): Bloodlust / battle rez as
-paired checkboxes, the secret-value crash fix, lighter text boxes.
-`main` = v0.4.0-alpha2. The stable v0.4.0 cut for CurseForge review is
-on hold with everything else.
+**Released 2026-09-30: v0.4.0 (stable) on `main`** for the tester via
+CurseForge: v0.4.0-alpha2 plus three fixes (Bloodlust / battle rez as
+paired checkboxes, the secret-value crash fix, lighter text boxes).
+On `dev` only (installed, **untested**): the sign-up note helper.
+Watch for tester feedback on v0.4.0.
 
 **Why the pause (player, 2026-09-30):** each design step hits a game wall
 (no key level anywhere, titles protected, search box locked, listings
@@ -82,11 +81,11 @@ before spending more time on code.
 1. Re-ideate scope with the player: what PickupGroup is for, given the
    walls above. Start from the notes-per-search-type idea (liked) and the
    reframe; no code.
-2. Only after that: re-plan phases, then test the untested `dev` changes
-   (note helper, checkboxes, crash fix, text boxes) and cut a release.
-3. Tester feedback (friend "Tyler", 2026-09-30, on the released alpha): Lua
-   error once a key starts (fixed on dev); black score box hard to see
-   (fixed on dev).
+2. Only after that: re-plan phases; the note helper (dev) waits on the
+   notes-per-search-type design.
+3. Tester feedback (friend "Tyler", 2026-09-30, on v0.4.0-alpha2): Lua
+   error once a key starts; black score box hard to see. Both fixed in
+   v0.4.0.
 
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
