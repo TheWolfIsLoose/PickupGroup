@@ -84,6 +84,17 @@ before spending more time on code.
   calls both lookups on the target and a live applicant and logs the
   result, then gets reverted.
 
+**Testing note (player, 2026-10-01):** the tester plays casually and doesn't
+take notes, so his reports are leads, not repro steps. To answer an issue
+for real, spike it ourselves (temporary `/pug` probe, reproduce, read the
+log). Open lead: the tester's client showed sign-ups as pending for hours
+(likely from the non-leader Apply clicks); unconfirmed.
+
+**Visibility (player, 2026-10-01):** the light text-box well was a noted
+accessibility win ("you can actually tell there's a field"). Keep inputs
+and controls visibly distinct from the panel everywhere (Kit palette:
+`well`, `ringHover`, brighter `btnRest`).
+
 **Resume here:**
 1. Re-ideate scope with the player: what PickupGroup is for, given the
    walls above. Start from the notes-per-search-type idea (liked) and the
