@@ -101,7 +101,13 @@ local function PaintRegions(f)
 end
 
 local function PaintKeys(f)
-    for _, b in ipairs(dungeonButtons) do b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true) end
+    -- Each dungeon shows the player's best timed key there this season.
+    local best = {}
+    for _, d in ipairs(Filters.Dungeons()) do best[d.name] = d.best end
+    for _, b in ipairs(dungeonButtons) do
+        b:SetText(b.code .. (best[b.dungeon] and (" +" .. best[b.dungeon]) or ""))
+        b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true)
+    end
     for key, c in pairs(checks) do c:Set(f[key]) end
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
     PaintRegions(f)
@@ -250,10 +256,13 @@ local function BuildKeys(parent)
             editing.dungeons[self.dungeon] = not editing.dungeons[self.dungeon] or nil
             Sidecar.Paint(); Changed()
         end)
-        b.dungeon = d.name
+        b.dungeon, b.code = d.name, d.code
         b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 23)
         b:HookScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(self.dungeon); GameTooltip:Show()
+            GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(self.dungeon)
+            local best = self:GetText():match("%+(%d+)")
+            GameTooltip:AddLine(best and ("Your best timed key this season: +" .. best) or "No timed key here this season.", 0.74, 0.74, 0.74)
+            GameTooltip:Show()
         end)
         b:HookScript("OnLeave", function() GameTooltip:Hide() end)
         dungeonButtons[#dungeonButtons + 1] = b
@@ -262,12 +271,24 @@ local function BuildKeys(parent)
 
     for _, c in ipairs({
         { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
-        { "lust", "Group has Bloodlust" }, { "brez", "Group has battle rez" },
+        { "lust", "Group has Bloodlust", "Keeps groups that have it, or will: you or your party bring it, "
+            .. "or a seat is still open after you join that a Bloodlust class can take (healer or damage)." },
+        { "brez", "Group has battle rez", "Keeps groups that have it, or will: you or your party bring it, "
+            .. "or a seat is still open after you join that a battle rez class can take." },
         { "noMyClass", "No other " .. (UnitClass("player") or "of my class") .. " in the group" },
     }) do
         local key = c[1]
         local cb = Kit.Check(box, c[2], function(on) editing[key] = on or nil; Changed() end)
         cb:SetPoint("TOPLEFT", 0, y)
+        if c[3] then
+            cb:HookScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                GameTooltip:SetText(c[2])
+                GameTooltip:AddLine(c[3], 0.74, 0.74, 0.74, true)
+                GameTooltip:Show()
+            end)
+            cb:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        end
         checks[key] = cb
         y = y - 20
     end

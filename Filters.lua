@@ -22,9 +22,11 @@ local DEFAULT = {
     raid = { id = "raid", name = "Raids", kind = "raid" },
 }
 
--- Classes that bring Bloodlust / a battle rez.
-local LUST = { SHAMAN = true, MAGE = true, HUNTER = true, EVOKER = true }
-local BREZ = { DRUID = true, DEATHKNIGHT = true, WARLOCK = true, PALADIN = true }
+-- Classes that bring Bloodlust / a battle rez: class file -> the roles it can fill (seats it could take).
+local T, H, D = "TANK", "HEALER", "DAMAGER"
+local function Roles(...) local o = {} for _, r in ipairs({ ... }) do o[r] = true end return o end
+local LUST = { SHAMAN = Roles(H, D), MAGE = Roles(D), HUNTER = Roles(D), EVOKER = Roles(H, D) }
+local BREZ = { DRUID = Roles(T, H, D), DEATHKNIGHT = Roles(T, D), WARLOCK = Roles(D), PALADIN = Roles(T, H, D) }
 
 local function All()
     ns.db.filters = ns.db.filters or {}
@@ -79,20 +81,19 @@ function Filters.Summary(f)
     return #out > 0 and table.concat(out, ", ") or "No rules"
 end
 
--- This season's dungeons, as { name, code }, from the game.
+-- This season's dungeons, as { name, code, best }, from the game.
 function Filters.Dungeons()
     local out = {}
     for _, mapID in ipairs(C_ChallengeMode.GetMapTable() or {}) do
         local name = C_ChallengeMode.GetMapUIInfo(mapID)
-        if name then out[#out + 1] = { name = name, code = ns.Groups.Code(name) } end
+        if name then
+            -- The player's best in-time key there this season, if any.
+            local timed = C_MythicPlus.GetSeasonBestForMap(mapID)
+            out[#out + 1] = { name = name, code = ns.Groups.Code(name), best = timed and timed.level }
+        end
     end
     table.sort(out, function(a, b) return a.code < b.code end)
     return out
-end
-
-local function Brings(classes, set)
-    for file in pairs(classes or {}) do if set[file] then return true end end
-    return false
 end
 
 -- My lockout, for one raid at one difficulty (the difficulty of the groups
@@ -222,8 +223,8 @@ function Filters.Pass(row)
         return true
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
-    if f.lust and not Brings(row.classes, LUST) then return false end
-    if f.brez and not Brings(row.classes, BREZ) then return false end
+    if f.lust and not ns.Groups.CanHave(row, LUST) then return false end
+    if f.brez and not ns.Groups.CanHave(row, BREZ) then return false end
     if f.noMyClass and row.classes and row.classes[select(2, UnitClass("player"))] then return false end
     local score = row.score or 0
     if (f.minScore or 0) > 0 and score < f.minScore then return false end

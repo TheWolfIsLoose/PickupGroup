@@ -150,17 +150,18 @@ end
 local function RowTooltip(frame)
     local row = frame.row
     if not row then return end
+    local GREY_T = 0.55
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
     if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
-    GameTooltip:AddLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), 0.85, 0.85, 0.85)
-    GameTooltip:AddDoubleLine("Leader", row.leader or "?", 0.55, 0.55, 0.55, 1, 1, 1)
-    if row.region then GameTooltip:AddDoubleLine("Realm region", Groups.REGION_NAME[row.region], 0.55, 0.55, 0.55, 1, 1, 1) end
+    GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
+        0.85, 0.85, 0.85, GREY_T, GREY_T, GREY_T)
     if row.isRaid then
-        GameTooltip:AddDoubleLine("Members", ("%d: %d tank, %d healer, %d damage"):format(row.members or 0,
-            row.counts.TANK, row.counts.HEALER, row.counts.DAMAGER), 0.55, 0.55, 0.55, 1, 1, 1)
-        GameTooltip:AddDoubleLine("Bosses down", row.total and (row.down .. "/" .. row.total) or row.down,
-            0.55, 0.55, 0.55, 1, 1, 1)
+        GameTooltip:AddLine(row.leader or "?", 1, 1, 1)
+        GameTooltip:AddLine(("|A:%s:14:14|a %d   |A:%s:14:14|a %d   |A:%s:14:14|a %d"):format(
+            ROLE_ATLAS.TANK, row.counts.TANK, ROLE_ATLAS.HEALER, row.counts.HEALER, ROLE_ATLAS.DAMAGER, row.counts.DAMAGER), 1, 1, 1)
+        GameTooltip:AddLine(row.total and (row.down .. "/" .. row.total .. " bosses down") or (row.down .. " bosses down"),
+            GREY_T, GREY_T, GREY_T)
         -- Which bosses, by name: a lockout isn't cleared in order.
         local listed = {}
         for _, boss in ipairs(row.bosses) do
@@ -173,22 +174,23 @@ local function RowTooltip(frame)
             if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.72, 0.3) end
         end
     else
-        GameTooltip:AddDoubleLine("Leader score", row.score or 0, 0.55, 0.55, 0.55, 1, 1, 1)
+        local score = row.score or 0
+        local c = score > 0 and C_ChallengeMode.GetDungeonScoreRarityColor(score)
+        GameTooltip:AddDoubleLine(row.leader or "?", score > 0 and score or "-", 1, 1, 1,
+            c and c.r or GREY_T, c and c.g or GREY_T, c and c.b or GREY_T)
+        -- Members as their spec icons: each spec's icon is its own.
+        local icons = {}
         for _, s in ipairs(row.specs) do
-            local c = RAID_CLASS_COLORS[s.file or ""]
-            GameTooltip:AddLine(("%s %s"):format(s.spec or "", s.class or ""), c and c.r or 1, c and c.g or 1, c and c.b or 1)
+            if s.icon then icons[#icons + 1] = ("|T%s:20:20:0:0:64:64:5:59:5:59|t"):format(s.icon) end
         end
+        if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
     end
-    if row.friends > 0 then GameTooltip:AddDoubleLine("Friends in group", row.friends, 0.55, 0.55, 0.55, FRIEND[1], FRIEND[2], FRIEND[3]) end
+    if row.friends > 0 then GameTooltip:AddLine(row.friends .. (row.friends == 1 and " friend" or " friends") .. " in the group", FRIEND[1], FRIEND[2], FRIEND[3]) end
     if row.guild > 0 then
         local g = GuildColor()
-        GameTooltip:AddDoubleLine("Guildmates in group", row.guild, 0.55, 0.55, 0.55, g[1], g[2], g[3])
+        GameTooltip:AddLine(row.guild .. (row.guild == 1 and " guildmate" or " guildmates") .. " in the group", g[1], g[2], g[3])
     end
-    GameTooltip:AddDoubleLine("Listed", Clock(row.age), 0.55, 0.55, 0.55, 1, 1, 1)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
-    GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Click Apply: sign up with a note.  Shift-click: sign up at once.", 0.55, 0.55, 0.55)
-    GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
     GameTooltip:Show()
 end
 
@@ -206,11 +208,14 @@ local function ActionTooltip(btn)
         tip = "All five sign-ups are in use. Click to withdraw the oldest"
             .. (o and (" (" .. (o.code or "?") .. ", " .. (o.leader or "?") .. ")") or "") .. ", then Apply here."
     elseif btn.full then tip = "All five sign-ups are in use (Options: Swap can make room)." end
+    GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
     if tip then
-        GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
         GameTooltip:SetText(tip, 1, 1, 1, 1, true)
-        GameTooltip:Show()
+    else
+        GameTooltip:SetText("Click: sign up with a note. Shift-click: sign up at once.", 1, 1, 1, 1, true)
     end
+    GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55, true)
+    GameTooltip:Show()
 end
 
 -- ---------------------------------------------------------------------------
