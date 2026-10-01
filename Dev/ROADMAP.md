@@ -16,16 +16,35 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-10-01 15:20 ET: v0.5.0 (stable) released from `main`** (see
-HISTORY). Design pause over; the decisions and plan are under "Resume
-here" item 1 and 3. Still unverified: greyed-out Apply tooltips (party /
-no seat), the key-run secret-listing trace; both stay on the DevChecklist.
-**Party-aware room built and seen working on dev (2026-10-01, player +
-Tripolos, 2 DPS: only groups with 2 open damage seats).** Roles from
-assigned role, else spec (GetInspectSpecialization), else any seat; the
-"party roles:" trace (next saved log) shows which source each member used.
-Next candidates: accessibility + ponytail pass (both addons), teleport
-button (needs a party), sign-up history view, final name.
+**State, 2026-10-01 18:10 ET (parked for the night).** v0.5.0 (stable) is
+on `main`. On `dev`, built since and **not released** (all installed in the
+player's AddOns; the player works through the DevChecklist, round 8, by
+area, tonight / tomorrow):
+- Party-aware room for my role (**works**, player + Tripolos).
+- Whisper leader in the row menu.
+- Raid boss rules = "must be alive" checkboxes; My lockout reads the
+  lockout of the difficulty in view (Pane.RaidDifficulty), button shows
+  it, e.g. "My lockout (H)"; schema 4.
+- Notes strip refreshes when Blizzard's dialog is reused (raid sign-up
+  bug; cause not confirmed, trace "strip shown ... focused").
+- Sign-up history view (Options > Sign-up history; newest 300).
+- Teleport button (5/5 party, not inside; untested; `/pug tp` dev check).
+- Group tooltip trimmed (no labels / realm / hints; spec icons); hints on
+  the Apply tooltip.
+- Dungeon buttons show the best timed key, "AOF (+18)", key white while
+  on, "(—)" for none (measured: fits with 3-letter codes).
+- Has Bloodlust / battle rez: the group has it, the party brings it, or a
+  seat that such a class can fill stays open after the party joins
+  (Groups.CanHave; self-check `lua5.1 Dev/test_canhave.lua`).
+- Raider.IO's profile panel moves to the sidecar's right edge (2px gap)
+  while it's open.
+
+**Next session:** read the saved log + DevChecklist ticks (no paste:
+stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
+what fails, then cut v0.6.0 (CHANGELOG / HISTORY per RELEASING). Still
+parked: greyed-out Apply tooltip "no seat"; key-run trace; teleport in a
+real 5/5. After that: accessibility + ponytail pass (player decides grey
+vs black rest outlines first), final name before 1.0.
 
 **Testing note (player, 2026-10-01):** the tester plays casually and doesn't
 take notes, so his reports are leads, not repro steps. To answer an issue

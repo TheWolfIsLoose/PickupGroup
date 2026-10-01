@@ -567,7 +567,7 @@ end
 -- the sidecar is open that anchor follows the sidecar instead; only an
 -- anchor on the Group Finder is touched (a user-placed panel stays put).
 local rioHooked, moving
-local RIO_GAP = 4  -- a little air between the sidecar and Raider.IO's panel
+local RIO_GAP = 2  -- a little air between the sidecar and Raider.IO's panel
 function Sidecar.MoveRaiderIO()
     local a = _G.RaiderIO_ProfileTooltipAnchor
     if not (a and frame) then return end
