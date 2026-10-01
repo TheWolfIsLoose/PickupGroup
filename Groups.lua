@@ -24,6 +24,28 @@ local PAST_RAIDS = { ["March on Quel'Danas"] = true }
 local SEAT_ORDER = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
 local DIFFICULTY = { [14] = "N", [15] = "H", [16] = "M", [17] = "LFR" }
 
+-- Realm regions within the Americas game region: every realm is North
+-- America except these. Keys are realm names squeezed (no spaces, hyphens or
+-- apostrophes, lower case) so any spelling of the name matches.
+Groups.REGIONS = { "NA", "OCE", "BR", "LATAM" }
+Groups.REGION_NAME = { NA = "North America", OCE = "Oceanic", BR = "Brazil", LATAM = "Latin America" }
+local REALM_REGION = {}
+for region, realms in pairs({
+    OCE = { "Aman'Thul", "Barthilas", "Caelestrasz", "Dath'Remar", "Dreadmaul", "Frostmourne",
+            "Gundrak", "Jubei'Thos", "Khaz'goroth", "Nagrand", "Saurfang", "Thaurissan" },
+    BR = { "Azralon", "Gallywix", "Goldrinn", "Nemesis", "Tol Barad" },
+    LATAM = { "Drakkari", "Quel'Thalas", "Ragnaros" },
+}) do
+    for _, r in ipairs(realms) do REALM_REGION[r:gsub("[%s%-']", ""):lower()] = region end
+end
+
+-- A leader's realm region from "Name-Realm" (no realm: the player's own).
+function Groups.Region(leader)
+    if type(leader) ~= "string" then return nil end
+    local realm = leader:match("^[^%-]+%-(.+)$") or GetRealmName() or ""
+    return REALM_REGION[realm:gsub("[%s%-']", ""):lower()] or "NA"
+end
+
 -- Spec icons by class file and (localized) spec name, built once.
 local specIcons
 local function SpecIcon(classFile, specName)
@@ -145,6 +167,7 @@ function Groups.Read(id)
 
     local row = {
         id = id, name = info.name, leader = info.leaderName, comment = info.comment,
+        region = Groups.Region(info.leaderName),
         score = info.leaderOverallDungeonScore, activity = name, code = Code(name),
         difficulty = DIFFICULTY[activity.difficultyID], isRaid = isRaid,
         age = info.age, members = info.numMembers, voice = info.voiceChat, playstyle = info.generalPlaystyle,

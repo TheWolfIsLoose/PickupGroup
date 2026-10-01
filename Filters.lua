@@ -75,6 +75,11 @@ function Filters.Summary(f)
         if f.atLeastMine then out[#out + 1] = "score at least mine"
         elseif (f.minScore or 0) > 0 then out[#out + 1] = "score " .. f.minScore .. "+" end
     end
+    if f.regions then
+        local r = {}
+        for _, code in ipairs(ns.Groups.REGIONS) do if f.regions[code] then r[#r + 1] = code end end
+        out[#out + 1] = "realms " .. (#r > 0 and table.concat(r, " ") or "none")
+    end
     return #out > 0 and table.concat(out, ", ") or "No rules"
 end
 
@@ -212,6 +217,7 @@ end
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")
     if not f then return true end
+    if f.regions and row.region and not f.regions[row.region] then return false end
     -- Full raids delist themselves, so "room" only means something for keys.
     if f.room and not row.fits and not row.isRaid then return false end
     if row.isRaid then

@@ -105,7 +105,12 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
       early single `db.note` moves to slot 1); the strip under Blizzard's
       dialog lists them, the first focused and selected, click another
       to select it for Ctrl+C. **Built on dev 2026-10-01, untested.**
-   d. Region filter from the 20-realm table.
+   d. Region filter from the 20-realm table. **Built on dev 2026-10-01,
+      untested:** "Leader's realm" toggles NA / OCE / BR / LATAM in both
+      filters (`f.regions`, nil = all), region in the row tooltip and the
+      filter summary; realm names compared squeezed (no spaces, hyphens
+      or apostrophes, lower case); no realm suffix = the player's realm.
+      Local only (no server field).
    Then the accessibility + ponytail pass, then v1.0 items.
 4. Untested, any time: text boxes return to the grey ring after typing
    (dev, 2026-10-01: Kit.Edit's SetScript ran after its HookScripts and

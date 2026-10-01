@@ -64,6 +64,43 @@ local function Toggle(parent, text, w, onClick)
     return b
 end
 
+-- Leader's realm region: four toggles, all on by default (regions = nil).
+local regionButtons = {}
+local function RegionRow(box, y)
+    local l = Label(box, "Leader's realm")
+    l:SetPoint("TOPLEFT", 0, y)
+    local codes = ns.Groups.REGIONS
+    local cellW = (W - 2 * PAD - 3 * (#codes - 1)) / #codes
+    for i, code in ipairs(codes) do
+        local b = Toggle(box, code, cellW, function(self)
+            if not editing.regions then
+                editing.regions = {}
+                for _, c in ipairs(codes) do editing.regions[c] = true end
+            end
+            editing.regions[self.region] = not editing.regions[self.region] or nil
+            local all = true
+            for _, c in ipairs(codes) do if not editing.regions[c] then all = false end end
+            if all then editing.regions = nil end
+            Sidecar.Paint(); Changed()
+        end)
+        b.region = code
+        b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), y - 16)
+        b:HookScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText(ns.Groups.REGION_NAME[self.region])
+            GameTooltip:AddLine("Groups whose leader plays on a realm in this region.", 0.74, 0.74, 0.74, true)
+            GameTooltip:Show()
+        end)
+        b:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        regionButtons[#regionButtons + 1] = b
+    end
+    return y - 16 - 23
+end
+
+local function PaintRegions(f)
+    for _, b in ipairs(regionButtons) do b:Paint(not f.regions or f.regions[b.region] == true) end
+end
+
 local function PaintKeys(f)
     for _, b in ipairs(dungeonButtons) do b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true) end
     for key, c in pairs(checks) do c:Set(f[key]) end
@@ -71,6 +108,7 @@ local function PaintKeys(f)
         cb:Set((f[cb.key] == true and "missing" or f[cb.key]) == cb.want)
     end
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
+    PaintRegions(f)
 end
 
 -- Each boss cycles Either -> Alive -> Dead: raids aren't cleared in order.
@@ -78,6 +116,7 @@ local WANT_NEXT = { [false] = "alive", alive = "dead", dead = false }
 local WANT_LOOK = { [false] = { "Either", { 0.55, 0.55, 0.55 } }, alive = { "Alive", MINT }, dead = { "Dead", { 1, 0.72, 0.3 } } }
 
 local function PaintRaid(f)
+    PaintRegions(f)
     for _, b in ipairs(diffButtons) do
         local on = not f.difficulties or f.difficulties[b.diff]
         b:Paint(on, on and b.color or nil)
@@ -275,7 +314,8 @@ local function BuildKeys(parent)
     end, true)
     Kit.Hint(scoreBox, "Any")
     scoreBox:SetPoint("TOPRIGHT", 0, y)
-    box:SetHeight(-y + 24)
+    y = RegionRow(box, y - 30)
+    box:SetHeight(-y + 4)
     return box
 end
 
@@ -295,7 +335,8 @@ local function BuildRaid(parent)
         diffButtons[i] = b
     end
     bossLabel = Label(box, "")
-    bossLabel:SetPoint("TOPLEFT", 0, -46)
+    local y = RegionRow(box, -46)
+    bossLabel:SetPoint("TOPLEFT", 0, y - 8)
     bossLabel:SetWidth(W - 2 * PAD)
     bossLabel:SetJustifyH("LEFT")
     bossLabel:SetWordWrap(true)
