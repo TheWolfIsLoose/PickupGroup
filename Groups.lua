@@ -184,6 +184,7 @@ function Groups.Read(id)
         row.counts = { TANK = counts.TANK or 0, HEALER = counts.HEALER or 0, DAMAGER = counts.DAMAGER or 0 }
         local killed = C_LFGList.GetSearchResultEncounterInfo(id)
         row.down, row.total = killed and #killed or 0, TotalBosses(activity.mapID)
+        row.bosses = bossNames[activity.mapID] or {}  -- journal order, for the tooltip
         row.killed = {}
         for _, boss in ipairs(killed or {}) do row.killed[boss] = true end
         if activity.mapID and activity.mapID ~= 0 then raids[name] = activity.mapID end

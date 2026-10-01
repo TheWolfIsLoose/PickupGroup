@@ -144,6 +144,17 @@ local function RowTooltip(frame)
             row.counts.TANK, row.counts.HEALER, row.counts.DAMAGER), 0.55, 0.55, 0.55, 1, 1, 1)
         GameTooltip:AddDoubleLine("Bosses down", row.total and (row.down .. "/" .. row.total) or row.down,
             0.55, 0.55, 0.55, 1, 1, 1)
+        -- Which bosses, by name: a lockout isn't cleared in order.
+        local listed = {}
+        for _, boss in ipairs(row.bosses) do
+            listed[boss] = true
+            local dead = row.killed[boss]
+            GameTooltip:AddDoubleLine("  " .. boss, dead and "Dead" or "Alive", 0.85, 0.85, 0.85,
+                dead and 1 or MINT[1], dead and 0.72 or MINT[2], dead and 0.3 or MINT[3])
+        end
+        for boss in pairs(row.killed) do  -- a name the journal spells differently
+            if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.72, 0.3) end
+        end
     else
         GameTooltip:AddDoubleLine("Leader score", row.score or 0, 0.55, 0.55, 0.55, 1, 1, 1)
         for _, s in ipairs(row.specs) do
