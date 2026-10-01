@@ -116,9 +116,7 @@ local WANT_LOOK = { [false] = { "Either", { 0.55, 0.55, 0.55 } }, alive = { "Ali
 
 local function PaintRaid(f)
     PaintRegions(f)
-    -- Boss rules judge every difficulty in the results: pick one of
-    -- Blizzard's raid + difficulty suggestions for accurate results.
-    bossLabel:SetText("Bosses in the group's lockout (pick a raid and difficulty in Blizzard's search for accurate results)")
+    bossLabel:SetText("Bosses in the group's lockout")
     -- Boss rows, pooled: a raid heading, then one row per boss.
     local y, n = 0, 0
     local function Line()

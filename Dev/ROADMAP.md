@@ -107,7 +107,7 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
       dialog lists them, the first focused and selected, click another
       to select it for Ctrl+C. **Built on dev 2026-10-01, untested.**
    d. Region filter from the 20-realm table. **Built on dev 2026-10-01,
-      untested:** "Leader's realm" toggles NA / OCE / BR / LATAM in both
+      untested:** "Leader's realm" toggles NA / OCE / BR / LAT in both
       filters (`f.regions`, nil = all), region in the row tooltip and the
       filter summary; realm names compared squeezed (no spaces, hyphens
       or apostrophes, lower case); no realm suffix = the player's realm.
@@ -518,7 +518,7 @@ show hidden, blacklist); alpha3 = per-boss raid rules, search text.
   on each keystroke, and it waits out the Refresh countdown (player). Delete keeps at
   least one filter per category.
 - Past-season raids still listed under the current expansion are left
-  out (named list in Groups.lua; March on Quel'Danas, S1). Update it each
+  out (named list in Groups.lua; March on Quel'Danas, S1; Sporefall, player 2026-10-01). Update it each
   season.
 - Hint when a raid filter mixes difficulties with boss rules (results
   can't be accurate across lockouts); one difficulty per filter.

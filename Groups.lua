@@ -19,7 +19,7 @@ ns.Groups = Groups
 -- a past season: left out of results and the boss list.
 -- ponytail: a named list to edit each season; derive it from the journal if
 -- that grows tedious.
-local PAST_RAIDS = { ["March on Quel'Danas"] = true }
+local PAST_RAIDS = { ["March on Quel'Danas"] = true, ["Sporefall"] = true }
 
 local SEAT_ORDER = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
 local DIFFICULTY = { [14] = "N", [15] = "H", [16] = "M", [17] = "LFR" }
@@ -27,14 +27,14 @@ local DIFFICULTY = { [14] = "N", [15] = "H", [16] = "M", [17] = "LFR" }
 -- Realm regions within the Americas game region: every realm is North
 -- America except these. Keys are realm names squeezed (no spaces, hyphens or
 -- apostrophes, lower case) so any spelling of the name matches.
-Groups.REGIONS = { "NA", "OCE", "BR", "LATAM" }
-Groups.REGION_NAME = { NA = "North America", OCE = "Oceanic", BR = "Brazil", LATAM = "Latin America" }
+Groups.REGIONS = { "NA", "OCE", "BR", "LAT" }
+Groups.REGION_NAME = { NA = "North America", OCE = "Oceanic", BR = "Brazil", LAT = "Latin America" }
 local REALM_REGION = {}
 for region, realms in pairs({
     OCE = { "Aman'Thul", "Barthilas", "Caelestrasz", "Dath'Remar", "Dreadmaul", "Frostmourne",
             "Gundrak", "Jubei'Thos", "Khaz'goroth", "Nagrand", "Saurfang", "Thaurissan" },
     BR = { "Azralon", "Gallywix", "Goldrinn", "Nemesis", "Tol Barad" },
-    LATAM = { "Drakkari", "Quel'Thalas", "Ragnaros" },
+    LAT = { "Drakkari", "Quel'Thalas", "Ragnaros" },
 }) do
     for _, r in ipairs(realms) do REALM_REGION[r:gsub("[%s%-']", ""):lower()] = region end
 end
