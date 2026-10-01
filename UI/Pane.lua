@@ -291,8 +291,12 @@ local function BuildRow(i)
 
     r.new = r:CreateTexture(nil, "OVERLAY")
     r.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-    r.new:SetSize(3, 3)
-    r.new:SetPoint("LEFT", 1, 0)
+    r.new:SetSize(5, 5)
+    r.new:SetPoint("LEFT", 3, 0)
+    local round = r:CreateMaskTexture()
+    round:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    round:SetAllPoints(r.new)
+    r.new:AddMaskTexture(round)
     for _, key in ipairs({ "friendMark", "guildMark" }) do
         local m = CreateFrame("Frame", nil, r)
         m:SetSize(10, 12)
@@ -301,7 +305,7 @@ local function BuildRow(i)
         r[key] = m
     end
     r.name = Text(r)
-    r.name:SetPoint("LEFT", PAD, 0)
+    r.name:SetPoint("LEFT", PAD + 5, 0)  -- room for the new mark
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
     -- Right-click: report, blacklist or hide the leader.
@@ -607,7 +611,7 @@ local function BuildBars()
     pane.diffHead = Head("", W_DIFF)
     pane.diffHead:SetPoint("RIGHT", pane.instHead, "LEFT", 0, 0)
     local name = Head("Name")
-    name:SetPoint("LEFT", PAD, 0)
+    name:SetPoint("LEFT", PAD + 5, 0)
 end
 
 -- Sign-ups count down their time left.

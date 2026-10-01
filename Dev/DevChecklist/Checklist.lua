@@ -6,6 +6,7 @@ DevChecklist_Items = {
     { "PickupGroup", "Click the X next to Blizzard's Filter button (reset): after the next refresh, Blizzard's filter matches ours again (open its menu).", "SS" },
     { "PickupGroup", "Options: tick Swap. Sign up to 5 groups: other rows read Swap; hover says which is oldest; click Swap withdraws it, button turns to Apply.", "SS + say done (log)" },
     { "PickupGroup", "With a sign-up out, /reload, then wait for it to end (or Cancel it).", "say done (log)" },
+    { "PickupGroup", "New mark: a bigger round mint dot before the name of groups new since the last search; names and the Name header shifted a little right.", "SS" },
     { "PickupGroup", "Greyed-out Apply tooltips: in a party not as leader; no seat for your role.", "SS" },
     { "PickupGroup", "Run a key with the Group Finder open at some point.", "say done (log)" },
 }
