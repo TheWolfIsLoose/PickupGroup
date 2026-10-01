@@ -222,6 +222,7 @@ local function BuildRow(i)
     r.act:SetHighlightFontObject("PickupGroupFontSmall")
     r.act:SetDisabledFontObject("PickupGroupFontSmall")
     r.act:SetScript("OnClick", OnAction)
+    r.act:SetMotionScriptsWhileDisabled(true)  -- greyed buttons still explain why
     r.act:HookScript("OnEnter", function(self) ActionTooltip(self); r.hover:Show() end)
     r.act:HookScript("OnLeave", function() GameTooltip:Hide(); r.hover:Hide() end)
 
