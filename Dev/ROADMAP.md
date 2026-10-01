@@ -23,7 +23,14 @@ conversation below, not with a build.
 **Released 2026-09-30: v0.4.0 (stable) on `main`** for the tester via
 CurseForge: v0.4.0-alpha2 plus three fixes (Bloodlust / battle rez as
 paired checkboxes, the secret-value crash fix, lighter text boxes).
-On `dev` only (installed, **untested**): the sign-up note helper.
+On `dev` only (installed): the sign-up note helper (**untested**); party
+members who aren't leader get a disabled "Leader" Apply (the game silently
+ignores their sign-ups: tester; **verified 2026-10-01**); the pane steps
+aside while the player's group is listed so Blizzard's listing view shows
+(**verified**); disabled action buttons now show their tooltip
+(`SetMotionScriptsWhileDisabled`; **untested**). Candidate v0.4.1 for the
+tester once the tooltip is checked. v0.4.0's crash fix still needs a
+started key to confirm.
 Watch for tester feedback on v0.4.0.
 
 **Why the pause (player, 2026-09-30):** each design step hits a game wall
