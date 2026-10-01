@@ -303,7 +303,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r:Show()
     r.edge:SetShown(isPinned)
     r.new:SetShown(not isPinned and fresh[row.id] == true)
-    r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.02 or 0)
+    r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.05 or 0)  -- every other row: easier to track across
     r.name:SetText(row.name or "?")
     local byName, marks, ink = ns.db.nameColors and not isPinned, {}, { 1, 1, 1 }
     if byName then
