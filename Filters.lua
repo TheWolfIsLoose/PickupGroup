@@ -62,7 +62,7 @@ function Filters.Summary(f)
     else
         local n = 0
         for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
-        if f.dungeons then out[#out + 1] = n .. (n == 1 and " dungeon" or " dungeons") end
+        if f.dungeons and n < #Filters.Dungeons() then out[#out + 1] = n .. (n == 1 and " dungeon" or " dungeons") end
         if f.room then out[#out + 1] = "room for me" end
         for _, kw in ipairs({ { "lust", "Bloodlust" }, { "brez", "battle rez" } }) do
             local key, word = kw[1], kw[2]
