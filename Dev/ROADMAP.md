@@ -16,7 +16,9 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-09-30 18:30 ET: DESIGN PAUSE. No more code until the player
+**State, 2026-10-01 01:50 ET (wrapped for the night): DESIGN PAUSE
+continues.** Bug fixes from tester feedback still go out as patch releases.
+**Paused since 2026-09-30 18:30 ET: No more code until the player
 and Claude have re-ideated what PickupGroup should do.** Resume with the
 conversation below, not with a build.
 
@@ -57,12 +59,22 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
 **Resume here:**
 1. Re-ideate scope with the player: what PickupGroup is for, given the
    walls above. Start from the notes-per-search-type idea (liked) and the
-   reframe; no code.
-2. Only after that: re-plan phases; the note helper (dev) waits on the
-   notes-per-search-type design.
-3. Tester feedback (friend "Tyler", 2026-09-30, on v0.4.0-alpha2): Lua
-   error once a key starts; black score box hard to see. Both fixed in
-   v0.4.0.
+   "less friction + memory" reframe; no code. Decide: one filter per
+   category vs several; what a "search type" is (it carries the note);
+   whether a plain Apply opens Blizzard's dialog when a note exists.
+2. Optional probe the player said he'd revisit: `/pug` command logging
+   `RaiderIO.GetProfile` / `ArchonTooltip.GetProfile` for the target and a
+   live applicant (decides the leader-side applicant pane).
+3. Only after 1: re-plan phases; the note helper (dev) waits on that.
+4. Untested, any time: disabled-button tooltip ("Leader", no seat,
+   sign-ups full); v0.4.0's crash fix (start a key with the Group Finder
+   open); raid sort fix (browse Raids - current).
+5. Open lead: tester's sign-ups stuck "pending" for hours (likely the
+   non-leader Apply clicks); spike it ourselves if it recurs.
+6. Parked: accessibility pass with the ponytail sweep, both addons
+   (project doc `claude/style-guide-accessibility-addendum.md`); region
+   filter before 1.0; party-aware room (needs friends); filter picker
+   (moot if filters collapse); final name before 1.0.
 
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
