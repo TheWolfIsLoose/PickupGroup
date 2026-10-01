@@ -620,7 +620,13 @@ local function Build()
     else
         pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
     end
-    pane:SetFrameLevel(panel:GetFrameLevel() + 50)
+    -- Above Blizzard's list, below its search suggestions (AutoCompleteFrame
+    -- sits at a fixed level over the list): the suggestions stay usable.
+    -- Our rows nest about 3 levels deep, so the pane sits 5 under.
+    local ac = panel.AutoCompleteFrame
+    pane:SetFrameLevel(ac and ac:GetFrameLevel() - 5 or panel:GetFrameLevel() + 50)
+    ns.Trace("pane", "levels: panel", panel:GetFrameLevel(), "suggestions", ac and ac:GetFrameLevel(),
+        "list", panel.ScrollBox and panel.ScrollBox:GetFrameLevel(), "pane", pane:GetFrameLevel())
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
