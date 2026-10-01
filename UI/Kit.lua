@@ -80,6 +80,11 @@ function Kit.Band(frame, color)
     frame._band:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
 end
 
+-- Ring colour for an input: mint while typing, grey under the mouse, else black.
+local function Ring(frame, c)
+    for _, t in ipairs(frame._border) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
+end
+
 -- 1px ring.
 function Kit.Border(frame, color)
     local ring = {}
@@ -175,11 +180,6 @@ function Kit.Check(parent, label, onChange)
     b:SetScript("OnClick", function(self) self:Set(not on); onChange(on) end)
     b:Set(false)
     return b
-end
-
--- Ring colour for an input: mint while typing, grey under the mouse, else black.
-local function Ring(frame, c)
-    for _, t in ipairs(frame._border) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
 end
 
 -- Text box: light well + black ring (grey on hover, mint while typing). onCommit(text) on Enter or losing

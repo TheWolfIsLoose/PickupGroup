@@ -210,7 +210,8 @@ Session setup (keeps usage down):
   files and compare sizes or checksums with the repo.
 - Logs: after a `/reload`, read
   `WTF\Account\SAVAGEFEARLESS\SavedVariables\PickupGroup.lua`.
-- Syntax check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua`.
+- Check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua` (syntax, plus a
+  local used above its definition: it passed syntax and broke in game once).
   No package manager reaches Lua here: `git clone --depth 1 -b v5.1
   https://github.com/lua/lua`, then `gcc -O2 -o lua51 -DLUA_USE_POSIX
   $(ls *.c | grep -v ltests.c) -lm`.
