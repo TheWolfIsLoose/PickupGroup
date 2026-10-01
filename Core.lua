@@ -14,7 +14,7 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 1
+local SCHEMA = 2
 local DEFAULTS = {
     schema = SCHEMA,
     trace  = true,   -- record trace steps; on by default until v1.0.0
@@ -23,7 +23,21 @@ local DEFAULTS = {
     cleanup   = { stale = true, staleHours = 3, advert = true, carry = true, blacklist = true },
     blacklist = {},  -- "Name-Realm" -> last seen in results (time())
 }
-local MIGRATIONS = {}  -- [n] = function(db) upgrades schema n-1 to n
+local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
+    -- 2: one filter per kind; keep the one that was active.
+    [2] = function(db)
+        if not db.filters then return end
+        local keep, active = {}, db.activeFilter or {}
+        for _, kind in ipairs({ "keys", "raid" }) do
+            local pick
+            for _, f in ipairs(db.filters) do
+                if f.kind == kind and (f.id == active[kind] or not pick) then pick = f end
+            end
+            if pick then keep[#keep + 1] = pick end
+        end
+        db.filters, db.activeFilter = keep, nil
+    end,
+}
 
 local function ApplyDefaults(saved, defaults)
     for k, v in pairs(defaults) do

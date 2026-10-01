@@ -4,11 +4,10 @@
     filter. Edits apply as they are made (no Save step). It covers
     Raider.IO's panel while open; that frame is never moved.
 
-    Filter tab (alpha): name, then per kind
+    Filter tab: the one filter of the kind in view
       keys  dungeons (this season), room for my role, has / needs Bloodlust,
             has / needs battle rez, leader at least my score, leader score floor
       raid  difficulty, bosses down at most, room
-    Delete keeps at least one filter per kind.
 --]]
 
 local _, ns = ...
@@ -22,7 +21,7 @@ local MINT = Kit.Palette.brand
 local DIFF = { { "N", { 0.12, 1, 0 } }, { "H", { 0, 0.44, 0.87 } }, { "M", { 1, 0.5, 0 } } }
 
 local frame, editing
-local nameBox, keysBox, raidBox, deleteBtn
+local keysBox, raidBox
 local dungeonButtons, checks, diffButtons = {}, {}, {}
 local scoreBox, bossBox
 local bossLines = {}
@@ -192,11 +191,9 @@ end
 
 function Sidecar.Paint()
     if not (frame and editing) then return end
-    nameBox:SetText(editing.name or "")
     keysBox:SetShown(editing.kind == "keys")
     raidBox:SetShown(editing.kind == "raid")
     if editing.kind == "keys" then PaintKeys(editing) else PaintRaid(editing) end
-    deleteBtn:SetEnabled(#Filters.List(editing.kind) > 1)
 end
 
 local function BuildKeys(parent)
@@ -474,39 +471,18 @@ local function Build()
     optionsView:SetPoint("TOPLEFT", PAD, -34)
     optionsView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 
-    nameBox = Kit.Edit(body, W - 2 * PAD, function(text)
-        text = strtrim(text or "")
-        if text ~= "" and editing then editing.name = text; ns.Pane.Render() end
-    end)
-    nameBox:SetPoint("TOPLEFT")
-    nameBox:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText("Filter name (its tab)"); GameTooltip:Show()
-    end)
-    nameBox:HookScript("OnLeave", function() GameTooltip:Hide() end)
-
     keysBox = BuildKeys(body)
-    keysBox:SetPoint("TOPLEFT", 0, -30)
+    keysBox:SetPoint("TOPLEFT")
     keysBox:SetPoint("RIGHT")
     raidBox = BuildRaid(body)
-    raidBox:SetPoint("TOPLEFT", 0, -30)
+    raidBox:SetPoint("TOPLEFT")
     raidBox:SetPoint("RIGHT")
 
-    deleteBtn = CreateFrame("Button", nil, body)
-    deleteBtn:SetSize(72, 22)
-    deleteBtn:SetPoint("BOTTOMLEFT")
-    Kit.Button(deleteBtn)
-    deleteBtn:SetText("Delete")
-    deleteBtn:SetScript("OnClick", function()
-        if editing and Filters.Delete(editing) then
-            editing = Filters.Active(editing.kind)
-            Sidecar.Paint(); Changed()
-        end
-    end)
-    -- Reset: the filter back to its starting rules (name kept); a second
+    -- Reset: the filter back to its starting rules; a second
     -- click confirms.
     local resetBtn = CreateFrame("Button", nil, body)
     resetBtn:SetSize(72, 22)
-    resetBtn:SetPoint("LEFT", deleteBtn, "RIGHT", 6, 0)
+    resetBtn:SetPoint("BOTTOMLEFT")
     Kit.Button(resetBtn)
     resetBtn:SetText("Reset")
     resetBtn:SetScript("OnClick", function(self)

@@ -5,7 +5,7 @@
     (search text is typed there). Blizzard's frames are never hidden,
     moved or written; the pane just covers them.
 
-      top bar   tab . count . setup . options; a mint line across the top
+      top bar   filter summary . hidden . count . setup . options; a mint line across the top
                 shrinks over the search cooldown (Blizzard's refresh searches)
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
       rows      sign-ups pinned first (mint edge), then results; wheel scrolls
@@ -47,9 +47,8 @@ local OUTCOME = {
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
-local panel, pane, backButton, cooldown, countText, tabBar, plusTab, hiddenButton
+local panel, pane, backButton, cooldown, countText, summary, hiddenButton
 local showHidden = false
-local tabs = {}
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
 local offset = 0
@@ -383,55 +382,10 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
--- One tab per saved filter of the kind in view; the active one in mint and
--- underlined. Left-click switches, right-click opens its setup.
-local function PaintTabs()
-    local Filters = ns.Filters
-    local kind = Filters.Kind()
-    local active = Filters.Active(kind)
-    local prev
-    for i, f in ipairs(Filters.List(kind)) do
-        local t = tabs[i]
-        if not t then
-            t = CreateFrame("Button", nil, tabBar)
-            t:SetHeight(BAR_H)
-            t:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-            t.text = Text(t, "PickupGroupFont")
-            t.text:SetPoint("LEFT")
-            t.under = t:CreateTexture(nil, "OVERLAY")
-            t.under:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-            t.under:SetHeight(2)
-            t.under:SetPoint("BOTTOMLEFT", 0, 1)
-            t.under:SetPoint("BOTTOMRIGHT", 0, 1)
-            t:SetScript("OnClick", function(self, button)
-                if button == "RightButton" then return ns.Sidecar.Open(self.filter) end
-                Filters.SetActive(self.filter)
-                offset = 0
-                Pane.Render()
-                ns.Sidecar.Follow(self.filter)
-            end)
-            tabs[i] = t
-        end
-        t.filter = f
-        t.text:SetText(f.name)
-        t:SetWidth(t.text:GetStringWidth())
-        local on = f == active
-        t.text:SetTextColor(on and MINT[1] or 0.74, on and MINT[2] or 0.74, on and MINT[3] or 0.74)
-        t.under:SetShown(on)
-        t:ClearAllPoints()
-        if prev then t:SetPoint("LEFT", prev, "RIGHT", 12, 0) else t:SetPoint("LEFT", 8, 0) end
-        t:Show()
-        prev = t
-    end
-    for i = #Filters.List(kind) + 1, #tabs do tabs[i]:Hide() end
-    plusTab:ClearAllPoints()
-    plusTab:SetPoint("LEFT", prev or tabBar, prev and "RIGHT" or "LEFT", prev and 6 or 8, 0)
-end
-
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     ns.Filters.Sync()  -- before Blizzard's search on a category change, too
-    PaintTabs()
+    summary:SetText(ns.Filters.Summary(ns.Filters.Active()))
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
     if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
@@ -516,28 +470,13 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
-    tabBar = bar
-    plusTab = CreateFrame("Button", nil, bar)
-    plusTab:SetSize(16, BAR_H)
-    Kit.Glyph(plusTab, { { 9, 2, 0 }, { 2, 9, 0 } })
-    plusTab:SetScript("OnClick", function()
-        local f = ns.Filters.New(ns.Filters.Kind())
-        offset = 0
-        Pane.Render()
-        ns.Sidecar.Open(f)
-    end)
-    plusTab:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM"); GameTooltip:SetText("New filter"); GameTooltip:Show()
-    end)
-    plusTab:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
     local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
     local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
-        "Set up this filter (right-click a tab works too)", function() ns.Sidecar.Open() end)
+        "Set up the filter", function() ns.Sidecar.Open() end)
     setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
 
     countText = Text(bar)
@@ -556,6 +495,27 @@ local function BuildBars()
         GameTooltip:Show()
     end)
     hiddenButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- What the filter does, in a line; click to set it up.
+    local sb = CreateFrame("Button", nil, bar)
+    sb:SetPoint("LEFT", 8, 0)
+    sb:SetPoint("RIGHT", hiddenButton, "LEFT", -8, 0)
+    sb:SetHeight(BAR_H)
+    summary = Text(sb)
+    summary:SetPoint("LEFT")
+    summary:SetPoint("RIGHT")
+    summary:SetJustifyH("LEFT")
+    summary:SetWordWrap(false)
+    summary:SetTextColor(0.74, 0.74, 0.74)
+    sb:SetScript("OnClick", function() ns.Sidecar.Open() end)
+    sb:SetScript("OnEnter", function(self)
+        summary:SetTextColor(MINT[1], MINT[2], MINT[3])
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText("Filter: " .. summary:GetText())
+        GameTooltip:AddLine("Click to set it up.", 0.74, 0.74, 0.74)
+        GameTooltip:Show()
+    end)
+    sb:SetScript("OnLeave", function() summary:SetTextColor(0.74, 0.74, 0.74); GameTooltip:Hide() end)
 
     local head = CreateFrame("Frame", nil, pane)
     head:SetPoint("TOPLEFT", 0, -BAR_H)

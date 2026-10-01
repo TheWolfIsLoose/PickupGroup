@@ -1,9 +1,8 @@
 --[[
     PickupGroup - Filters.lua
-    Saved filters: named sets of search rules, shown as tabs. Account-wide
-    in PickupGroupDB.filters; the active one per kind in
-    PickupGroupDB.activeFilter. Kind is "keys" (Dungeons) or "raid"
-    (Raids - current). Rules run on our copy of the results only.
+    One filter per kind, account-wide in PickupGroupDB.filters. Kind is
+    "keys" (Dungeons) or "raid" (Raids - current). Rules run on our copy of
+    the results; the keys filter also narrows Blizzard's search (Sync).
 
     keys: room, lust / brez ("has" | "missing"), minScore, atLeastMine, dungeons (nil = all,
           else set of dungeon names)
@@ -16,10 +15,9 @@ local _, ns = ...
 local Filters = {}
 ns.Filters = Filters
 
-local SHIPPED = {
-    { id = "weekly", name = "Weekly keys", kind = "keys", room = true },
-    { id = "push", name = "Push keys", kind = "keys", room = true, atLeastMine = true },
-    { id = "raid", name = "Raid", kind = "raid", difficulties = { N = true, H = true, M = true } },
+local DEFAULT = {
+    keys = { id = "keys", name = "Dungeons", kind = "keys", room = true },
+    raid = { id = "raid", name = "Raids", kind = "raid", difficulties = { N = true, H = true, M = true } },
 }
 
 -- Classes that bring Bloodlust / a battle rez.
@@ -27,8 +25,7 @@ local LUST = { SHAMAN = true, MAGE = true, HUNTER = true, EVOKER = true }
 local BREZ = { DRUID = true, DEATHKNIGHT = true, WARLOCK = true, PALADIN = true }
 
 local function All()
-    if not ns.db.filters then ns.db.filters = CopyTable(SHIPPED) end
-    ns.db.activeFilter = ns.db.activeFilter or {}
+    ns.db.filters = ns.db.filters or {}
     return ns.db.filters
 end
 
@@ -37,55 +34,48 @@ function Filters.Kind()
     return (p and p.categoryID == 3) and "raid" or "keys"
 end
 
-function Filters.List(kind)
-    local out = {}
-    for _, f in ipairs(All()) do if f.kind == kind then out[#out + 1] = f end end
-    return out
-end
-
+-- The filter of a kind (the one in view by default), made on first use.
 function Filters.Active(kind)
     kind = kind or Filters.Kind()
-    local list = Filters.List(kind)
-    local id = ns.db.activeFilter and ns.db.activeFilter[kind]
-    for _, f in ipairs(list) do if f.id == id then return f end end
-    return list[1]
-end
-
-function Filters.SetActive(f)
-    All()
-    ns.db.activeFilter[f.kind] = f.id
-end
-
-function Filters.New(kind)
-    local base = Filters.Active(kind)
-    local f = base and CopyTable(base) or { kind = kind, room = true }
-    f.id, f.name = "f" .. time() .. math.random(1000), "New filter"
+    for _, f in ipairs(All()) do if f.kind == kind then return f end end
+    local f = CopyTable(DEFAULT[kind])
     table.insert(All(), f)
-    Filters.SetActive(f)
-    ns.Log.Emit("filter", { action = "new", name = f.name })
     return f
 end
 
--- Back to its starting rules: a shipped filter to how it shipped, any other
--- to a clean one of its kind. Keeps its name and place.
+-- Back to its starting rules.
 function Filters.Reset(f)
-    local base = { kind = f.kind, room = f.kind == "keys" or nil }
-    for _, s in ipairs(SHIPPED) do if s.id == f.id then base = s end end
-    if f.kind == "raid" and not base.difficulties then base.difficulties = { N = true, H = true, M = true } end
-    local id, name = f.id, f.name
+    local base = DEFAULT[f.kind] or DEFAULT.keys
     wipe(f)
     for k, v in pairs(CopyTable(base)) do f[k] = v end
-    f.id, f.name = id, name
-    ns.Log.Emit("filter", { action = "reset", name = name })
+    ns.Log.Emit("filter", { action = "reset", name = f.name })
 end
 
--- Never the last filter of its kind.
-function Filters.Delete(f)
-    if #Filters.List(f.kind) <= 1 then return false end
-    local all = All()
-    for i, g in ipairs(all) do if g == f then table.remove(all, i) break end end
-    ns.Log.Emit("filter", { action = "delete", name = f.name })
-    return true
+-- A short line saying what the filter does, for the pane's top bar.
+local DIFF_ORDER = { "N", "H", "M" }
+function Filters.Summary(f)
+    local out = {}
+    if f.kind == "raid" then
+        local d = {}
+        for _, l in ipairs(DIFF_ORDER) do if not f.difficulties or f.difficulties[l] then d[#d + 1] = l end end
+        if #d < 3 then out[#out + 1] = table.concat(d, " ") end
+        local rules = 0
+        for _, bosses in pairs(f.bosses or {}) do for _ in pairs(bosses) do rules = rules + 1 end end
+        if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss rule" or " boss rules") end
+    else
+        local n = 0
+        for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
+        if f.dungeons then out[#out + 1] = n .. (n == 1 and " dungeon" or " dungeons") end
+        if f.room then out[#out + 1] = "room for me" end
+        for _, kw in ipairs({ { "lust", "Bloodlust" }, { "brez", "battle rez" } }) do
+            local key, word = kw[1], kw[2]
+            local want = f[key] == true and "missing" or f[key]
+            if want then out[#out + 1] = (want == "has" and "has " or "needs ") .. word end
+        end
+        if f.atLeastMine then out[#out + 1] = "score at least mine"
+        elseif (f.minScore or 0) > 0 then out[#out + 1] = "score " .. f.minScore .. "+" end
+    end
+    return #out > 0 and table.concat(out, ", ") or "No rules"
 end
 
 -- This season's dungeons, as { name, code }, from the game.

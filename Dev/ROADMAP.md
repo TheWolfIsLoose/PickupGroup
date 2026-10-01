@@ -62,35 +62,48 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    "less friction + memory" reframe; no code. Decide: one filter per
    category vs several; what a "search type" is (it carries the note);
    whether a plain Apply opens Blizzard's dialog when a note exists.
-   **Options prepared 2026-10-01 (Claude; nothing decided):**
-   - *What PickupGroup is for*, given the walls (no key level, protected
-     titles, no note or search text from addons): a candidate line is
-     "Blizzard's search, with less friction and a memory". Less friction:
-     one-line rows with comp tiles, saved filters that also narrow the
-     server search (beats the 100-result cap), clean-up in place of a spam
-     addon, Apply from the row. Memory: the application log, declined /
-     re-apply friction, new mark, friends mark. What else would earn a
-     place under that line, and what doesn't fit it?
-   - *What a "search type" is*: (a) a saved filter, and each filter may
-     carry a note (no new concept; Weekly / Push / Raid each get one);
-     (b) one per category (keys, raid), one note each; (c) notes are their
-     own list, and a filter points at one. (a) is the smallest.
-   - *One filter per category vs several*: without key level, Weekly and
-     Push differ only by score floor and the key level the player types.
-     If notes ride on filters, several filters earn their place as
-     "presets" (filter + note); if not, one filter per category plus the
-     typed search text may be enough, and the filter picker question (3c)
-     goes away.
-   - *Apply when a note exists*: the game never lets an addon fill the
-     note, so a note always costs Ctrl+C / click / Ctrl+V in Blizzard's
-     dialog. (a) Apply stays instant (no note), shift-click opens the
-     dialog with the note ready to copy (today's dev build); (b) when the
-     active filter has a note, Apply opens the dialog instead; (c) an
-     Options switch between (a) and (b).
+   **Decided 2026-10-01 (player), the design pause ends:**
+   - **What it is:** enhancements on top of Blizzard's search. Pass our
+     filter through to Blizzard's filter; otherwise take what Blizzard
+     gives and show it better. Preserve and work with Blizzard's own
+     pieces rather than replace them.
+   - **One filter per content type** (keys, raid): the player types search
+     text in Blizzard's box anyway, and listings can't be filtered by
+     name, so several filters add little. Tabs go; the filter picker (3c)
+     is moot. **Built on dev 2026-10-01** (schema 2 keeps the filter that
+     was active per kind; the top bar shows a one-line summary of the
+     filter, click to set it up; name box and Delete gone).
+   - **Raids:** players type the raid's name and pick Blizzard's
+     suggestion, which is one line per raid and difficulty (e.g. "<raid>
+     Heroic"). Work with that, don't replace it. Open: whether our raid
+     filter's difficulty buttons are now redundant (the search already
+     carries the difficulty), and whether boss rules should follow the
+     difficulty seen in the results.
+   - **Notes:** up to 5 pre-made notes (a list, not tied to a filter).
+     **Click Apply** opens Blizzard's sign-up dialog with the notes
+     offered to copy (the game won't let an addon fill the note);
+     **shift-click Apply** signs up at once with no note. (The reverse of
+     today: a modified click suits our one button better than a double
+     click.)
+   - **Realm regions:** NA is its own game region (EU, CN, KR, TW are
+     separate licences and never in its results), so only US-region
+     realms matter: our own table of the 20 Oceanic, Brazil and Latin
+     America realms, everything else North America; no library.
+     Leader names are "Name-Realm" with the realm's apostrophes kept and
+     its spaces as shown in game (player); compare with spaces stripped
+     to be safe. A same-realm leader may have no "-Realm": use the
+     player's own realm.
 2. Optional probe the player said he'd revisit: `/pug` command logging
    `RaiderIO.GetProfile` / `ArchonTooltip.GetProfile` for the target and a
    live applicant (decides the leader-side applicant pane).
-3. Only after 1: re-plan phases; the note helper (dev) waits on that.
+3. Plan from here (one change per alpha, all on dev until tested):
+   a. One filter per kind (built, untested).
+   b. Apply flip: click = Blizzard's dialog with notes to copy,
+      shift-click = instant sign-up; re-apply friction kept for shift.
+   c. Up to 5 notes in Options; the strip under Blizzard's dialog lists
+      them, click one to select it for Ctrl+C.
+   d. Region filter from the 20-realm table.
+   Then the accessibility + ponytail pass, then v1.0 items.
 4. Untested, any time: text boxes return to the grey ring after typing
    (dev, 2026-10-01: Kit.Edit's SetScript ran after its HookScripts and
    dropped them, so the mint focus ring stayed after leaving a box);
@@ -276,8 +289,8 @@ PickupGroup is an original design and an original codebase.
 
 - **Pane**: PickupGroup's main frame, laid over the Group Finder's
   results area.
-- **Filter**: a saved, named set of search parameters, shown as a
-  **tab** across the pane's top bar.
+- **Filter**: the saved search rules for a content type (one for keys,
+  one for raids), summarised in the pane's top bar.
 - **Sidecar**: the panel attached to the Group Finder's right edge for
   filter setup and options.
 - **Comp**: the group's make-up; **tiles** for dungeons, **counts** for
