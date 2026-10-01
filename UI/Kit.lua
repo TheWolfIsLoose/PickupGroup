@@ -44,7 +44,9 @@ Kit.Palette = {
     bgDark    = { 0.031, 0.031, 0.031, 0.97 }, -- window
     bgMedium  = { 0.055, 0.055, 0.055, 0.95 }, -- buttons
     panelBg   = { 0.060, 0.060, 0.060, 0.98 }, -- sidecar, log window
-    btnRest   = { 1, 1, 1, 0.045 },
+    btnRest   = { 1, 1, 1, 0.07 },
+    well      = { 1, 1, 1, 0.08 },             -- text boxes, checkboxes: visibly "fill me"
+    ringHover = { 0.55, 0.55, 0.55, 1 },       -- input under the mouse
     hoverWash = { 0.851, 0.851, 0.851, 0.15 },
     pressFill = { 0.851, 0.851, 0.851, 0.22 },
     border    = { 0, 0, 0, 1 },
@@ -76,6 +78,11 @@ function Kit.Band(frame, color)
     frame._band = frame._band or Solid(frame, "BACKGROUND", -6, color)
     frame._band:SetAllPoints()
     frame._band:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
+end
+
+-- Ring colour for an input: mint while typing, grey under the mouse, else black.
+local function Ring(frame, c)
+    for _, t in ipairs(frame._border) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
 end
 
 -- 1px ring.
@@ -147,7 +154,7 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     return btn
 end
 
--- Checkbox: 12px flat well, mint square when on; the label is part of the
+-- Checkbox: 12px light well (grey ring on hover), mint square when on; the label is part of the
 -- click area. box:Set(on), box:Get(); onChange(on) after a click.
 function Kit.Check(parent, label, onChange)
     local b = CreateFrame("Button", nil, parent)
@@ -155,10 +162,12 @@ function Kit.Check(parent, label, onChange)
     local well = CreateFrame("Frame", nil, b)
     well:SetSize(12, 12)
     well:SetPoint("LEFT")
-    Kit.Fill(well, { 0, 0, 0, 0.55 })
+    Kit.Fill(well, Palette.well)
     Kit.Border(well)
+    b:SetScript("OnEnter", function() Ring(well, Palette.ringHover) end)
+    b:SetScript("OnLeave", function() Ring(well, Palette.border) end)
     local mark = well:CreateTexture(nil, "OVERLAY")
-    mark:SetSize(6, 6)
+    mark:SetSize(8, 8)
     mark:SetPoint("CENTER")
     mark:SetColorTexture(Palette.brand[1], Palette.brand[2], Palette.brand[3], 1)
     local text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
@@ -173,7 +182,7 @@ function Kit.Check(parent, label, onChange)
     return b
 end
 
--- Text box: light well + black ring. onCommit(text) on Enter or losing
+-- Text box: light well + black ring (grey on hover, mint while typing). onCommit(text) on Enter or losing
 -- focus. Clears focus when hidden (a hidden focused box eats every key).
 function Kit.Edit(parent, width, onCommit, numeric)
     local e = CreateFrame("EditBox", nil, parent)
@@ -182,8 +191,12 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetFontObject("PickupGroupFontSmall")
     e:SetTextInsets(6, 6, 0, 0)
     if numeric then e:SetNumeric(true) end
-    Kit.Fill(e, { 1, 1, 1, 0.08 })  -- lifted: a black well vanished on the panel
+    Kit.Fill(e, Palette.well)
     Kit.Border(e)
+    e:HookScript("OnEnter", function(self) if not self:HasFocus() then Ring(self, Palette.ringHover) end end)
+    e:HookScript("OnLeave", function(self) if not self:HasFocus() then Ring(self, Palette.border) end end)
+    e:HookScript("OnEditFocusGained", function(self) Ring(self, Palette.brand) end)
+    e:HookScript("OnEditFocusLost", function(self) Ring(self, Palette.border) end)
     local function commit(self) onCommit(self:GetText()) end
     e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)

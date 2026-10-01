@@ -20,62 +20,22 @@ cheap.
 and Claude have re-ideated what PickupGroup should do.** Resume with the
 conversation below, not with a build.
 
-**Released 2026-09-30: v0.4.0 (stable) on `main`** for the tester via
-CurseForge: v0.4.0-alpha2 plus three fixes (Bloodlust / battle rez as
-paired checkboxes, the secret-value crash fix, lighter text boxes).
-On `dev` only (installed, **untested**): the sign-up note helper.
-Watch for tester feedback on v0.4.0.
+**Released 2026-10-01: v0.4.1 (stable) on `main`** (see HISTORY): raid
+sort crash fix, party-leader Apply, pane steps aside while listed,
+disabled-button tooltips, visibility pass. v0.4.0's secret-value crash fix
+still needs a started key to confirm. On `dev` only: the sign-up note
+helper (**untested**), waiting on the notes-per-search-type design.
 
-**Why the pause (player, 2026-09-30):** each design step hits a game wall
-(no key level anywhere, titles protected, search box locked, listings
-secret inside a running key). The player built the premise from another
-addon that does far too much; with key-level filtering gone, filters
-alone make PickupGroup "nice skinning over a narrow rule set". Ideate
-before spending more time on code.
+**Testing note (player, 2026-10-01):** the tester plays casually and doesn't
+take notes, so his reports are leads, not repro steps. To answer an issue
+for real, spike it ourselves (temporary `/pug` probe, reproduce, read the
+log). Open lead: the tester's client showed sign-ups as pending for hours
+(likely from the non-leader Apply clicks); unconfirmed.
 
-**Where the conversation stands (none of this is decided):**
-- **Multiple dungeon filters look hollow.** Weekly vs Push differ by one
-  checkbox; key level (the real axis) lives in Blizzard's search box,
-  which addons can't fill. Raids still differ meaningfully (difficulty,
-  bosses). Candidate: one filter per category, no tabs / drop-down (3c
-  becomes moot).
-- **Rejected as search axes (player):** playstyle and leader's best in
-  the dungeon. Players don't search by them; may be used case by case.
-- **Liked (player): pre-written sign-up notes per search type.** Claude's
-  sketch: a note per saved filter (or search type), a default note in
-  Options, the copy strip opens with the active one selected, small
-  buttons to swap to another. Open: should a plain Apply click open
-  Blizzard's dialog when a note exists (so it's always offered), or stay
-  shift-click only? Depends on how "search type" ends up defined if
-  filters collapse.
-- **Raider.IO / Archon (optional, never required, no internet):**
-  - Raider.IO's documented API `RaiderIO.GetProfile(name, realm)`: score,
-    main's score (alt detection), per-dungeon best level + chests
-    (+1/+2/+3 = timed / 20% / 40% under: a coarse "pace"), timed-key
-    counts (5+/10+/15+/20+), roles, previous season, raid progress with
-    kills per boss. No Pace / ILVL Pace, no run history, no rankings in
-    game (the website has them; player showed the site's per-run table).
-    Exact run times only for the player's own characters (R.IO client).
-  - Archon `ArchonTooltip.GetProfile(name, realm)`: Warcraft Logs
-    **raid** parses only (best average per difficulty/spec, per boss).
-    No M+. Regional DB is load-on-demand.
-  - Searching: listings expose only the leader's name, so lookups describe
-    the leader only; Raider.IO already shows it on hover. Leading: every
-    applicant has name-realm and the leader knows their own key
-    (`C_MythicPlus.GetOwnedKeystoneLevel`), so an applicant pane (best in
-    this dungeon with chests, main's score, sort / "timed this at your
-    level") is where lookups pay off. Blizzard's own
-    `GetApplicantDungeonScoreForListing` covers best level + timed
-    without any addon. Leading is on hold in this roadmap: this would
-    reopen it.
-- **Claude's reframe on the table:** "less friction + memory" rather than
-  "better filters": application management (pinned sign-ups, outcomes,
-  re-apply), the player's own key history (application log), clean-up
-  replacing LFGSpamFilter, server-side narrowing (100-result cap), and
-  an applicant pane for leading. Shelving is a legitimate outcome too.
-- **Pending probe (player will revisit):** a throwaway `/pug` command that
-  calls both lookups on the target and a live applicant and logs the
-  result, then gets reverted.
+**Visibility (player, 2026-10-01):** the light text-box well was a noted
+accessibility win ("you can actually tell there's a field"). Keep inputs
+and controls visibly distinct from the panel everywhere (Kit palette:
+`well`, `ringHover`, brighter `btnRest`).
 
 **Resume here:**
 1. Re-ideate scope with the player: what PickupGroup is for, given the
@@ -192,7 +152,8 @@ Session setup (keeps usage down):
   files and compare sizes or checksums with the repo.
 - Logs: after a `/reload`, read
   `WTF\Account\SAVAGEFEARLESS\SavedVariables\PickupGroup.lua`.
-- Syntax check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua`.
+- Check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua` (syntax, plus a
+  local used above its definition: it passed syntax and broke in game once).
   No package manager reaches Lua here: `git clone --depth 1 -b v5.1
   https://github.com/lua/lua`, then `gcc -O2 -o lua51 -DLUA_USE_POSIX
   $(ls *.c | grep -v ltests.c) -lm`.

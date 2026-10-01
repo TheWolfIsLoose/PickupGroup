@@ -73,6 +73,9 @@ local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
 local function Eligible()
     local p = Panel()
     if not (p and p:IsShown()) then return false end
+    -- While the player's group is listed, step aside as Blizzard does (its
+    -- listing view: members can't act, the leader manages applicants).
+    if C_LFGList.HasActiveEntryInfo() then return false end
     if p.categoryID == 2 then return true end  -- Dungeons
     local recommended = Enum.LFGListFilter and Enum.LFGListFilter.Recommended or 1
     return p.categoryID == 3 and bit.band(p.filters or 0, recommended) ~= 0  -- Raids - current
@@ -93,6 +96,9 @@ end
 -- ---------------------------------------------------------------------------
 -- Actions (each runs straight from a click: the game requires it)
 -- ---------------------------------------------------------------------------
+-- Only a party's leader can sign it up; the game ignores anyone else silently.
+local function NotLeader() return IsInGroup() and not UnitIsGroupLeader("player") end
+
 local function Apply(row)
     local r = Groups.MyRoles()
     C_LFGList.ApplyToGroup(row.id, r.TANK, r.HEALER, r.DAMAGER)
@@ -162,6 +168,7 @@ local function ActionTooltip(btn)
     local tip
     if row.status == "applied" then tip = "Click to cancel this sign-up."
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
+    elseif NotLeader() then tip = "Only your party leader can sign the party up."
     elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click twice to sign up again."
     elseif not row.fits then tip = "No open seat for the roles you sign up as."
     elseif btn.full then tip = "All five sign-ups are in use." end
@@ -215,6 +222,7 @@ local function BuildRow(i)
     r.act:SetHighlightFontObject("PickupGroupFontSmall")
     r.act:SetDisabledFontObject("PickupGroupFontSmall")
     r.act:SetScript("OnClick", OnAction)
+    r.act:SetMotionScriptsWhileDisabled(true)  -- greyed buttons still explain why
     r.act:HookScript("OnEnter", function(self) ActionTooltip(self); r.hover:Show() end)
     r.act:HookScript("OnLeave", function() GameTooltip:Hide(); r.hover:Hide() end)
 
@@ -295,7 +303,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r:Show()
     r.edge:SetShown(isPinned)
     r.new:SetShown(not isPinned and fresh[row.id] == true)
-    r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.02 or 0)
+    r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.05 or 0)  -- every other row: easier to track across
     r.name:SetText(row.name or "?")
     local byName, marks, ink = ns.db.nameColors and not isPinned, {}, { 1, 1, 1 }
     if byName then
@@ -363,6 +371,8 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         label = "Invited"
     elseif row.status == "inviteaccepted" then
         label, enabled = "Joined", false
+    elseif NotLeader() then
+        label, enabled = "Leader", false
     elseif OVER[row.status] then
         label = (armed == row.id) and "Sure?" or "Reapply"
     elseif not row.fits or full then
@@ -737,6 +747,9 @@ ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
     RenderSoon()
 end)
 ns.On("LFG_LIST_SEARCH_RESULT_UPDATED", RenderSoon)
+ns.On("GROUP_ROSTER_UPDATE", RenderSoon)
+ns.On("PARTY_LEADER_CHANGED", RenderSoon)
+ns.On("LFG_LIST_ACTIVE_ENTRY_UPDATE", function() Pane.Update() end)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
     local o = OUTCOME[new]
