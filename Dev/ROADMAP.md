@@ -51,7 +51,7 @@ off toggles 5.8:1 (all pass); disabled text 4.2:1 (exempt); hover ring
 / checkbox well 1.2:1, button face 1.2:1, black 1px ring 1.1:1 against the
 panel. Candidate fix: a rest ring of about 0.4 grey on inputs and buttons
 (3.3:1) instead of black; that departs from StockClerk's black-line style,
-so the player decides. Checkbox 12px and action buttons 18px tall are
+so the player decides (parked: see item 6). Checkbox 12px and action buttons 18px tall are
 under 2.5.8's 24px (the label widens the checkbox's click area).
 
 **Resume here:**
@@ -148,6 +148,10 @@ Next, in order:
 6. **Ponytail sweep** (player: Claude's call on timing): after Phase 4
    lands and before v1.0.0, in a session with plenty of usage; whole
    codebase, one pass, then a test build.
+   **Accessibility pass alongside it (player, 2026-10-01, parked):** WCAG 2.2
+   for both PickupGroup and StockClerk together (they share the style
+   language, so a change like grey rest rings lands in both). Start from
+   the baseline under "Visibility" above.
 7. Later: teleport button (needs a party to test), filter sharing,
    leading (on hold), final name before 1.0.
 
