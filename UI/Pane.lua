@@ -199,7 +199,7 @@ local function ActionTooltip(btn)
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
     elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Shift-click twice to sign up again at once."
-    elseif not row.fits then tip = "No open seat for the roles you sign up as."
+    elseif not row.fits then tip = Groups.Party() and "Not enough open seats for your party's roles." or "No open seat for the roles you sign up as."
     elseif btn.full and ns.db.swap then
         local o = Oldest()
         tip = "All five sign-ups are in use. Click to withdraw the oldest"

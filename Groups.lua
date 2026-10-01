@@ -136,6 +136,36 @@ function Groups.MyRoles()
     return { TANK = tank, HEALER = healer, DAMAGER = dps }
 end
 
+-- In a party (not a raid): seats needed per role, from each member's
+-- assigned role, else their spec's role, else unknown (any seat); the
+-- player falls back to a single role picked in Blizzard's role choice.
+-- nil when solo.
+local lastParty
+function Groups.Party()
+    if not IsInGroup() or IsInRaid() then return nil end
+    local need = { TANK = 0, HEALER = 0, DAMAGER = 0, size = 0 }
+    local seen = {}
+    for _, unit in ipairs({ "player", "party1", "party2", "party3", "party4" }) do
+        if UnitExists(unit) then
+            need.size = need.size + 1
+            local role = UnitGroupRolesAssigned(unit)
+            if role == "NONE" and unit ~= "player" then
+                local spec = GetInspectSpecialization(unit)
+                role = spec and spec > 0 and GetSpecializationRoleByID(spec) or "NONE"
+            elseif role == "NONE" then
+                local r, n = Groups.MyRoles(), 0
+                for k, on in pairs(r) do if on then role, n = k, n + 1 end end
+                if n ~= 1 then role = "NONE" end
+            end
+            if need[role] then need[role] = need[role] + 1 end
+            seen[#seen + 1] = unit .. "=" .. role
+        end
+    end
+    local key = table.concat(seen, " ")
+    if key ~= lastParty then lastParty = key; ns.Trace("groups", "party roles:", key) end
+    return need
+end
+
 local function Application(id)
     local _, status, pending, remaining = C_LFGList.GetApplicationInfo(id)
     return status, pending, remaining
@@ -169,8 +199,22 @@ function Groups.Read(id)
     if isRaid then
         fits = (info.numMembers or 0) < (activity.maxNumPlayers or 30)
     else
-        for role, on in pairs(mine) do
-            if on and (counts[role .. "_REMAINING"] or 0) > 0 then fits = true end
+        local party = Groups.Party()
+        if party then
+            -- Room for the whole party: every known role has its seats, and
+            -- enough seats are open for everyone.
+            local open = 0
+            fits = true
+            for _, role in ipairs({ "TANK", "HEALER", "DAMAGER" }) do
+                local left = counts[role .. "_REMAINING"] or 0
+                open = open + left
+                if party[role] > left then fits = false end
+            end
+            if open < party.size then fits = false end
+        else
+            for role, on in pairs(mine) do
+                if on and (counts[role .. "_REMAINING"] or 0) > 0 then fits = true end
+            end
         end
     end
 
