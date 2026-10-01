@@ -14,7 +14,7 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 1
+local SCHEMA = 3
 local DEFAULTS = {
     schema = SCHEMA,
     trace  = true,   -- record trace steps; on by default until v1.0.0
@@ -23,7 +23,29 @@ local DEFAULTS = {
     cleanup   = { stale = true, staleHours = 3, advert = true, carry = true, blacklist = true },
     blacklist = {},  -- "Name-Realm" -> last seen in results (time())
 }
-local MIGRATIONS = {}  -- [n] = function(db) upgrades schema n-1 to n
+local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
+    -- 2: one filter per kind; keep the one that was active.
+    [2] = function(db)
+        if not db.filters then return end
+        local keep, active = {}, db.activeFilter or {}
+        for _, kind in ipairs({ "keys", "raid" }) do
+            local pick
+            for _, f in ipairs(db.filters) do
+                if f.kind == kind and (f.id == active[kind] or not pick) then pick = f end
+            end
+            if pick then keep[#keep + 1] = pick end
+        end
+        db.filters, db.activeFilter = keep, nil
+    end,
+    -- 3: Bloodlust / battle rez are one "has it" switch each.
+    [3] = function(db)
+        for _, f in ipairs(db.filters or {}) do
+            f.lust = f.lust == "has" or nil
+            f.brez = f.brez == "has" or nil
+            f.text = nil  -- leftover from 0.3.4's saved search text
+        end
+    end,
+}
 
 local function ApplyDefaults(saved, defaults)
     for k, v in pairs(defaults) do
@@ -50,6 +72,32 @@ function ns.CharDB()
     local key = UnitName("player") .. "-" .. GetRealmName()
     ns.db.chars[key] = ns.db.chars[key] or {}
     return ns.db.chars[key]
+end
+
+-- Sign-up notes: up to MAX, account-wide, by slot (empty slots are nil).
+local Notes = { MAX = 5 }
+ns.Notes = Notes
+
+function Notes.All()
+    local db = ns.db
+    db.notes = db.notes or {}
+    if db.note then  -- the single note of an early dev build
+        if not db.notes[1] then db.notes[1] = db.note end
+        db.note = nil
+    end
+    return db.notes
+end
+
+function Notes.Set(i, text)
+    text = strtrim(text or "")
+    Notes.All()[i] = text ~= "" and text or nil
+end
+
+-- The notes in slot order, gaps closed.
+function Notes.List()
+    local out, all = {}, Notes.All()
+    for i = 1, Notes.MAX do if all[i] then out[#out + 1] = all[i] end end
+    return out
 end
 
 function ns.Version()

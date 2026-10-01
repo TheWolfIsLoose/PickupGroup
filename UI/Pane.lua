@@ -5,13 +5,13 @@
     (search text is typed there). Blizzard's frames are never hidden,
     moved or written; the pane just covers them.
 
-      top bar   tab . count . setup . options; a mint line across the top
+      top bar   filter summary . hidden . count . setup . options; a mint line across the top
                 shrinks over the search cooldown (Blizzard's refresh searches)
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
       rows      sign-ups pinned first (mint edge), then results; wheel scrolls
 
-    Action button: Apply (shift-click: Blizzard's sign-up dialog, for a
-    note) / time left (hover: Cancel) / Reapply (second click confirms).
+    Action button: Apply (click: Blizzard's sign-up dialog, for a note;
+    shift-click: sign up at once) / time left (hover: Cancel) / Reapply (second click confirms).
 --]]
 
 local _, ns = ...
@@ -47,9 +47,8 @@ local OUTCOME = {
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
-local panel, pane, backButton, cooldown, countText, tabBar, plusTab, hiddenButton
+local panel, pane, backButton, cooldown, countText, summary, hiddenButton
 local showHidden = false
-local tabs = {}
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
 local offset = 0
@@ -105,6 +104,15 @@ local function Apply(row)
     ns.Log.Emit("apply", { code = row.code, leader = row.leader })
 end
 
+-- Swap (opt-in): the sign-up with the least time left.
+local function Oldest()
+    local o
+    for _, p in ipairs(pinned) do
+        if p.status == "applied" and (not o or (p.remaining or 0) < (o.remaining or 0)) then o = p end
+    end
+    return o
+end
+
 local function OnAction(btn, mouse)
     local row = btn.row
     if not row then return end
@@ -113,7 +121,16 @@ local function OnAction(btn, mouse)
         ns.Log.Emit("cancel", { code = row.code, leader = row.leader })
     elseif row.status == "invited" or row.status == "inviteaccepted" then
         return
-    elseif IsShiftKeyDown() and LFGListApplicationDialog_Show then
+    elseif btn.full and ns.db.swap and row.fits and not OVER[row.status] then
+        -- Withdraw the oldest; this row's button then reads Apply.
+        local o = Oldest()
+        if o then
+            C_LFGList.CancelApplication(o.id)
+            ns.Log.Emit("cancel", { code = o.code, leader = o.leader })
+        end
+    elseif not IsShiftKeyDown() and LFGListApplicationDialog_Show then
+        -- Click: Blizzard's sign-up dialog, for a note (our notes show under it).
+        armed = nil
         LFGListApplicationDialog_Show(LFGListApplicationDialog, row.id)
     elseif OVER[row.status] and armed ~= row.id then
         armed = row.id  -- re-applying takes a second click
@@ -137,11 +154,23 @@ local function RowTooltip(frame)
     if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
     GameTooltip:AddLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), 0.85, 0.85, 0.85)
     GameTooltip:AddDoubleLine("Leader", row.leader or "?", 0.55, 0.55, 0.55, 1, 1, 1)
+    if row.region then GameTooltip:AddDoubleLine("Realm region", Groups.REGION_NAME[row.region], 0.55, 0.55, 0.55, 1, 1, 1) end
     if row.isRaid then
         GameTooltip:AddDoubleLine("Members", ("%d: %d tank, %d healer, %d damage"):format(row.members or 0,
             row.counts.TANK, row.counts.HEALER, row.counts.DAMAGER), 0.55, 0.55, 0.55, 1, 1, 1)
         GameTooltip:AddDoubleLine("Bosses down", row.total and (row.down .. "/" .. row.total) or row.down,
             0.55, 0.55, 0.55, 1, 1, 1)
+        -- Which bosses, by name: a lockout isn't cleared in order.
+        local listed = {}
+        for _, boss in ipairs(row.bosses) do
+            listed[boss] = true
+            local dead = row.killed[boss]
+            GameTooltip:AddDoubleLine("  " .. boss, dead and "Dead" or "Alive", 0.85, 0.85, 0.85,
+                dead and 1 or MINT[1], dead and 0.72 or MINT[2], dead and 0.3 or MINT[3])
+        end
+        for boss in pairs(row.killed) do  -- a name the journal spells differently
+            if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.72, 0.3) end
+        end
     else
         GameTooltip:AddDoubleLine("Leader score", row.score or 0, 0.55, 0.55, 0.55, 1, 1, 1)
         for _, s in ipairs(row.specs) do
@@ -157,7 +186,7 @@ local function RowTooltip(frame)
     GameTooltip:AddDoubleLine("Listed", Clock(row.age), 0.55, 0.55, 0.55, 1, 1, 1)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Click Apply: sign up.  Shift-click: add a note first.", 0.55, 0.55, 0.55)
+    GameTooltip:AddLine("Click Apply: sign up with a note.  Shift-click: sign up at once.", 0.55, 0.55, 0.55)
     GameTooltip:AddLine("Right-click the row: report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
     GameTooltip:Show()
 end
@@ -169,9 +198,13 @@ local function ActionTooltip(btn)
     if row.status == "applied" then tip = "Click to cancel this sign-up."
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
-    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click twice to sign up again."
+    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Shift-click twice to sign up again at once."
     elseif not row.fits then tip = "No open seat for the roles you sign up as."
-    elseif btn.full then tip = "All five sign-ups are in use." end
+    elseif btn.full and ns.db.swap then
+        local o = Oldest()
+        tip = "All five sign-ups are in use. Click to withdraw the oldest"
+            .. (o and (" (" .. (o.code or "?") .. ", " .. (o.leader or "?") .. ")") or "") .. ", then Apply here."
+    elseif btn.full then tip = "All five sign-ups are in use (Options: Swap can make room)." end
     if tip then
         GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
         GameTooltip:SetText(tip, 1, 1, 1, 1, true)
@@ -258,8 +291,12 @@ local function BuildRow(i)
 
     r.new = r:CreateTexture(nil, "OVERLAY")
     r.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-    r.new:SetSize(3, 3)
-    r.new:SetPoint("LEFT", 1, 0)
+    r.new:SetSize(5, 5)
+    r.new:SetPoint("LEFT", 3, 0)
+    local round = r:CreateMaskTexture()
+    round:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    round:SetAllPoints(r.new)
+    r.new:AddMaskTexture(round)
     for _, key in ipairs({ "friendMark", "guildMark" }) do
         local m = CreateFrame("Frame", nil, r)
         m:SetSize(10, 12)
@@ -268,7 +305,7 @@ local function BuildRow(i)
         r[key] = m
     end
     r.name = Text(r)
-    r.name:SetPoint("LEFT", PAD, 0)
+    r.name:SetPoint("LEFT", PAD + 5, 0)  -- room for the new mark
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
     -- Right-click: report, blacklist or hide the leader.
@@ -375,6 +412,8 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         label, enabled = "Leader", false
     elseif OVER[row.status] then
         label = (armed == row.id) and "Sure?" or "Reapply"
+    elseif full and ns.db.swap and row.fits then
+        label = "Swap"
     elseif not row.fits or full then
         label, enabled = "-", false
     end
@@ -383,55 +422,10 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
--- One tab per saved filter of the kind in view; the active one in mint and
--- underlined. Left-click switches, right-click opens its setup.
-local function PaintTabs()
-    local Filters = ns.Filters
-    local kind = Filters.Kind()
-    local active = Filters.Active(kind)
-    local prev
-    for i, f in ipairs(Filters.List(kind)) do
-        local t = tabs[i]
-        if not t then
-            t = CreateFrame("Button", nil, tabBar)
-            t:SetHeight(BAR_H)
-            t:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-            t.text = Text(t, "PickupGroupFont")
-            t.text:SetPoint("LEFT")
-            t.under = t:CreateTexture(nil, "OVERLAY")
-            t.under:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-            t.under:SetHeight(2)
-            t.under:SetPoint("BOTTOMLEFT", 0, 1)
-            t.under:SetPoint("BOTTOMRIGHT", 0, 1)
-            t:SetScript("OnClick", function(self, button)
-                if button == "RightButton" then return ns.Sidecar.Open(self.filter) end
-                Filters.SetActive(self.filter)
-                offset = 0
-                Pane.Render()
-                ns.Sidecar.Follow(self.filter)
-            end)
-            tabs[i] = t
-        end
-        t.filter = f
-        t.text:SetText(f.name)
-        t:SetWidth(t.text:GetStringWidth())
-        local on = f == active
-        t.text:SetTextColor(on and MINT[1] or 0.74, on and MINT[2] or 0.74, on and MINT[3] or 0.74)
-        t.under:SetShown(on)
-        t:ClearAllPoints()
-        if prev then t:SetPoint("LEFT", prev, "RIGHT", 12, 0) else t:SetPoint("LEFT", 8, 0) end
-        t:Show()
-        prev = t
-    end
-    for i = #Filters.List(kind) + 1, #tabs do tabs[i]:Hide() end
-    plusTab:ClearAllPoints()
-    plusTab:SetPoint("LEFT", prev or tabBar, prev and "RIGHT" or "LEFT", prev and 6 or 8, 0)
-end
-
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     ns.Filters.Sync()  -- before Blizzard's search on a category change, too
-    PaintTabs()
+    summary:SetText(ns.Filters.Summary(ns.Filters.Active()))
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
     if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
@@ -516,28 +510,13 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
-    tabBar = bar
-    plusTab = CreateFrame("Button", nil, bar)
-    plusTab:SetSize(16, BAR_H)
-    Kit.Glyph(plusTab, { { 9, 2, 0 }, { 2, 9, 0 } })
-    plusTab:SetScript("OnClick", function()
-        local f = ns.Filters.New(ns.Filters.Kind())
-        offset = 0
-        Pane.Render()
-        ns.Sidecar.Open(f)
-    end)
-    plusTab:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM"); GameTooltip:SetText("New filter"); GameTooltip:Show()
-    end)
-    plusTab:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
     local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
     local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
-        "Set up this filter (right-click a tab works too)", function() ns.Sidecar.Open() end)
+        "Set up the filter", function() ns.Sidecar.Open() end)
     setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
 
     countText = Text(bar)
@@ -556,6 +535,27 @@ local function BuildBars()
         GameTooltip:Show()
     end)
     hiddenButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- What the filter does, in a line; click to set it up.
+    local sb = CreateFrame("Button", nil, bar)
+    sb:SetPoint("LEFT", 8, 0)
+    sb:SetPoint("RIGHT", hiddenButton, "LEFT", -8, 0)
+    sb:SetHeight(BAR_H)
+    summary = Text(sb)
+    summary:SetPoint("LEFT")
+    summary:SetPoint("RIGHT")
+    summary:SetJustifyH("LEFT")
+    summary:SetWordWrap(false)
+    summary:SetTextColor(0.74, 0.74, 0.74)
+    sb:SetScript("OnClick", function() ns.Sidecar.Open() end)
+    sb:SetScript("OnEnter", function(self)
+        summary:SetTextColor(MINT[1], MINT[2], MINT[3])
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText("Filter: " .. summary:GetText())
+        GameTooltip:AddLine("Click to set it up.", 0.74, 0.74, 0.74)
+        GameTooltip:Show()
+    end)
+    sb:SetScript("OnLeave", function() summary:SetTextColor(0.74, 0.74, 0.74); GameTooltip:Hide() end)
 
     local head = CreateFrame("Frame", nil, pane)
     head:SetPoint("TOPLEFT", 0, -BAR_H)
@@ -611,7 +611,7 @@ local function BuildBars()
     pane.diffHead = Head("", W_DIFF)
     pane.diffHead:SetPoint("RIGHT", pane.instHead, "LEFT", 0, 0)
     local name = Head("Name")
-    name:SetPoint("LEFT", PAD, 0)
+    name:SetPoint("LEFT", PAD + 5, 0)
 end
 
 -- Sign-ups count down their time left.
@@ -646,7 +646,13 @@ local function Build()
     else
         pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
     end
-    pane:SetFrameLevel(panel:GetFrameLevel() + 50)
+    -- Above Blizzard's list, below its search suggestions (AutoCompleteFrame
+    -- sits at a fixed level over the list): the suggestions stay usable.
+    -- Our rows nest about 3 levels deep, so the pane sits 5 under.
+    local ac = panel.AutoCompleteFrame
+    pane:SetFrameLevel(ac and ac:GetFrameLevel() - 5 or panel:GetFrameLevel() + 50)
+    ns.Trace("pane", "levels: panel", panel:GetFrameLevel(), "suggestions", ac and ac:GetFrameLevel(),
+        "list", panel.ScrollBox and panel.ScrollBox:GetFrameLevel(), "pane", pane:GetFrameLevel())
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)

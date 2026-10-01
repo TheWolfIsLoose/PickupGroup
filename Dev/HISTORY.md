@@ -2,6 +2,42 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.5.0 (2026-10-01)
+
+Design pause ended (player decisions, see ROADMAP). Verified in game in five
+checklist rounds unless noted.
+- One filter per kind (schema 2 keeps the active one per kind; tabs, names,
+  New and Delete gone); `Filters.Summary` line in the top bar opens setup.
+- Apply flipped: click = Blizzard's sign-up dialog, shift-click = instant.
+  Up to five notes (`db.notes` by slot; the dev `db.note` moves to slot 1),
+  Notes tab in the sidecar; strip under Blizzard's dialog, a note selected
+  on the next frame (selecting on focus didn't stick).
+- Region filter: own 20-realm table (Oceanic 12, Brazil 5, Latin America 3;
+  the rest North America), realm names squeezed for matching; `f.regions`.
+- Lust / brez single "has" switches, `noMyClass` (local + Blizzard's
+  needsMyClass); schema 3 migrates (has -> true, needs dropped, stale
+  `text` field removed).
+- `Filters.Sync` compares with Blizzard's current advanced filter and
+  rewrites on any drift (reset button, its menu), replacing the cached key.
+- Raid filter: N/H/M buttons removed; My lockout uses the highest
+  Normal/Heroic save; Sporefall joins the past-raid list. Tooltip lists
+  each boss Dead / Alive in journal order.
+- Pane frame level = Blizzard's AutoCompleteFrame - 5 (it covered the
+  search suggestions); logged levels: panel 2, list 3, pane 15, suggestions 20.
+- Swap (opt-in, `db.swap`): full sign-ups -> button "Swap" withdraws the
+  sign-up with the least time left; then Apply (the game wants a click per
+  sign-up).
+- Applications: `Reattach` after PLAYER_ENTERING_WORLD (+5 s) picks open
+  sign-ups back up; pending entries older than 10 min with nothing out
+  become "unknown". Verified: "reattached 2", both endings logged.
+- Kit.Edit: SetScript ran after HookScript and dropped the focus-ring
+  hooks; scripts set first now.
+- Secret listings skipped in a running key are traced (first, every 100th).
+- New mark: 5px round dot, names shifted 5px.
+- Not verified yet: greyed-out Apply tooltips; the key-run trace.
+- Seen: a quick double Apply logged "failed" then "applied" for the same
+  listing (two log entries); harmless.
+
 ## v0.4.1 (2026-10-01)
 
 From the tester and the player's own checks (verified in game unless noted):

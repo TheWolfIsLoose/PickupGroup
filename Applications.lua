@@ -8,8 +8,9 @@
     Entry: { ts, code, activity, activityID, leader, isRaid, difficulty,
              roles ("T", "H", "D" joined), result, ended, level, onTime }
     result: pending, declined, filled (group full), delisted, withdrawn,
-            timedout, invitedeclined, failed, joined; then for a finished
-            key: timed / depleted.
+            timedout, invitedeclined, failed, joined, unknown (the ending
+            happened while the game was closed); then for a finished key:
+            timed / depleted.
 --]]
 
 local _, ns = ...
@@ -27,10 +28,7 @@ local ENDING = {
     failed = "failed", inviteaccepted = "joined",
 }
 
--- ponytail: open sign-ups live only for the session; one still out at a
--- /reload stays "pending". Rebuild from C_LFGList.GetApplications() at login
--- if the log shows many stuck pending.
-local open = {}  -- result ID -> entry
+local open = {}  -- result ID -> entry (rebuilt after a /reload, see Reattach)
 
 -- A group is known by leader and activity: a new search gives the same
 -- listing a new result ID, and WoW then forgets the sign-up's ending.
@@ -116,4 +114,37 @@ ns.On("CHALLENGE_MODE_COMPLETED", function()
         end
         if time() - (e.ts or 0) > JOIN_WINDOW then return end
     end
+end)
+
+-- After a login or /reload: sign-ups still out pick their entries back up
+-- (by leader and activity), so their endings get logged; pending entries
+-- with no sign-up left ended unseen. Sign-ups expire within minutes, so
+-- only entries older than STALE are closed.
+local STALE = 600
+local function Reattach()
+    local out = {}
+    for _, id in ipairs(C_LFGList.GetApplications() or {}) do
+        local _, status = C_LFGList.GetApplicationInfo(id)
+        local info = C_LFGList.GetSearchResultInfo(id)
+        if info and not issecretvalue(info.leaderName) and (status == "applied" or status == "invited") then
+            out[Key(info.leaderName, info.activityIDs and info.activityIDs[1] or info.activityID)] = id
+        end
+    end
+    local n, closed = 0, 0
+    for _, e in ipairs(List()) do
+        if e.result == "pending" then
+            local id = out[Key(e.leader, e.activityID)]
+            if id and not open[id] then open[id] = e; n = n + 1
+            elseif not id and time() - (e.ts or 0) > STALE then e.result, e.ended = "unknown", time(); closed = closed + 1 end
+        end
+    end
+    ns.Trace("apply", "reattached", n, "closed unseen", closed)
+end
+
+-- Also fires entering instances, where listings can be secret: errors are logged.
+ns.On("PLAYER_ENTERING_WORLD", function()
+    C_Timer.After(5, function()
+        local ok, err = pcall(Reattach)
+        if not ok then ns.LogError(err) end
+    end)
 end)

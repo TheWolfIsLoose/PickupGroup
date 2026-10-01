@@ -1,13 +1,14 @@
 --[[
     PickupGroup - Filters.lua
-    Saved filters: named sets of search rules, shown as tabs. Account-wide
-    in PickupGroupDB.filters; the active one per kind in
-    PickupGroupDB.activeFilter. Kind is "keys" (Dungeons) or "raid"
-    (Raids - current). Rules run on our copy of the results only.
+    One filter per kind, account-wide in PickupGroupDB.filters. Kind is
+    "keys" (Dungeons) or "raid" (Raids - current). Rules run on our copy of
+    the results; the keys filter also narrows Blizzard's search (Sync).
 
-    keys: room, lust / brez ("has" | "missing"), minScore, atLeastMine, dungeons (nil = all,
+    keys: room, lust / brez (true = the group has it), noMyClass, minScore,
+          atLeastMine, dungeons (nil = all,
           else set of dungeon names)
-    raid: room, difficulties (set of N/H/M),
+    raid: room (difficulty comes from Blizzard's search: the raid suggestion
+          picked in its search box carries it),
           bosses[raid name][boss name] = "alive" | "dead" (absent = either)
 --]]
 
@@ -16,10 +17,9 @@ local _, ns = ...
 local Filters = {}
 ns.Filters = Filters
 
-local SHIPPED = {
-    { id = "weekly", name = "Weekly keys", kind = "keys", room = true },
-    { id = "push", name = "Push keys", kind = "keys", room = true, atLeastMine = true },
-    { id = "raid", name = "Raid", kind = "raid", difficulties = { N = true, H = true, M = true } },
+local DEFAULT = {
+    keys = { id = "keys", name = "Dungeons", kind = "keys", room = true },
+    raid = { id = "raid", name = "Raids", kind = "raid" },
 }
 
 -- Classes that bring Bloodlust / a battle rez.
@@ -27,8 +27,7 @@ local LUST = { SHAMAN = true, MAGE = true, HUNTER = true, EVOKER = true }
 local BREZ = { DRUID = true, DEATHKNIGHT = true, WARLOCK = true, PALADIN = true }
 
 local function All()
-    if not ns.db.filters then ns.db.filters = CopyTable(SHIPPED) end
-    ns.db.activeFilter = ns.db.activeFilter or {}
+    ns.db.filters = ns.db.filters or {}
     return ns.db.filters
 end
 
@@ -37,55 +36,47 @@ function Filters.Kind()
     return (p and p.categoryID == 3) and "raid" or "keys"
 end
 
-function Filters.List(kind)
-    local out = {}
-    for _, f in ipairs(All()) do if f.kind == kind then out[#out + 1] = f end end
-    return out
-end
-
+-- The filter of a kind (the one in view by default), made on first use.
 function Filters.Active(kind)
     kind = kind or Filters.Kind()
-    local list = Filters.List(kind)
-    local id = ns.db.activeFilter and ns.db.activeFilter[kind]
-    for _, f in ipairs(list) do if f.id == id then return f end end
-    return list[1]
-end
-
-function Filters.SetActive(f)
-    All()
-    ns.db.activeFilter[f.kind] = f.id
-end
-
-function Filters.New(kind)
-    local base = Filters.Active(kind)
-    local f = base and CopyTable(base) or { kind = kind, room = true }
-    f.id, f.name = "f" .. time() .. math.random(1000), "New filter"
+    for _, f in ipairs(All()) do if f.kind == kind then return f end end
+    local f = CopyTable(DEFAULT[kind])
     table.insert(All(), f)
-    Filters.SetActive(f)
-    ns.Log.Emit("filter", { action = "new", name = f.name })
     return f
 end
 
--- Back to its starting rules: a shipped filter to how it shipped, any other
--- to a clean one of its kind. Keeps its name and place.
+-- Back to its starting rules.
 function Filters.Reset(f)
-    local base = { kind = f.kind, room = f.kind == "keys" or nil }
-    for _, s in ipairs(SHIPPED) do if s.id == f.id then base = s end end
-    if f.kind == "raid" and not base.difficulties then base.difficulties = { N = true, H = true, M = true } end
-    local id, name = f.id, f.name
+    local base = DEFAULT[f.kind] or DEFAULT.keys
     wipe(f)
     for k, v in pairs(CopyTable(base)) do f[k] = v end
-    f.id, f.name = id, name
-    ns.Log.Emit("filter", { action = "reset", name = name })
+    ns.Log.Emit("filter", { action = "reset", name = f.name })
 end
 
--- Never the last filter of its kind.
-function Filters.Delete(f)
-    if #Filters.List(f.kind) <= 1 then return false end
-    local all = All()
-    for i, g in ipairs(all) do if g == f then table.remove(all, i) break end end
-    ns.Log.Emit("filter", { action = "delete", name = f.name })
-    return true
+-- A short line saying what the filter does, for the pane's top bar.
+function Filters.Summary(f)
+    local out = {}
+    if f.kind == "raid" then
+        local rules = 0
+        for _, bosses in pairs(f.bosses or {}) do for _ in pairs(bosses) do rules = rules + 1 end end
+        if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss rule" or " boss rules") end
+    else
+        local n = 0
+        for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
+        if f.dungeons and n < #Filters.Dungeons() then out[#out + 1] = n .. (n == 1 and " dungeon" or " dungeons") end
+        if f.room then out[#out + 1] = "room for me" end
+        if f.lust then out[#out + 1] = "has Bloodlust" end
+        if f.brez then out[#out + 1] = "has battle rez" end
+        if f.noMyClass then out[#out + 1] = "no other " .. (UnitClass("player") or "of my class") end
+        if f.atLeastMine then out[#out + 1] = "score at least mine"
+        elseif (f.minScore or 0) > 0 then out[#out + 1] = "score " .. f.minScore .. "+" end
+    end
+    if f.regions then
+        local r = {}
+        for _, code in ipairs(ns.Groups.REGIONS) do if f.regions[code] then r[#r + 1] = code end end
+        out[#out + 1] = "realms " .. (#r > 0 and table.concat(r, " ") or "none")
+    end
+    return #out > 0 and table.concat(out, ", ") or "No rules"
 end
 
 -- This season's dungeons, as { name, code }, from the game.
@@ -106,10 +97,9 @@ end
 
 -- Match my lockout, for one raid. Normal and Heroic lockouts are per boss:
 -- bosses killed this week become Dead, the rest Alive, from the highest
--- Normal/Heroic lockout the filter looks for. Mythic lockouts are whole
--- (shared by everyone present at the first kill): only a Mythic-only
--- filter works from the Mythic save, and with Mythic among several
--- difficulties it adds a note. Returns a line saying what it did.
+-- Normal/Heroic lockout. Mythic lockouts are whole (shared by everyone
+-- present at the first kill): a Mythic save only adds a note. Returns a
+-- line saying what it did.
 local DIFF_ID, RANK = { [14] = "N", [15] = "H", [16] = "M" }, { N = 1, H = 2 }
 local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
 
@@ -124,44 +114,33 @@ local function Saved(raidName)
 end
 
 function Filters.MatchLockout(f, raidName)
-    local wants = f.difficulties or { N = true, H = true, M = true }
     local saved = Saved(raidName)
     f.bosses = f.bosses or {}
     local text
 
-    if wants.M and not wants.H and not wants.N then
-        if saved.M then
-            text = "You're saved to a Mythic lockout: only the group on that same lockout can take you, "
-                .. "and listings don't say which that is. Bosses left as they were."
-        else
-            f.bosses[raidName] = nil
-            text = "Not saved on Mythic: any group can take you (you'd accept their lockout). Every boss set to Either."
+    local best, bestDiff
+    for d, i in pairs(saved) do
+        if RANK[d] and (not bestDiff or RANK[d] > RANK[bestDiff]) then best, bestDiff = i, d end
+    end
+    local killed, n = {}, 0
+    if best then
+        local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)
+        for j = 1, count or 0 do
+            local boss, _, isKilled = GetSavedInstanceEncounterInfo(best, j)
+            if boss and isKilled then killed[boss] = true; n = n + 1 end
         end
-    else
-        local best, bestDiff
-        for d, i in pairs(saved) do
-            if RANK[d] and wants[d] and (not bestDiff or RANK[d] > RANK[bestDiff]) then best, bestDiff = i, d end
+    end
+    f.bosses[raidName] = {}
+    for _, raid in ipairs(ns.Groups.Raids()) do
+        if raid.name == raidName then
+            for _, boss in ipairs(raid.bosses) do f.bosses[raidName][boss] = killed[boss] and "dead" or "alive" end
         end
-        local killed, n = {}, 0
-        if best then
-            local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)
-            for j = 1, count or 0 do
-                local boss, _, isKilled = GetSavedInstanceEncounterInfo(best, j)
-                if boss and isKilled then killed[boss] = true; n = n + 1 end
-            end
-        end
-        f.bosses[raidName] = {}
-        for _, raid in ipairs(ns.Groups.Raids()) do
-            if raid.name == raidName then
-                for _, boss in ipairs(raid.bosses) do f.bosses[raidName][boss] = killed[boss] and "dead" or "alive" end
-            end
-        end
-        text = best
-            and ("Matched your %s lockout: %d killed set to Dead, the rest Alive."):format(DIFF_WORD[bestDiff], n)
-            or "No Normal or Heroic lockout for this raid this week: every boss set to Alive."
-        if wants.M and saved.M then
-            text = text .. " Mythic groups: you're saved on Mythic, so only your own lockout's group can take you."
-        end
+    end
+    text = best
+        and ("Matched your %s lockout: %d killed set to Dead, the rest Alive."):format(DIFF_WORD[bestDiff], n)
+        or "No Normal or Heroic lockout for this raid this week: every boss set to Alive."
+    if saved.M then
+        text = text .. " Mythic groups: you're saved on Mythic, so only your own lockout's group can take you."
     end
     ns.Log.Emit("filter", { action = "match lockout", name = f.name .. ", " .. raidName .. ": " .. text })
     return text
@@ -170,8 +149,9 @@ end
 -- Blizzard's advanced filter narrows the search on the server (a search
 -- returns at most 100 groups, so narrowing there matters). The active keys
 -- filter drives it: dungeons, room for my role (only with one role picked),
--- score floor. Written only when those change; ours wins over edits made in
--- Blizzard's menu. Bloodlust / battle rez have no server field: local only.
+-- score floor, no other of my class. Rewritten whenever Blizzard's differs
+-- (its menu or its reset button), so ours wins. Bloodlust / battle rez have
+-- no server field: local only.
 local groupIDs  -- dungeon name -> activity group ID (current season)
 local function GroupIDs()
     if groupIDs then return groupIDs end
@@ -185,7 +165,14 @@ local function GroupIDs()
     return out
 end
 
-local lastSync
+local function SameSet(a, b)
+    if #a ~= #b then return false end
+    local seen = {}
+    for _, v in ipairs(a) do seen[v] = true end
+    for _, v in ipairs(b) do if not seen[v] then return false end end
+    return true
+end
+
 function Filters.Sync()
     if Filters.Kind() ~= "keys" or not C_LFGList.SaveAdvancedFilter then return end
     local f = Filters.Active("keys")
@@ -205,15 +192,18 @@ function Filters.Sync()
         if n ~= 1 then need = nil end
     end
     local rating = math.max(f.minScore or 0, f.atLeastMine and C_ChallengeMode.GetOverallDungeonScore() or 0)
-    local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating
-    if key == lastSync then return end
+    local mine = f.noMyClass == true
     local adv = C_LFGList.GetAdvancedFilter()
     if not adv then return end
+    if SameSet(adv.activities or {}, acts) and adv.needsTank == (need == "TANK")
+        and adv.needsHealer == (need == "HEALER") and adv.needsDamage == (need == "DAMAGER")
+        and (adv.minimumRating or 0) == rating and (adv.needsMyClass == true) == mine then return end
     adv.activities = acts
     adv.needsTank, adv.needsHealer, adv.needsDamage = need == "TANK", need == "HEALER", need == "DAMAGER"
     adv.minimumRating = rating
+    adv.needsMyClass = mine
     C_LFGList.SaveAdvancedFilter(adv)
-    lastSync = key
+    local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating .. (mine and "|no other mine" or "")
     ns.Log.Emit("filter", { action = "blizzard filter", name = f.name .. ": " .. key
         .. (missing and (" (unmapped: " .. missing .. ")") or "") })
 end
@@ -222,10 +212,10 @@ end
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")
     if not f then return true end
+    if f.regions and row.region and not f.regions[row.region] then return false end
     -- Full raids delist themselves, so "room" only means something for keys.
     if f.room and not row.fits and not row.isRaid then return false end
     if row.isRaid then
-        if f.difficulties and row.difficulty and not f.difficulties[row.difficulty] then return false end
         -- Raids aren't cleared in order, so each boss can be asked for alive
         -- or dead in the listing.
         for boss, want in pairs(f.bosses and f.bosses[row.activity] or {}) do
@@ -235,15 +225,9 @@ function Filters.Pass(row)
         return true
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
-    -- "has": keep groups that bring it; "missing" (or an old true): keep
-    -- groups without it.
-    for key, set in pairs({ lust = LUST, brez = BREZ }) do
-        local want = f[key] == true and "missing" or f[key]
-        if want then
-            local has = Brings(row.classes, set)
-            if (want == "has" and not has) or (want == "missing" and has) then return false end
-        end
-    end
+    if f.lust and not Brings(row.classes, LUST) then return false end
+    if f.brez and not Brings(row.classes, BREZ) then return false end
+    if f.noMyClass and row.classes and row.classes[select(2, UnitClass("player"))] then return false end
     local score = row.score or 0
     if (f.minScore or 0) > 0 and score < f.minScore then return false end
     if f.atLeastMine and score < (C_ChallengeMode.GetOverallDungeonScore() or 0) then return false end

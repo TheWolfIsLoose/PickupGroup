@@ -193,15 +193,16 @@ function Kit.Edit(parent, width, onCommit, numeric)
     if numeric then e:SetNumeric(true) end
     Kit.Fill(e, Palette.well)
     Kit.Border(e)
+    -- SetScript drops any hooks already on that script, so set before hooking
+    -- (the rest ring after typing never came back while this ran last).
+    e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    e:SetScript("OnEditFocusLost", function(self) onCommit(self:GetText()) end)
+    e:SetScript("OnHide", function(self) self:ClearFocus() end)
     e:HookScript("OnEnter", function(self) if not self:HasFocus() then Ring(self, Palette.ringHover) end end)
     e:HookScript("OnLeave", function(self) if not self:HasFocus() then Ring(self, Palette.border) end end)
     e:HookScript("OnEditFocusGained", function(self) Ring(self, Palette.brand) end)
-    e:HookScript("OnEditFocusLost", function(self) Ring(self, Palette.border) end)
-    local function commit(self) onCommit(self:GetText()) end
-    e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
-    e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    e:SetScript("OnEditFocusLost", commit)
-    e:SetScript("OnHide", function(self) self:ClearFocus() end)
+    e:HookScript("OnEditFocusLost", function(self) Ring(self, self:IsMouseOver() and Palette.ringHover or Palette.border) end)
     return e
 end
 

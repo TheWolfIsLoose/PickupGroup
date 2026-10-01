@@ -16,17 +16,12 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-10-01 01:50 ET (wrapped for the night): DESIGN PAUSE
-continues.** Bug fixes from tester feedback still go out as patch releases.
-**Paused since 2026-09-30 18:30 ET: No more code until the player
-and Claude have re-ideated what PickupGroup should do.** Resume with the
-conversation below, not with a build.
-
-**Released 2026-10-01: v0.4.1 (stable) on `main`** (see HISTORY): raid
-sort crash fix, party-leader Apply, pane steps aside while listed,
-disabled-button tooltips, visibility pass. v0.4.0's secret-value crash fix
-still needs a started key to confirm. On `dev` only: the sign-up note
-helper (**untested**), waiting on the notes-per-search-type design.
+**State, 2026-10-01 15:20 ET: v0.5.0 (stable) released from `main`** (see
+HISTORY). Design pause over; the decisions and plan are under "Resume
+here" item 1 and 3. Still unverified: greyed-out Apply tooltips (party /
+no seat), the key-run secret-listing trace; both stay on the DevChecklist.
+Next candidates: accessibility + ponytail pass (both addons), party-aware
+room (needs friends), teleport button (needs a party), final name.
 
 **Testing note (player, 2026-10-01):** the tester plays casually and doesn't
 take notes, so his reports are leads, not repro steps. To answer an issue
@@ -62,11 +57,77 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    "less friction + memory" reframe; no code. Decide: one filter per
    category vs several; what a "search type" is (it carries the note);
    whether a plain Apply opens Blizzard's dialog when a note exists.
+   **Decided 2026-10-01 (player), the design pause ends:**
+   - **What it is:** enhancements on top of Blizzard's search. Pass our
+     filter through to Blizzard's filter; otherwise take what Blizzard
+     gives and show it better. Preserve and work with Blizzard's own
+     pieces rather than replace them.
+   - **One filter per content type** (keys, raid): the player types search
+     text in Blizzard's box anyway, and listings can't be filtered by
+     name, so several filters add little. Tabs go; the filter picker (3c)
+     is moot. **Built on dev 2026-10-01** (schema 2 keeps the filter that
+     was active per kind; the top bar shows a one-line summary of the
+     filter, click to set it up; name box and Delete gone).
+   - **Raids:** players type the raid's name and pick Blizzard's
+     suggestion, which is one line per raid and difficulty (e.g. "<raid>
+     Heroic"). Work with that, don't replace it. **Done on dev
+     2026-10-01 (player's screenshot):** the raid filter's N/H/M buttons
+     are gone (the suggestion carries the difficulty; rows keep their
+     difficulty letter); "My lockout" uses the highest Normal/Heroic save,
+     a Mythic save adds a note.
+   - **Notes:** up to 5 pre-made notes (a list, not tied to a filter).
+     **Click Apply** opens Blizzard's sign-up dialog with the notes
+     offered to copy (the game won't let an addon fill the note);
+     **shift-click Apply** signs up at once with no note. (The reverse of
+     today: a modified click suits our one button better than a double
+     click.)
+   - **Realm regions:** NA is its own game region (EU, CN, KR, TW are
+     separate licences and never in its results), so only US-region
+     realms matter: our own table of the 20 Oceanic, Brazil and Latin
+     America realms, everything else North America; no library.
+     Leader names are "Name-Realm" with the realm's apostrophes kept and
+     its spaces as shown in game (player); compare with spaces stripped
+     to be safe. A same-realm leader may have no "-Realm": use the
+     player's own realm.
 2. Optional probe the player said he'd revisit: `/pug` command logging
    `RaiderIO.GetProfile` / `ArchonTooltip.GetProfile` for the target and a
    live applicant (decides the leader-side applicant pane).
-3. Only after 1: re-plan phases; the note helper (dev) waits on that.
-4. Untested, any time: disabled-button tooltip ("Leader", no seat,
+3. Plan from here (one change per alpha, all on dev until tested):
+   a. One filter per kind (built, untested).
+   b. Apply flip: click = Blizzard's dialog with notes to copy,
+      shift-click = instant sign-up; re-apply friction kept for shift.
+      **Built on dev 2026-10-01, untested.**
+   c. Up to 5 notes (sidecar's new Notes tab, `db.notes` by slot; the
+      early single `db.note` moves to slot 1); the strip under Blizzard's
+      dialog lists them, the first focused and selected, click another
+      to select it for Ctrl+C. **Built on dev 2026-10-01, untested.**
+   d. Region filter from the 20-realm table. **Built on dev 2026-10-01,
+      untested:** "Leader's realm" toggles NA / OCE / BR / LAT in both
+      filters (`f.regions`, nil = all), region in the row tooltip and the
+      filter summary; realm names compared squeezed (no spaces, hyphens
+      or apostrophes, lower case); no realm suffix = the player's realm.
+      Local only (no server field).
+   e. Verified 2026-10-01 (player screenshot): Blizzard's search
+      suggestions show over the pane (pane at suggestions' level - 5);
+      the raid filter without difficulty buttons; region toggles render.
+      Raid browsing: no errors (player). v0.4.0 crash fix: a trace line
+      "secret listing skipped" (first, then every 100th) shows the guard
+      working in real play; check the log after a key run with the Group
+      Finder open (no spike: secret values can't be simulated).
+      Round 1 (player, checklist + log): summary, shift-click Apply,
+      boss-by-name tooltip (out-of-order kills right), region filter and
+      tooltip, text-box ring, realm row / Sporefall all pass. Levels:
+      panel 2, list 3, pane 15, suggestions 20. One shift-click failed at
+      once (AOF, likely delisted). Fixed: summary said "8 dungeons" with all
+      on; a note's selection didn't stick (now selected on the next frame).
+      Round 3: click Apply -> note selected -> pasted -> Blizzard's Sign Up
+      went through (log: applied, then our Cancel). **Notes flow verified.**
+      Left: greyed-out Apply tooltips; a key run (secret-listing trace).
+   Then the accessibility + ponytail pass, then v1.0 items.
+4. Untested, any time: text boxes return to the grey ring after typing
+   (dev, 2026-10-01: Kit.Edit's SetScript ran after its HookScripts and
+   dropped them, so the mint focus ring stayed after leaving a box);
+   disabled-button tooltip ("Leader", no seat,
    sign-ups full); v0.4.0's crash fix (start a key with the Group Finder
    open); raid sort fix (browse Raids - current).
 5. Open lead: tester's sign-ups stuck "pending" for hours (likely the
@@ -75,6 +136,15 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    (project doc `claude/style-guide-accessibility-addendum.md`); region
    filter before 1.0; party-aware room (needs friends); filter picker
    (moot if filters collapse); final name before 1.0.
+
+**In-game test list (player, 2026-10-01):** `Dev/DevChecklist/` is a
+dev-only addon installed as `Interface\AddOns\DevChecklist` (never
+shipped; works for StockClerk too). Each test round, rewrite
+`Checklist.lua` (round name; items as { addon, what to do / expect, what to
+send: SS, log, ... }) and install it; a `/reload` picks it up. It shows at
+login while anything is unticked; `/dc` toggles it. Ticks are saved per
+item text in `WTF\Account\SAVAGEFEARLESS\SavedVariables\DevChecklist.lua`:
+read them with the log.
 
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
@@ -151,7 +221,24 @@ Next, in order:
    has no call for another realm's region: it needs realm data, either
    a bundled third-party realm library (kept with its license and
    credit) or our own realm table. Decide which before building.
-   **Leaning (2026-09-29):** LibRealmInfo by Phanx (zlib;
+   **Research 2026-10-01 (Claude; player decides):** LibRealmInfo's
+   data is stale in both copies: phanx-wow (last data 2019) points to
+   github.com/janekjl/LibRealmInfo (v17, last data Nov 2020, adds Classic
+   realms). Both list the same 246 retail US realms, but they disagree on
+   the US timezone tag for dozens of them (e.g. Laughing Skull CST vs EST,
+   Blackrock PST vs MST) and the fork has typos in its Brazil rows, so
+   "US East / US West" from the tags is not trustworthy (and NA realms
+   share one data centre, as far as known, so it says little about
+   latency). What is solid for a US player: Oceanic (12 realms), Brazil
+   (5), Latin America (3), everything else North America. **Lighter
+   option:** no library at all, our own 20-name table for those three
+   groups (realm names are facts, no licence or credit needed), every
+   other realm counted as North America. EU (split by language) would
+   need a full EU table: build it only if an EU player wants it.
+   To check in game before building: how `leaderName` spells realms with
+   an apostrophe or space (e.g. Aman'Thul, Jubei'Thos), and that a
+   same-realm leader has no realm suffix.
+   Earlier leaning (2026-09-29): LibRealmInfo by Phanx (zlib;
    github.com/phanx-wow/LibRealmInfo; region, locale and US timezone tags
    PST/MST/CST/EST/AEST/BRT...). Last release Jan 2021, so realms added
    since are missing: bundle it fresh from its GitHub (not the archived
@@ -231,8 +318,8 @@ PickupGroup is an original design and an original codebase.
 
 - **Pane**: PickupGroup's main frame, laid over the Group Finder's
   results area.
-- **Filter**: a saved, named set of search parameters, shown as a
-  **tab** across the pane's top bar.
+- **Filter**: the saved search rules for a content type (one for keys,
+  one for raids), summarised in the pane's top bar.
 - **Sidecar**: the panel attached to the Group Finder's right edge for
   filter setup and options.
 - **Comp**: the group's make-up; **tiles** for dungeons, **counts** for
@@ -446,7 +533,7 @@ show hidden, blacklist); alpha3 = per-boss raid rules, search text.
   on each keystroke, and it waits out the Refresh countdown (player). Delete keeps at
   least one filter per category.
 - Past-season raids still listed under the current expansion are left
-  out (named list in Groups.lua; March on Quel'Danas, S1). Update it each
+  out (named list in Groups.lua; March on Quel'Danas, S1; Sporefall, player 2026-10-01). Update it each
   season.
 - Hint when a raid filter mixes difficulties with boss rules (results
   can't be accurate across lockouts); one difficulty per filter.
