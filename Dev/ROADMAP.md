@@ -123,9 +123,11 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
       boss-by-name tooltip (out-of-order kills right), region filter and
       tooltip, text-box ring, realm row / Sporefall all pass. Levels:
       panel 2, list 3, pane 15, suggestions 20. One shift-click failed at
-      once (AOF, likely delisted). Open: note 1 looked empty in the strip
-      in one screenshot; a note sign-up through Blizzard's dialog isn't in
-      the log yet. Fixed: summary said "8 dungeons" with all on.
+      once (AOF, likely delisted). Fixed: summary said "8 dungeons" with all
+      on; a note's selection didn't stick (now selected on the next frame).
+      Round 3: click Apply -> note selected -> pasted -> Blizzard's Sign Up
+      went through (log: applied, then our Cancel). **Notes flow verified.**
+      Left: greyed-out Apply tooltips; a key run (secret-listing trace).
    Then the accessibility + ponytail pass, then v1.0 items.
 4. Untested, any time: text boxes return to the grey ring after typing
    (dev, 2026-10-01: Kit.Edit's SetScript ran after its HookScripts and
