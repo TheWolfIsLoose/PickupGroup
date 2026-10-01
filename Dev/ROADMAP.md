@@ -543,8 +543,12 @@ show hidden, blacklist); alpha3 = per-boss raid rules, search text.
   season.
 - Hint when a raid filter mixes difficulties with boss rules (results
   can't be accurate across lockouts); one difficulty per filter.
-- The sidecar hangs off the Group Finder's right edge and covers
-  Raider.IO's panel while open (Raider.IO's frame is never moved).
+- The sidecar hangs off the Group Finder's right edge. **Changed
+  2026-10-01 (player):** Raider.IO's profile panel moves to the sidecar's
+  right edge while it's open (its anchor frame
+  `RaiderIO_ProfileTooltipAnchor` is re-pointed from PVEFrame to the
+  sidecar, hooked on its SetPoint since Raider.IO re-places it on updates;
+  a user-placed panel is left alone).
 
 Filter setup (keys and raid), save / delete / new tab, Options tab,
 clean-up switches, re-apply friction, blacklist entry.

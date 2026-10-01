@@ -1,8 +1,10 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
 DevChecklist_Round = "PickupGroup dev, round 8"
+local F = "PickupGroup: Sidecar"
 local D, R, S, P = "PickupGroup: Dungeon view", "PickupGroup: Raid view", "PickupGroup: Sign-ups & options", "PickupGroup: Party / later"
 DevChecklist_Items = {
+    { F, "Open the sidecar: Raider.IO's profile panel moves to the sidecar's right edge (no overlap); close it: the panel goes back next to the Group Finder.", "SS (both)" },
     { D, "Dungeon buttons read e.g. AOF (+19), the key in white while on; (—) where you have no timed key; hover says so.", "SS" },
     { D, "Has Bloodlust on (you're not a lust class): groups without lust still show when a healer or damage seat stays open after you join; groups whose only other open seat is tank are hidden.", "SS" },
     { D, "Group tooltip: name; dungeon + time listed; leader + score; spec icons in a row; friends/guild and the description if any. No labels, no realm, no hints.", "SS" },

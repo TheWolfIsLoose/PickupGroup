@@ -485,7 +485,7 @@ local function Build()
     frame:SetWidth(W)
     frame:SetPoint("TOPLEFT", PVEFrame, "TOPRIGHT", 1, 0)
     frame:SetPoint("BOTTOMLEFT", PVEFrame, "BOTTOMRIGHT", 1, 0)
-    frame:SetFrameStrata("DIALOG")  -- above Raider.IO's panel, which it covers
+    frame:SetFrameStrata("DIALOG")
     frame:SetToplevel(true)
     frame:EnableMouse(true)
     Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
@@ -555,7 +555,32 @@ local function Build()
         Filters.Reset(editing)
         Sidecar.Paint(); Changed()
     end)
+    -- Raider.IO's profile panel (when loaded) moves over to the sidecar's
+    -- right edge while it's open, and back when it closes.
+    frame:HookScript("OnShow", Sidecar.MoveRaiderIO)
+    frame:HookScript("OnHide", Sidecar.MoveRaiderIO)
     frame:Hide()
+end
+
+-- Raider.IO places its profile panel by anchoring a small frame to the
+-- Group Finder's right edge (and re-places it whenever it updates). While
+-- the sidecar is open that anchor follows the sidecar instead; only an
+-- anchor on the Group Finder is touched (a user-placed panel stays put).
+local rioHooked, moving
+function Sidecar.MoveRaiderIO()
+    local a = _G.RaiderIO_ProfileTooltipAnchor
+    if not (a and frame) then return end
+    if not rioHooked then
+        rioHooked = true
+        hooksecurefunc(a, "SetPoint", function(_, _, rel) if not moving and rel == PVEFrame then Sidecar.MoveRaiderIO() end end)
+    end
+    local p, rel, rp, x, y = a:GetPoint()
+    local to = (frame:IsShown() and rel == PVEFrame and frame) or (not frame:IsShown() and rel == frame and PVEFrame)
+    if not to then return end
+    moving = true
+    a:ClearAllPoints()
+    a:SetPoint(p, to, rp, x, y)
+    moving = false
 end
 
 -- Open on a filter (the active one by default); toggles when already open on it.
