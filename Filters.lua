@@ -4,7 +4,8 @@
     "keys" (Dungeons) or "raid" (Raids - current). Rules run on our copy of
     the results; the keys filter also narrows Blizzard's search (Sync).
 
-    keys: room, lust / brez ("has" | "missing"), minScore, atLeastMine, dungeons (nil = all,
+    keys: room, lust / brez (true = the group has it), noMyClass, minScore,
+          atLeastMine, dungeons (nil = all,
           else set of dungeon names)
     raid: room (difficulty comes from Blizzard's search: the raid suggestion
           picked in its search box carries it),
@@ -64,11 +65,9 @@ function Filters.Summary(f)
         for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
         if f.dungeons and n < #Filters.Dungeons() then out[#out + 1] = n .. (n == 1 and " dungeon" or " dungeons") end
         if f.room then out[#out + 1] = "room for me" end
-        for _, kw in ipairs({ { "lust", "Bloodlust" }, { "brez", "battle rez" } }) do
-            local key, word = kw[1], kw[2]
-            local want = f[key] == true and "missing" or f[key]
-            if want then out[#out + 1] = (want == "has" and "has " or "needs ") .. word end
-        end
+        if f.lust then out[#out + 1] = "has Bloodlust" end
+        if f.brez then out[#out + 1] = "has battle rez" end
+        if f.noMyClass then out[#out + 1] = "no other " .. (UnitClass("player") or "of my class") end
         if f.atLeastMine then out[#out + 1] = "score at least mine"
         elseif (f.minScore or 0) > 0 then out[#out + 1] = "score " .. f.minScore .. "+" end
     end
@@ -150,8 +149,9 @@ end
 -- Blizzard's advanced filter narrows the search on the server (a search
 -- returns at most 100 groups, so narrowing there matters). The active keys
 -- filter drives it: dungeons, room for my role (only with one role picked),
--- score floor. Written only when those change; ours wins over edits made in
--- Blizzard's menu. Bloodlust / battle rez have no server field: local only.
+-- score floor, no other of my class. Rewritten whenever Blizzard's differs
+-- (its menu or its reset button), so ours wins. Bloodlust / battle rez have
+-- no server field: local only.
 local groupIDs  -- dungeon name -> activity group ID (current season)
 local function GroupIDs()
     if groupIDs then return groupIDs end
@@ -165,7 +165,14 @@ local function GroupIDs()
     return out
 end
 
-local lastSync
+local function SameSet(a, b)
+    if #a ~= #b then return false end
+    local seen = {}
+    for _, v in ipairs(a) do seen[v] = true end
+    for _, v in ipairs(b) do if not seen[v] then return false end end
+    return true
+end
+
 function Filters.Sync()
     if Filters.Kind() ~= "keys" or not C_LFGList.SaveAdvancedFilter then return end
     local f = Filters.Active("keys")
@@ -185,15 +192,18 @@ function Filters.Sync()
         if n ~= 1 then need = nil end
     end
     local rating = math.max(f.minScore or 0, f.atLeastMine and C_ChallengeMode.GetOverallDungeonScore() or 0)
-    local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating
-    if key == lastSync then return end
+    local mine = f.noMyClass == true
     local adv = C_LFGList.GetAdvancedFilter()
     if not adv then return end
+    if SameSet(adv.activities or {}, acts) and adv.needsTank == (need == "TANK")
+        and adv.needsHealer == (need == "HEALER") and adv.needsDamage == (need == "DAMAGER")
+        and (adv.minimumRating or 0) == rating and (adv.needsMyClass == true) == mine then return end
     adv.activities = acts
     adv.needsTank, adv.needsHealer, adv.needsDamage = need == "TANK", need == "HEALER", need == "DAMAGER"
     adv.minimumRating = rating
+    adv.needsMyClass = mine
     C_LFGList.SaveAdvancedFilter(adv)
-    lastSync = key
+    local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating .. (mine and "|no other mine" or "")
     ns.Log.Emit("filter", { action = "blizzard filter", name = f.name .. ": " .. key
         .. (missing and (" (unmapped: " .. missing .. ")") or "") })
 end
@@ -215,15 +225,9 @@ function Filters.Pass(row)
         return true
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
-    -- "has": keep groups that bring it; "missing" (or an old true): keep
-    -- groups without it.
-    for key, set in pairs({ lust = LUST, brez = BREZ }) do
-        local want = f[key] == true and "missing" or f[key]
-        if want then
-            local has = Brings(row.classes, set)
-            if (want == "has" and not has) or (want == "missing" and has) then return false end
-        end
-    end
+    if f.lust and not Brings(row.classes, LUST) then return false end
+    if f.brez and not Brings(row.classes, BREZ) then return false end
+    if f.noMyClass and row.classes and row.classes[select(2, UnitClass("player"))] then return false end
     local score = row.score or 0
     if (f.minScore or 0) > 0 and score < f.minScore then return false end
     if f.atLeastMine and score < (C_ChallengeMode.GetOverallDungeonScore() or 0) then return false end

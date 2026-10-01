@@ -14,7 +14,7 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 2
+local SCHEMA = 3
 local DEFAULTS = {
     schema = SCHEMA,
     trace  = true,   -- record trace steps; on by default until v1.0.0
@@ -36,6 +36,14 @@ local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
             if pick then keep[#keep + 1] = pick end
         end
         db.filters, db.activeFilter = keep, nil
+    end,
+    -- 3: Bloodlust / battle rez are one "has it" switch each.
+    [3] = function(db)
+        for _, f in ipairs(db.filters or {}) do
+            f.lust = f.lust == "has" or nil
+            f.brez = f.brez == "has" or nil
+            f.text = nil  -- leftover from 0.3.4's saved search text
+        end
     end,
 }
 

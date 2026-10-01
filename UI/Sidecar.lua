@@ -5,8 +5,9 @@
     Raider.IO's panel while open; that frame is never moved.
 
     Filter tab: the one filter of the kind in view
-      keys  dungeons (this season), room for my role, has / needs Bloodlust,
-            has / needs battle rez, leader at least my score, leader score floor
+      keys  dungeons (this season), room for my role, leader at least my
+            score, has Bloodlust, has battle rez, no other of my class,
+            leader score floor, leader's realm
       raid  leader's realm, each boss alive / dead / either
     Notes tab: up to five sign-up notes, offered to copy under Blizzard's
     sign-up dialog.
@@ -27,7 +28,6 @@ local dungeonButtons, checks = {}, {}
 local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
-local classToggles = {}
 local filterView, optionsView, notesView, view = nil, nil, nil, "filter"
 local headTabs = {}
 local open = {}  -- raid name -> heading unfolded (this session)
@@ -103,9 +103,6 @@ end
 local function PaintKeys(f)
     for _, b in ipairs(dungeonButtons) do b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true) end
     for key, c in pairs(checks) do c:Set(f[key]) end
-    for _, cb in ipairs(classToggles) do
-        cb:Set((f[cb.key] == true and "missing" or f[cb.key]) == cb.want)
-    end
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
     PaintRegions(f)
 end
@@ -263,27 +260,13 @@ local function BuildKeys(parent)
 
     for _, c in ipairs({
         { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
+        { "lust", "Group has Bloodlust" }, { "brez", "Group has battle rez" },
+        { "noMyClass", "No other " .. (UnitClass("player") or "of my class") .. " in the group" },
     }) do
         local key = c[1]
         local cb = Kit.Check(box, c[2], function(on) editing[key] = on or nil; Changed() end)
         cb:SetPoint("TOPLEFT", 0, y)
         checks[key] = cb
-        y = y - 20
-    end
-    -- Bloodlust / battle rez: "has" (the group brings it) or "needs" (it
-    -- doesn't, so yours fills the gap). Ticking one clears its pair.
-    for _, c in ipairs({
-        { "lust", "has", "Group has Bloodlust" }, { "lust", "missing", "Group needs Bloodlust" },
-        { "brez", "has", "Group has battle rez" }, { "brez", "missing", "Group needs battle rez" },
-    }) do
-        local key, want = c[1], c[2]
-        local cb = Kit.Check(box, c[3], function(on)
-            editing[key] = on and want or nil
-            Sidecar.Paint(); Changed()
-        end)
-        cb.key, cb.want = key, want
-        cb:SetPoint("TOPLEFT", 0, y)
-        classToggles[#classToggles + 1] = cb
         y = y - 20
     end
     y = y - 4
@@ -381,6 +364,21 @@ local function BuildOptions(parent)
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.names = names
+    y = y - 22
+    local swap = Kit.Check(box, "Swap when all sign-ups are out", function(on)
+        ns.db.swap = on or nil
+        ns.Log.Emit("setting", { key = "swap", on = on })
+        ns.Pane.Render()
+    end)
+    swap:SetPoint("TOPLEFT", 0, y)
+    swap:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Swap when all sign-ups are out")
+        GameTooltip:AddLine("With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    swap:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    box.swap = swap
     y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
@@ -440,6 +438,7 @@ local function PaintOptions()
     local o, c = optionsView, ns.db.cleanup
     o.blizz:Set(ns.db.useBlizzard)
     o.names:Set(ns.db.nameColors)
+    o.swap:Set(ns.db.swap)
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()

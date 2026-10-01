@@ -104,6 +104,15 @@ local function Apply(row)
     ns.Log.Emit("apply", { code = row.code, leader = row.leader })
 end
 
+-- Swap (opt-in): the sign-up with the least time left.
+local function Oldest()
+    local o
+    for _, p in ipairs(pinned) do
+        if p.status == "applied" and (not o or (p.remaining or 0) < (o.remaining or 0)) then o = p end
+    end
+    return o
+end
+
 local function OnAction(btn, mouse)
     local row = btn.row
     if not row then return end
@@ -112,6 +121,13 @@ local function OnAction(btn, mouse)
         ns.Log.Emit("cancel", { code = row.code, leader = row.leader })
     elseif row.status == "invited" or row.status == "inviteaccepted" then
         return
+    elseif btn.full and ns.db.swap and row.fits and not OVER[row.status] then
+        -- Withdraw the oldest; this row's button then reads Apply.
+        local o = Oldest()
+        if o then
+            C_LFGList.CancelApplication(o.id)
+            ns.Log.Emit("cancel", { code = o.code, leader = o.leader })
+        end
     elseif not IsShiftKeyDown() and LFGListApplicationDialog_Show then
         -- Click: Blizzard's sign-up dialog, for a note (our notes show under it).
         armed = nil
@@ -184,7 +200,11 @@ local function ActionTooltip(btn)
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
     elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Shift-click twice to sign up again at once."
     elseif not row.fits then tip = "No open seat for the roles you sign up as."
-    elseif btn.full then tip = "All five sign-ups are in use." end
+    elseif btn.full and ns.db.swap then
+        local o = Oldest()
+        tip = "All five sign-ups are in use. Click to withdraw the oldest"
+            .. (o and (" (" .. (o.code or "?") .. ", " .. (o.leader or "?") .. ")") or "") .. ", then Apply here."
+    elseif btn.full then tip = "All five sign-ups are in use (Options: Swap can make room)." end
     if tip then
         GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
         GameTooltip:SetText(tip, 1, 1, 1, 1, true)
@@ -388,6 +408,8 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         label, enabled = "Leader", false
     elseif OVER[row.status] then
         label = (armed == row.id) and "Sure?" or "Reapply"
+    elseif full and ns.db.swap and row.fits then
+        label = "Swap"
     elseif not row.fits or full then
         label, enabled = "-", false
     end
