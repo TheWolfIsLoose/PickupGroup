@@ -148,3 +148,14 @@ ns.On("PLAYER_ENTERING_WORLD", function()
         if not ok then ns.LogError(err) end
     end)
 end)
+
+-- The dungeon of the group most recently joined through a sign-up (within
+-- JOIN_WINDOW), as its activity name; nil if none.
+function Applications.LastJoined()
+    local list = List()
+    for i = #list, 1, -1 do
+        local e = list[i]
+        if e.result == "joined" and not e.isRaid and time() - (e.ended or 0) < JOIN_WINDOW then return e.activity end
+        if time() - (e.ts or 0) > JOIN_WINDOW then return nil end
+    end
+end

@@ -107,14 +107,13 @@ local function PaintKeys(f)
     PaintRegions(f)
 end
 
--- Each boss cycles Either -> Alive -> Dead: raids aren't cleared in order.
-local WANT_NEXT = { [false] = "alive", alive = "dead", dead = false }
-local WANT_LOOK = { [false] = { "Either", { 0.55, 0.55, 0.55 } }, alive = { "Alive", MINT }, dead = { "Dead", { 1, 0.72, 0.3 } } }
+local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
 
 local function PaintRaid(f)
     PaintRegions(f)
-    bossLabel:SetText("Bosses in the group's lockout")
-    -- Boss rows, pooled: a raid heading, then one row per boss.
+    bossLabel:SetText("Ticked bosses must be alive in the group")
+    -- Pooled lines: a raid heading (fold, My lockout), then one checkbox
+    -- per boss.
     local y, n = 0, 0
     local function Line()
         n = n + 1
@@ -122,38 +121,38 @@ local function PaintRaid(f)
         if not l then
             l = CreateFrame("Button", nil, bossBox)
             l:SetHeight(18)
-            -- A raid heading folds its bosses away.
             l:SetScript("OnClick", function(self)
                 if self.raid then open[self.raid] = not open[self.raid]; PaintRaid(editing) end
             end)
             l.text = l:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
             l.text:SetPoint("LEFT")
-            l.text:SetPoint("RIGHT", -60, 0)
+            l.text:SetPoint("RIGHT", -84, 0)
             l.text:SetJustifyH("LEFT")
             l.text:SetWordWrap(false)
-            l.want = Toggle(l, "", 56, function(self)
-                if self.lockout then
-                    local text = Filters.MatchLockout(editing, self.raid)
-                    open[self.raid] = true
-                    Sidecar.Paint(); Changed()
-                    GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
-                    return
-                end
+            l.check = Kit.Check(l, "", function(on)
                 local rules = editing.bosses or {}
                 editing.bosses = rules
-                rules[self.raid] = rules[self.raid] or {}
-                rules[self.raid][self.boss] = WANT_NEXT[rules[self.raid][self.boss] or false] or nil
+                rules[l.bossRaid] = rules[l.bossRaid] or {}
+                rules[l.bossRaid][l.boss] = on or nil
                 Sidecar.Paint(); Changed()
+            end)
+            l.check:SetPoint("LEFT")
+            l.want = Toggle(l, "", 80, function(self)
+                local text = Filters.MatchLockout(editing, self.raid, ns.Pane.RaidDifficulty(self.raid))
+                open[self.raid] = true
+                Sidecar.Paint(); Changed()
+                GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
             end)
             l.want:SetHeight(16)
             l.want:SetPoint("RIGHT")
             l.want:HookScript("OnEnter", function(self)
-                if not self.lockout then return end
+                local d = ns.Pane.RaidDifficulty(self.raid)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
-                GameTooltip:SetText("Match my lockout", 1, 1, 1)
-                GameTooltip:AddLine("Bosses you've killed this week: Dead. Bosses you still need: Alive. "
-                    .. "Uses your highest Normal or Heroic lockout. "
-                    .. "Mythic lockouts are whole: saved on Mythic, only your own lockout's group can take you.", 0.8, 0.8, 0.8, true)
+                GameTooltip:SetText("My lockout", 1, 1, 1)
+                GameTooltip:AddLine("Ticks the bosses this character hasn't killed this week"
+                    .. (DIFF_WORD[d] and (" on " .. DIFF_WORD[d] .. ", the difficulty of the groups listed.")
+                        or ". Search the raid with a difficulty first: the lockout follows the groups listed."),
+                    0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end)
             l.want:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -179,24 +178,25 @@ local function PaintRaid(f)
         if open[raid.name] == nil then open[raid.name] = set > 0 or raid == biggest end
         local h = Line()
         h.raid = raid.name
+        h.check:Hide()
+        h.text:Show()
         h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
-            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " set)") or ""))
+            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or ""))
         h.text:SetTextColor(0.7, 0.7, 0.7)
-        h.want.lockout, h.want.raid, h.want.boss = true, raid.name, nil
-        h.want:SetText("My lockout")
+        local d = ns.Pane.RaidDifficulty(raid.name)
+        h.want.raid = raid.name
+        h.want:SetText("My lockout" .. (d and (" (" .. d .. ")") or ""))
         h.want:Paint(false)
         h.want:Show()
         for _, boss in ipairs(open[raid.name] and raid.bosses or {}) do
             local l = Line()
             l.raid = nil
-            l.want.lockout = nil
-            l.text:SetText(boss)
-            l.text:SetTextColor(1, 1, 1)
-            local want = editing.bosses and editing.bosses[raid.name] and editing.bosses[raid.name][boss] or false
-            l.want.raid, l.want.boss = raid.name, boss
-            l.want:SetText(WANT_LOOK[want][1])
-            l.want:Paint(want ~= false, WANT_LOOK[want][2])
-            l.want:Show()
+            l.text:Hide()
+            l.want:Hide()
+            l.bossRaid, l.boss = raid.name, boss
+            l.check:SetLabel(boss)
+            l.check:Set(rules and rules[boss])
+            l.check:Show()
         end
         y = y - 4
     end
@@ -204,6 +204,8 @@ local function PaintRaid(f)
     if n == 0 then
         local l = Line()
         l.raid = nil
+        l.check:Hide()
+        l.text:Show()
         l.text:SetText("Bosses show here once raids are in the results.")
         l.text:SetTextColor(0.55, 0.55, 0.55)
         l.want:Hide()
@@ -430,6 +432,13 @@ local function BuildOptions(parent)
         self.armed = nil; self:SetText("Clear")
         ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render()
     end)
+    y = y - 34
+    local history = CreateFrame("Button", nil, box)
+    history:SetSize(W - 2 * PAD, 22)
+    history:SetPoint("TOPLEFT", 0, y)
+    Kit.Button(history)
+    history:SetText("Sign-up history")
+    history:SetScript("OnClick", function() ns.History.Toggle() end)
     box:Hide()
     return box
 end
@@ -570,9 +579,9 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     local dialog = LFGListApplicationDialog
     if not dialog then return end
     local strip
-    dialog:HookScript("OnShow", function()
+    local function Refresh()
         local notes = ns.Notes.List()
-        if #notes == 0 then return end
+        if #notes == 0 then if strip then strip:Hide() end return end
         if not strip then
             Kit.ApplyFontFace()
             strip = CreateFrame("Frame", nil, dialog)
@@ -609,8 +618,15 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
         end
         strip:SetHeight(26 + #notes * 24)
         strip:Show()
-        strip.boxes[1]:SetFocus()
-    end)
+        -- Next frame: the dialog may still be taking focus when it opens.
+        C_Timer.After(0, function()
+            if strip:IsVisible() then strip.boxes[1]:SetFocus() end
+            ns.Trace("notes", "strip shown, notes", #notes, "focused", strip.boxes[1]:HasFocus())
+        end)
+    end
+    dialog:HookScript("OnShow", Refresh)
+    -- Apply on another group while the dialog is open re-uses it (no OnShow).
+    hooksecurefunc("LFGListApplicationDialog_Show", function() if dialog:IsShown() then Refresh() end end)
     dialog:HookScript("OnHide", function() if strip then strip:Hide() end end)
 end)
 

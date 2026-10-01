@@ -51,6 +51,7 @@ local panel, pane, backButton, cooldown, countText, summary, hiddenButton
 local showHidden = false
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
+local raidDiff = {}  -- raid name -> { difficulty letter -> groups in view }
 local offset = 0
 local lastSearch, armed = 0, nil
 -- New mark: listings not in the previous search's results (leader + activity),
@@ -187,7 +188,7 @@ local function RowTooltip(frame)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine("Click Apply: sign up with a note.  Shift-click: sign up at once.", 0.55, 0.55, 0.55)
-    GameTooltip:AddLine("Right-click the row: report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
+    GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
     GameTooltip:Show()
 end
 
@@ -308,13 +309,17 @@ local function BuildRow(i)
     r.name:SetPoint("LEFT", PAD + 5, 0)  -- room for the new mark
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
-    -- Right-click: report, blacklist or hide the leader.
+    -- Right-click: whisper, report, blacklist or hide the leader.
     r:RegisterForClicks("RightButtonUp")
     r:SetScript("OnClick", function(self)
         local row = self.row
         if not (row and row.leader and MenuUtil) then return end
         MenuUtil.CreateContextMenu(self, function(_, root)
             root:CreateTitle(row.leader)
+            root:CreateButton("Whisper leader", function()
+                local tell = ChatFrameUtil and ChatFrameUtil.SendTell or ChatFrame_SendTell
+                if tell then tell(row.leader) end
+            end)
             root:CreateButton("Report and hide", function()
                 ns.Cleanup.HideForSession(row.leader)
                 if LFGList_ReportListing then LFGList_ReportListing(row.id, row.leader) end
@@ -422,6 +427,13 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
+-- The difficulty most groups listed for a raid are on, or nil.
+function Pane.RaidDifficulty(raid)
+    local best, n = nil, 0
+    for d, c in pairs(raidDiff[raid] or {}) do if c > n then best, n = d, c end end
+    return best
+end
+
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     ns.Filters.Sync()  -- before Blizzard's search on a category change, too
@@ -429,6 +441,17 @@ function Pane.Render()
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
     if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
+    -- Difficulty per raid in view (My lockout follows it).
+    wipe(raidDiff)
+    for _, list in ipairs({ pinned, results }) do
+        for _, row in ipairs(list) do
+            if row.isRaid and row.difficulty then
+                local c = raidDiff[row.activity] or {}
+                c[row.difficulty] = (c[row.difficulty] or 0) + 1
+                raidDiff[row.activity] = c
+            end
+        end
+    end
     hiddenButton.text:SetText(showHidden and "|cffffb84dshowing hidden|r" or (hiddenCount > 0 and (hiddenCount .. " hidden") or ""))
     hiddenButton.text:SetTextColor(0.55, 0.55, 0.55)
     hiddenButton:SetWidth(math.max(1, hiddenButton.text:GetStringWidth()))
@@ -771,3 +794,81 @@ ns.On("LFG_LIST_SEARCH_FAILED", function(reason)
     lastSearch = GetTime()
     if cooldown then cooldown:Show() end
 end)
+
+-- ---------------------------------------------------------------------------
+-- Teleport: a standalone button while the party is full (5/5) for a known
+-- dungeon and not yet inside, casting that dungeon's teleport (the "Path
+-- of ..." spells in the Hero's Path flyouts, matched by their description).
+-- The dungeon: the party's listing, else the group last joined through a
+-- sign-up. A secure button: shown, hidden and set up only out of combat.
+-- Shift-drag moves it.
+-- ---------------------------------------------------------------------------
+local teleport, teleportCache = nil, {}
+
+function Pane.TeleportSpell(dungeon)
+    if teleportCache[dungeon] ~= nil then return teleportCache[dungeon] or nil end
+    local found = false
+    for i = 1, GetNumFlyouts() do
+        local fid = GetFlyoutID(i)
+        local _, _, slots, known = GetFlyoutInfo(fid)
+        for s = 1, (known and slots or 0) do
+            local spellID, _, isKnown = GetFlyoutSlotInfo(fid, s)
+            local desc = spellID and C_Spell.GetSpellDescription(spellID) or ""
+            if isKnown and desc:lower():find(dungeon:lower(), 1, true) then found = spellID end
+        end
+    end
+    -- Descriptions can load late: only remember a hit.
+    if found then teleportCache[dungeon] = found end
+    ns.Trace("teleport", "spell for", dungeon, tostring(found))
+    return found or nil
+end
+
+local function PartyDungeon()
+    local entry = C_LFGList.GetActiveEntryInfo()
+    local act = entry and entry.activityIDs and entry.activityIDs[1]
+    local info = act and C_LFGList.GetActivityInfoTable(act)
+    if info and (info.maxNumPlayers or 5) <= 5 then return Groups.BaseName(info.fullName) end
+    return ns.Applications.LastJoined()
+end
+
+local function UpdateTeleport()
+    if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
+    local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
+        and not IsInInstance() and PartyDungeon()
+    local spell = dungeon and Pane.TeleportSpell(dungeon)
+    if not spell then if teleport then teleport:Hide() end return end
+    if not teleport then
+        Kit.ApplyFontFace()
+        teleport = CreateFrame("Button", "PickupGroupTeleport", UIParent, "SecureActionButtonTemplate")
+        teleport:SetSize(150, 26)
+        local p = ns.db.teleportPoint or { "TOP", "TOP", 0, -140 }
+        teleport:SetPoint(p[1], UIParent, p[2], p[3], p[4])
+        teleport:SetFrameStrata("HIGH")
+        Kit.Button(teleport)
+        teleport:RegisterForClicks("AnyUp", "AnyDown")
+        teleport:SetAttribute("type", "spell")
+        teleport:SetMovable(true)
+        teleport:RegisterForDrag("LeftButton")
+        teleport:SetScript("OnDragStart", function(self) if IsShiftKeyDown() then self:StartMoving() end end)
+        teleport:SetScript("OnDragStop", function(self)
+            self:StopMovingOrSizing()
+            local a, _, b, x, y = self:GetPoint()
+            ns.db.teleportPoint = { a, b, x, y }
+        end)
+        teleport:HookScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:SetSpellByID(self:GetAttribute("spell"))
+            GameTooltip:AddLine("Shift-drag to move.", 0.55, 0.55, 0.55)
+            GameTooltip:Show()
+        end)
+        teleport:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    end
+    teleport:SetAttribute("spell", spell)
+    teleport:SetText("Teleport: " .. Groups.Code(dungeon))
+    teleport:Show()
+end
+
+for _, ev in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LFG_LIST_ACTIVE_ENTRY_UPDATE",
+    "PLAYER_REGEN_ENABLED", "ZONE_CHANGED_NEW_AREA", "SPELLS_CHANGED" }) do
+    ns.On(ev, UpdateTeleport)
+end
