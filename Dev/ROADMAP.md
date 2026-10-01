@@ -112,6 +112,11 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
       filter summary; realm names compared squeezed (no spaces, hyphens
       or apostrophes, lower case); no realm suffix = the player's realm.
       Local only (no server field).
+   e. Verified 2026-10-01 (player screenshot): Blizzard's search
+      suggestions show over the pane (pane at suggestions' level - 5);
+      the raid filter without difficulty buttons; region toggles render.
+      Still to test: one filter + summary, Apply flip + notes strip,
+      boss-by-name tooltip, region filtering results, text-box ring.
    Then the accessibility + ponytail pass, then v1.0 items.
 4. Untested, any time: text boxes return to the grey ring after typing
    (dev, 2026-10-01: Kit.Edit's SetScript ran after its HookScripts and
