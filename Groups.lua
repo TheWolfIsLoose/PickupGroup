@@ -223,6 +223,9 @@ function Groups.List(showHidden)
         end
     end
     table.sort(rows, function(a, b)
+        -- Must agree whichever row comes first, or table.sort breaks: a
+        -- raid category can return a non-raid listing. Raids go first.
+        if a.isRaid ~= b.isRaid then return a.isRaid == true end
         if a.isRaid then
             if (a.down or 0) ~= (b.down or 0) then return (a.down or 0) < (b.down or 0) end
             return (a.age or 0) < (b.age or 0)
