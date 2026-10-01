@@ -115,6 +115,10 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    e. Verified 2026-10-01 (player screenshot): Blizzard's search
       suggestions show over the pane (pane at suggestions' level - 5);
       the raid filter without difficulty buttons; region toggles render.
+      Raid browsing: no errors (player). v0.4.0 crash fix: a trace line
+      "secret listing skipped" (first, then every 100th) shows the guard
+      working in real play; check the log after a key run with the Group
+      Finder open (no spike: secret values can't be simulated).
       Still to test: one filter + summary, Apply flip + notes strip,
       boss-by-name tooltip, region filtering results, text-box ring.
    Then the accessibility + ponytail pass, then v1.0 items.

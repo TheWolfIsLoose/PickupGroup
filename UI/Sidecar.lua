@@ -581,8 +581,11 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
             strip:SetPoint("TOPRIGHT", dialog, "BOTTOMRIGHT", 0, -2)
             Kit.Fill(strip, Kit.Palette.panelBg)
             Kit.Border(strip)
-            local l = Label(strip, "|cff98ff98Pickup|rGroup notes: click one, Ctrl+C, then Ctrl+V into the note above")
+            local l = Label(strip, "Notes: click one, Ctrl+C, then Ctrl+V above")
             l:SetPoint("TOPLEFT", PAD, -6)
+            l:SetPoint("RIGHT", -PAD, 0)
+            l:SetJustifyH("LEFT")
+            l:SetWordWrap(false)
             strip.boxes = {}
             for i = 1, ns.Notes.MAX do
                 local e = Kit.Edit(strip, 10, function() end)

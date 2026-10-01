@@ -145,7 +145,16 @@ function Groups.Read(id)
     local info = C_LFGList.GetSearchResultInfo(id)
     -- In a running key (and other restricted content) listings are secret:
     -- untestable, so skip them rather than error once per listing.
-    if not info or issecretvalue(info.isDelisted) or info.isDelisted then return nil end
+    if not info then return nil end
+    if issecretvalue(info.isDelisted) then
+        -- In a running key: count it, so the log shows the guard at work.
+        Groups.secretSkips = (Groups.secretSkips or 0) + 1
+        if Groups.secretSkips == 1 or Groups.secretSkips % 100 == 0 then
+            ns.Trace("groups", "secret listing skipped (restricted content), total", Groups.secretSkips)
+        end
+        return nil
+    end
+    if info.isDelisted then return nil end
     local activityID = info.activityIDs and info.activityIDs[1] or info.activityID
     local activity = activityID and C_LFGList.GetActivityInfoTable(activityID) or {}
     local isRaid = (activity.maxNumPlayers or 5) > 5
