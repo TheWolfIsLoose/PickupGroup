@@ -135,6 +135,15 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    filter before 1.0; party-aware room (needs friends); filter picker
    (moot if filters collapse); final name before 1.0.
 
+**In-game test list (player, 2026-10-01):** `Dev/DevChecklist/` is a
+dev-only addon installed as `Interface\AddOns\DevChecklist` (never
+shipped; works for StockClerk too). Each test round, rewrite
+`Checklist.lua` (round name; items as { addon, what to do / expect, what to
+send: SS, log, ... }) and install it; a `/reload` picks it up. It shows at
+login while anything is unticked; `/dc` toggles it. Ticks are saved per
+item text in `WTF\Account\SAVAGEFEARLESS\SavedVariables\DevChecklist.lua`:
+read them with the log.
+
 Testing method (player's preference): the player tests in game,
 `/reload`s and says "done"; Claude reads the log from the saved variables
 file (Session setup), never asks for a paste. Screenshots for layout.
