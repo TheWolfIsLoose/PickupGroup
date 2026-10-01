@@ -36,6 +36,23 @@ log). Open lead: the tester's client showed sign-ups as pending for hours
 accessibility win ("you can actually tell there's a field"). Keep inputs
 and controls visibly distinct from the panel everywhere (Kit palette:
 `well`, `ringHover`, brighter `btnRest`).
+Reference (player, 2026-10-01): WCAG 2.2, https://www.w3.org/TR/WCAG22/ .
+The criteria that apply to an addon UI: 1.4.1 Use of Color (A: never colour
+alone), 1.4.3 Contrast Minimum (AA: text 4.5:1, large text 3:1; disabled
+controls exempt), 1.4.11 Non-text Contrast (AA: control boundaries and
+meaningful graphics 3:1 against what's next to them), 2.4.7 / 2.4.13 Focus
+Visible / Appearance (a clear focus cue, 3:1), 2.5.8 Target Size Minimum
+(AA: about 24x24 px), 3.3.2 Labels or Instructions (A), 3.2.4 Consistent
+Identification (AA).
+Baseline measured 2026-10-01 (v0.4.1 palette over the panel / window):
+text white 19:1, grey labels .55 5.7:1, mint 15.6:1, score orange 7.9:1,
+off toggles 5.8:1 (all pass); disabled text 4.2:1 (exempt); hover ring
+5.7:1 and mint focus ring 15.6:1 (pass). **Fails 1.4.11 at rest:** text-box
+/ checkbox well 1.2:1, button face 1.2:1, black 1px ring 1.1:1 against the
+panel. Candidate fix: a rest ring of about 0.4 grey on inputs and buttons
+(3.3:1) instead of black; that departs from StockClerk's black-line style,
+so the player decides. Checkbox 12px and action buttons 18px tall are
+under 2.5.8's 24px (the label widens the checkbox's click area).
 
 **Resume here:**
 1. Re-ideate scope with the player: what PickupGroup is for, given the
