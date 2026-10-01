@@ -100,8 +100,11 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    a. One filter per kind (built, untested).
    b. Apply flip: click = Blizzard's dialog with notes to copy,
       shift-click = instant sign-up; re-apply friction kept for shift.
-   c. Up to 5 notes in Options; the strip under Blizzard's dialog lists
-      them, click one to select it for Ctrl+C.
+      **Built on dev 2026-10-01, untested.**
+   c. Up to 5 notes (sidecar's new Notes tab, `db.notes` by slot; the
+      early single `db.note` moves to slot 1); the strip under Blizzard's
+      dialog lists them, the first focused and selected, click another
+      to select it for Ctrl+C. **Built on dev 2026-10-01, untested.**
    d. Region filter from the 20-realm table.
    Then the accessibility + ponytail pass, then v1.0 items.
 4. Untested, any time: text boxes return to the grey ring after typing

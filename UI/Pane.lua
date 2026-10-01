@@ -10,8 +10,8 @@
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
       rows      sign-ups pinned first (mint edge), then results; wheel scrolls
 
-    Action button: Apply (shift-click: Blizzard's sign-up dialog, for a
-    note) / time left (hover: Cancel) / Reapply (second click confirms).
+    Action button: Apply (click: Blizzard's sign-up dialog, for a note;
+    shift-click: sign up at once) / time left (hover: Cancel) / Reapply (second click confirms).
 --]]
 
 local _, ns = ...
@@ -112,7 +112,9 @@ local function OnAction(btn, mouse)
         ns.Log.Emit("cancel", { code = row.code, leader = row.leader })
     elseif row.status == "invited" or row.status == "inviteaccepted" then
         return
-    elseif IsShiftKeyDown() and LFGListApplicationDialog_Show then
+    elseif not IsShiftKeyDown() and LFGListApplicationDialog_Show then
+        -- Click: Blizzard's sign-up dialog, for a note (our notes show under it).
+        armed = nil
         LFGListApplicationDialog_Show(LFGListApplicationDialog, row.id)
     elseif OVER[row.status] and armed ~= row.id then
         armed = row.id  -- re-applying takes a second click
@@ -156,7 +158,7 @@ local function RowTooltip(frame)
     GameTooltip:AddDoubleLine("Listed", Clock(row.age), 0.55, 0.55, 0.55, 1, 1, 1)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Click Apply: sign up.  Shift-click: add a note first.", 0.55, 0.55, 0.55)
+    GameTooltip:AddLine("Click Apply: sign up with a note.  Shift-click: sign up at once.", 0.55, 0.55, 0.55)
     GameTooltip:AddLine("Right-click the row: report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
     GameTooltip:Show()
 end
@@ -168,7 +170,7 @@ local function ActionTooltip(btn)
     if row.status == "applied" then tip = "Click to cancel this sign-up."
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
-    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click twice to sign up again."
+    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Shift-click twice to sign up again at once."
     elseif not row.fits then tip = "No open seat for the roles you sign up as."
     elseif btn.full then tip = "All five sign-ups are in use." end
     if tip then

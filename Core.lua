@@ -66,6 +66,32 @@ function ns.CharDB()
     return ns.db.chars[key]
 end
 
+-- Sign-up notes: up to MAX, account-wide, by slot (empty slots are nil).
+local Notes = { MAX = 5 }
+ns.Notes = Notes
+
+function Notes.All()
+    local db = ns.db
+    db.notes = db.notes or {}
+    if db.note then  -- the single note of an early dev build
+        if not db.notes[1] then db.notes[1] = db.note end
+        db.note = nil
+    end
+    return db.notes
+end
+
+function Notes.Set(i, text)
+    text = strtrim(text or "")
+    Notes.All()[i] = text ~= "" and text or nil
+end
+
+-- The notes in slot order, gaps closed.
+function Notes.List()
+    local out, all = {}, Notes.All()
+    for i = 1, Notes.MAX do if all[i] then out[#out + 1] = all[i] end end
+    return out
+end
+
 function ns.Version()
     return C_AddOns.GetAddOnMetadata(addonName, "Version") or "?"
 end

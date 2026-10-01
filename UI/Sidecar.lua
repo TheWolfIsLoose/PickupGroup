@@ -8,6 +8,8 @@
       keys  dungeons (this season), room for my role, has / needs Bloodlust,
             has / needs battle rez, leader at least my score, leader score floor
       raid  difficulty, bosses down at most, room
+    Notes tab: up to five sign-up notes, offered to copy under Blizzard's
+    sign-up dialog.
 --]]
 
 local _, ns = ...
@@ -27,7 +29,7 @@ local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
 local classToggles = {}
-local filterView, optionsView, view = nil, nil, "filter"
+local filterView, optionsView, notesView, view = nil, nil, nil, "filter"
 local headTabs = {}
 local open = {}  -- raid name -> heading unfolded (this session)
 
@@ -306,6 +308,33 @@ local function BuildRaid(parent)
 end
 
 -- Options: the switch to Blizzard's list and the clean-up rules.
+-- Notes: up to Notes.MAX sign-up notes, offered to copy under Blizzard's
+-- sign-up dialog (the game won't let an addon fill its note box).
+local noteBoxes = {}
+local function BuildNotes(parent)
+    local box = CreateFrame("Frame", nil, parent)
+    local intro = Label(box, "Click Apply to sign up with a note: these are offered to copy under Blizzard's sign-up window. Shift-click Apply signs up at once, no note.")
+    intro:SetPoint("TOPLEFT")
+    intro:SetPoint("RIGHT")
+    intro:SetJustifyH("LEFT")
+    intro:SetWordWrap(true)
+    local prev = intro
+    for i = 1, ns.Notes.MAX do
+        local e = Kit.Edit(box, W - 2 * PAD, function(text) ns.Notes.Set(i, text) end)
+        e:SetMaxLetters(255)
+        e:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, i == 1 and -10 or -6)
+        Kit.Hint(e, "Note " .. i)
+        noteBoxes[i] = e
+        prev = e
+    end
+    return box
+end
+
+local function PaintNotes()
+    local list = ns.Notes.All()
+    for i, e in ipairs(noteBoxes) do e:SetText(list[i] or "") end
+end
+
 local function BuildOptions(parent)
     local box = CreateFrame("Frame", nil, parent)
     local c = ns.db.cleanup
@@ -341,23 +370,6 @@ local function BuildOptions(parent)
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.names = names
-    y = y - 26
-    -- Sign-up note: the game won't let addons fill Blizzard's note box, so
-    -- the note is offered ready to copy whenever Blizzard's sign-up dialog opens.
-    local note = Kit.Edit(box, W - 2 * PAD, function(text)
-        text = strtrim(text or "")
-        ns.db.note = text ~= "" and text or nil
-    end)
-    note:SetPoint("TOPLEFT", 0, y)
-    Kit.Hint(note, "Sign-up note")
-    note:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Sign-up note")
-        GameTooltip:AddLine("Shown ready to copy under Blizzard's sign-up window (shift-click Apply opens it): Ctrl+C, then Ctrl+V into the note.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    note:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    box.note = note
     y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
@@ -417,7 +429,6 @@ local function PaintOptions()
     local o, c = optionsView, ns.db.cleanup
     o.blizz:Set(ns.db.useBlizzard)
     o.names:Set(ns.db.nameColors)
-    o.note:SetText(ns.db.note or "")
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
@@ -438,7 +449,7 @@ local function Build()
 
     -- Header tabs: Filter (the filter being edited) and Options.
     local prev
-    for _, t in ipairs({ { "filter", "Filter" }, { "options", "Options" } }) do
+    for _, t in ipairs({ { "filter", "Filter" }, { "notes", "Notes" }, { "options", "Options" } }) do
         local b = CreateFrame("Button", nil, frame)
         b:SetHeight(26)
         b.text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
@@ -470,6 +481,9 @@ local function Build()
     optionsView = BuildOptions(frame)
     optionsView:SetPoint("TOPLEFT", PAD, -34)
     optionsView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+    notesView = BuildNotes(frame)
+    notesView:SetPoint("TOPLEFT", PAD, -34)
+    notesView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 
     keysBox = BuildKeys(body)
     keysBox:SetPoint("TOPLEFT")
@@ -506,12 +520,15 @@ function Sidecar.Show(which)
     view = which
     filterView:SetShown(which == "filter")
     optionsView:SetShown(which == "options")
+    notesView:SetShown(which == "notes")
     for _, t in ipairs(headTabs) do
         local on = t.view == which
         t.text:SetTextColor(on and MINT[1] or 0.74, on and MINT[2] or 0.74, on and MINT[3] or 0.74)
         t.under:SetShown(on)
     end
-    if which == "options" then PaintOptions() else Sidecar.Paint() end
+    if which == "options" then PaintOptions()
+    elseif which == "notes" then PaintNotes()
+    else Sidecar.Paint() end
 end
 
 -- Open on a filter (the active one by default), or on Options; clicking
@@ -521,7 +538,7 @@ function Sidecar.Open(f, which)
     if not frame then Build() end
     which = which or "filter"
     f = f or Filters.Active()
-    if frame:IsShown() and view == which and (which == "options" or editing == f) then frame:Hide() return end
+    if frame:IsShown() and view == which and (which ~= "filter" or editing == f) then frame:Hide() return end
     editing = f
     RequestRaidInfo()  -- lockouts for Match my lockout
     frame:Show()
@@ -537,36 +554,46 @@ function Sidecar.Hide()
     if frame then frame:Hide() end
 end
 
--- The note, ready to copy, under Blizzard's sign-up dialog while it's open.
+-- The notes, ready to copy, under Blizzard's sign-up dialog while it's open:
+-- click one to select it, then Ctrl+C and Ctrl+V into Blizzard's note box.
 EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     local dialog = LFGListApplicationDialog
     if not dialog then return end
     local strip
     dialog:HookScript("OnShow", function()
-        if not ns.db.note then return end
+        local notes = ns.Notes.List()
+        if #notes == 0 then return end
         if not strip then
             Kit.ApplyFontFace()
             strip = CreateFrame("Frame", nil, dialog)
-            strip:SetHeight(46)
             strip:SetPoint("TOPLEFT", dialog, "BOTTOMLEFT", 0, -2)
             strip:SetPoint("TOPRIGHT", dialog, "BOTTOMRIGHT", 0, -2)
             Kit.Fill(strip, Kit.Palette.panelBg)
             Kit.Border(strip)
-            local l = Label(strip, "|cff98ff98Pickup|rGroup note: Ctrl+C, then Ctrl+V into the note above")
+            local l = Label(strip, "|cff98ff98Pickup|rGroup notes: click one, Ctrl+C, then Ctrl+V into the note above")
             l:SetPoint("TOPLEFT", PAD, -6)
-            strip.box = Kit.Edit(strip, 10, function() end)
-            strip.box:SetPoint("TOPLEFT", PAD, -20)
-            strip.box:SetPoint("RIGHT", -PAD, 0)
-            -- Keep the text as saved and selected, whatever gets typed.
-            strip.box:HookScript("OnTextChanged", function(self, user)
-                if user then self:SetText(ns.db.note or ""); self:HighlightText() end
-            end)
-            strip.box:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+            strip.boxes = {}
+            for i = 1, ns.Notes.MAX do
+                local e = Kit.Edit(strip, 10, function() end)
+                e:SetPoint("TOPLEFT", PAD, -20 - (i - 1) * 24)
+                e:SetPoint("RIGHT", -PAD, 0)
+                -- Keep the text as saved and selected, whatever gets typed.
+                e:HookScript("OnTextChanged", function(self, user)
+                    if user then self:SetText(self.note or ""); self:HighlightText() end
+                end)
+                e:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+                strip.boxes[i] = e
+            end
         end
-        strip.box:SetText(ns.db.note)
+        for i, e in ipairs(strip.boxes) do
+            e.note = notes[i]
+            e:SetText(notes[i] or "")
+            e:SetShown(notes[i] ~= nil)
+        end
+        strip:SetHeight(26 + #notes * 24)
         strip:Show()
-        strip.box:SetFocus()
-        strip.box:HighlightText()
+        strip.boxes[1]:SetFocus()
+        strip.boxes[1]:HighlightText()
     end)
     dialog:HookScript("OnHide", function() if strip then strip:Hide() end end)
 end)
