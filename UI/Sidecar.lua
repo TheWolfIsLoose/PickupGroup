@@ -52,10 +52,10 @@ local function Toggle(parent, text, w, onClick)
     b:SetHighlightFontObject("PickupGroupFontSmall")
     b:SetText(text)
     -- On: the choice's colour as text and a 1px ring on a neutral fill, so
-    -- every colour reads (no colour-on-green). Off: dim grey, black ring.
+    -- every colour reads (no colour-on-green). Off: grey, black ring.
     function b:Paint(on, color)
-        local c = on and (color or MINT) or { 0.55, 0.55, 0.55 }
-        self:GetFontString():SetTextColor(c[1], c[2], c[3], on and 1 or 0.45)
+        local c = on and (color or MINT) or { 0.6, 0.6, 0.6 }
+        self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
         local ring = on and c or Kit.Palette.border
         for _, t in ipairs(self._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
     end
