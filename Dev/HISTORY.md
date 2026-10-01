@@ -2,6 +2,30 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.4.1 (2026-10-01)
+
+From the tester and the player's own checks (verified in game unless noted):
+- Fix: `Groups.List` sort wasn't a consistent order when a raid search
+  returned a non-raid row (raid rows compared by bosses, others by score):
+  table.sort errored ("attempt to index local 'b'"). Raids now sort first.
+  Reproduced and checked with 2000 random mixed sorts (old: 843 failures).
+- Party members who aren't leader: Apply disabled, label "Leader"; the
+  game silently ignores their `ApplyToGroup` (no status event, nothing
+  blocked: the tester's log). Re-renders on GROUP_ROSTER_UPDATE /
+  PARTY_LEADER_CHANGED.
+- `Eligible()` is false while `C_LFGList.HasActiveEntryInfo()`: the pane
+  steps aside so Blizzard's listing view shows (leader and members);
+  LFG_LIST_ACTIVE_ENTRY_UPDATE re-evaluates.
+- Action button `SetMotionScriptsWhileDisabled(true)`: disabled buttons'
+  tooltips (Leader, no seat, sign-ups full) never showed before.
+- Visibility pass (player: an accessibility win): Kit palette `well`
+  (white 8%) for text boxes and checkboxes, checkbox mark 8px, `ringHover`
+  grey on hover and mint while typing, `btnRest` 4.5% -> 7%, off toggles
+  solid grey; row stripes 2% -> 5%.
+- Dev/check.lua also flags a top-level local used above its definition
+  (a hover helper defined below Kit.Check errored in game before release).
+- Not included: the sign-up note helper (dev only).
+
 ## v0.4.0 (2026-09-30): first stable release (CurseForge review)
 
 The three fixes below on top of v0.4.0-alpha2, cherry-picked from `dev`
