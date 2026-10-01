@@ -145,7 +145,9 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
 dev-only addon installed as `Interface\AddOns\DevChecklist` (never
 shipped; works for StockClerk too). Each test round, rewrite
 `Checklist.lua` (round name; items as { addon, what to do / expect, what to
-send: SS, log, ... }) and install it; a `/reload` picks it up. It shows at
+send: SS, log, ... }) and install it; a `/reload` picks it up. Group the
+items by area (dungeon view, raid view, notes / sign-ups, options, party,
+...): player, 2026-10-01; keep each area's items together in the list. It shows at
 login while anything is unticked; `/dc` toggles it. Ticks are saved per
 item text in `WTF\Account\SAVAGEFEARLESS\SavedVariables\DevChecklist.lua`:
 read them with the log.
