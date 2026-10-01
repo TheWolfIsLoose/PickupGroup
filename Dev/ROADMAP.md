@@ -16,17 +16,12 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-10-01 (day session, player away; Claude worked the
-no-game items): DESIGN PAUSE continues.** Bug fixes from tester feedback still go out as patch releases.
-**Paused since 2026-09-30 18:30 ET: No more code until the player
-and Claude have re-ideated what PickupGroup should do.** Resume with the
-conversation below, not with a build.
-
-**Released 2026-10-01: v0.4.1 (stable) on `main`** (see HISTORY): raid
-sort crash fix, party-leader Apply, pane steps aside while listed,
-disabled-button tooltips, visibility pass. v0.4.0's secret-value crash fix
-still needs a started key to confirm. On `dev` only: the sign-up note
-helper (**untested**), waiting on the notes-per-search-type design.
+**State, 2026-10-01 15:20 ET: v0.5.0 (stable) released from `main`** (see
+HISTORY). Design pause over; the decisions and plan are under "Resume
+here" item 1 and 3. Still unverified: greyed-out Apply tooltips (party /
+no seat), the key-run secret-listing trace; both stay on the DevChecklist.
+Next candidates: accessibility + ponytail pass (both addons), party-aware
+room (needs friends), teleport button (needs a party), final name.
 
 **Testing note (player, 2026-10-01):** the tester plays casually and doesn't
 take notes, so his reports are leads, not repro steps. To answer an issue

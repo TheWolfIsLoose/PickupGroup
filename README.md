@@ -1,6 +1,7 @@
 # PickupGroup
 
 A premade-groups tool that lives inside World of Warcraft's Group Finder:
-saved search filters, a compact results table, and signing up.
+a filter per content type that also drives Blizzard's own filter, a compact
+results table, sign-up notes, and signing up.
 
-Working name; may change before 1.0. Private while in development.
+Working name; may change before 1.0.
