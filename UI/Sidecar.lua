@@ -108,7 +108,7 @@ local function PaintKeys(f)
         local on = not f.dungeons or f.dungeons[b.dungeon] == true
         -- The key in white while the dungeon is on (grey with it when off);
         -- an em dash where there's no timed key.
-        local key = best[b.dungeon] and ("+" .. best[b.dungeon]) or "\226\128\148"
+        local key = "(" .. (best[b.dungeon] and ("+" .. best[b.dungeon]) or "\226\128\148") .. ")"
         b:SetText(b.code .. " " .. (on and ("|cffffffff" .. key .. "|r") or key))
         b:Paint(on)
     end
