@@ -16,8 +16,8 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-10-01 01:50 ET (wrapped for the night): DESIGN PAUSE
-continues.** Bug fixes from tester feedback still go out as patch releases.
+**State, 2026-10-01 (day session, player away; Claude worked the
+no-game items): DESIGN PAUSE continues.** Bug fixes from tester feedback still go out as patch releases.
 **Paused since 2026-09-30 18:30 ET: No more code until the player
 and Claude have re-ideated what PickupGroup should do.** Resume with the
 conversation below, not with a build.
@@ -62,11 +62,39 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
    "less friction + memory" reframe; no code. Decide: one filter per
    category vs several; what a "search type" is (it carries the note);
    whether a plain Apply opens Blizzard's dialog when a note exists.
+   **Options prepared 2026-10-01 (Claude; nothing decided):**
+   - *What PickupGroup is for*, given the walls (no key level, protected
+     titles, no note or search text from addons): a candidate line is
+     "Blizzard's search, with less friction and a memory". Less friction:
+     one-line rows with comp tiles, saved filters that also narrow the
+     server search (beats the 100-result cap), clean-up in place of a spam
+     addon, Apply from the row. Memory: the application log, declined /
+     re-apply friction, new mark, friends mark. What else would earn a
+     place under that line, and what doesn't fit it?
+   - *What a "search type" is*: (a) a saved filter, and each filter may
+     carry a note (no new concept; Weekly / Push / Raid each get one);
+     (b) one per category (keys, raid), one note each; (c) notes are their
+     own list, and a filter points at one. (a) is the smallest.
+   - *One filter per category vs several*: without key level, Weekly and
+     Push differ only by score floor and the key level the player types.
+     If notes ride on filters, several filters earn their place as
+     "presets" (filter + note); if not, one filter per category plus the
+     typed search text may be enough, and the filter picker question (3c)
+     goes away.
+   - *Apply when a note exists*: the game never lets an addon fill the
+     note, so a note always costs Ctrl+C / click / Ctrl+V in Blizzard's
+     dialog. (a) Apply stays instant (no note), shift-click opens the
+     dialog with the note ready to copy (today's dev build); (b) when the
+     active filter has a note, Apply opens the dialog instead; (c) an
+     Options switch between (a) and (b).
 2. Optional probe the player said he'd revisit: `/pug` command logging
    `RaiderIO.GetProfile` / `ArchonTooltip.GetProfile` for the target and a
    live applicant (decides the leader-side applicant pane).
 3. Only after 1: re-plan phases; the note helper (dev) waits on that.
-4. Untested, any time: disabled-button tooltip ("Leader", no seat,
+4. Untested, any time: text boxes return to the grey ring after typing
+   (dev, 2026-10-01: Kit.Edit's SetScript ran after its HookScripts and
+   dropped them, so the mint focus ring stayed after leaving a box);
+   disabled-button tooltip ("Leader", no seat,
    sign-ups full); v0.4.0's crash fix (start a key with the Group Finder
    open); raid sort fix (browse Raids - current).
 5. Open lead: tester's sign-ups stuck "pending" for hours (likely the
@@ -151,7 +179,24 @@ Next, in order:
    has no call for another realm's region: it needs realm data, either
    a bundled third-party realm library (kept with its license and
    credit) or our own realm table. Decide which before building.
-   **Leaning (2026-09-29):** LibRealmInfo by Phanx (zlib;
+   **Research 2026-10-01 (Claude; player decides):** LibRealmInfo's
+   data is stale in both copies: phanx-wow (last data 2019) points to
+   github.com/janekjl/LibRealmInfo (v17, last data Nov 2020, adds Classic
+   realms). Both list the same 246 retail US realms, but they disagree on
+   the US timezone tag for dozens of them (e.g. Laughing Skull CST vs EST,
+   Blackrock PST vs MST) and the fork has typos in its Brazil rows, so
+   "US East / US West" from the tags is not trustworthy (and NA realms
+   share one data centre, as far as known, so it says little about
+   latency). What is solid for a US player: Oceanic (12 realms), Brazil
+   (5), Latin America (3), everything else North America. **Lighter
+   option:** no library at all, our own 20-name table for those three
+   groups (realm names are facts, no licence or credit needed), every
+   other realm counted as North America. EU (split by language) would
+   need a full EU table: build it only if an EU player wants it.
+   To check in game before building: how `leaderName` spells realms with
+   an apostrophe or space (e.g. Aman'Thul, Jubei'Thos), and that a
+   same-realm leader has no realm suffix.
+   Earlier leaning (2026-09-29): LibRealmInfo by Phanx (zlib;
    github.com/phanx-wow/LibRealmInfo; region, locale and US timezone tags
    PST/MST/CST/EST/AEST/BRT...). Last release Jan 2021, so realms added
    since are missing: bundle it fresh from its GitHub (not the archived
