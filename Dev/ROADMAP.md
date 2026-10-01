@@ -75,10 +75,11 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
      filter, click to set it up; name box and Delete gone).
    - **Raids:** players type the raid's name and pick Blizzard's
      suggestion, which is one line per raid and difficulty (e.g. "<raid>
-     Heroic"). Work with that, don't replace it. Open: whether our raid
-     filter's difficulty buttons are now redundant (the search already
-     carries the difficulty), and whether boss rules should follow the
-     difficulty seen in the results.
+     Heroic"). Work with that, don't replace it. **Done on dev
+     2026-10-01 (player's screenshot):** the raid filter's N/H/M buttons
+     are gone (the suggestion carries the difficulty; rows keep their
+     difficulty letter); "My lockout" uses the highest Normal/Heroic save,
+     a Mythic save adds a note.
    - **Notes:** up to 5 pre-made notes (a list, not tied to a filter).
      **Click Apply** opens Blizzard's sign-up dialog with the notes
      offered to copy (the game won't let an addon fill the note);

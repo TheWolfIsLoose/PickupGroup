@@ -7,7 +7,7 @@
     Filter tab: the one filter of the kind in view
       keys  dungeons (this season), room for my role, has / needs Bloodlust,
             has / needs battle rez, leader at least my score, leader score floor
-      raid  difficulty, bosses down at most, room
+      raid  leader's realm, each boss alive / dead / either
     Notes tab: up to five sign-up notes, offered to copy under Blizzard's
     sign-up dialog.
 --]]
@@ -20,11 +20,10 @@ ns.Sidecar = Sidecar
 local Kit, Filters = ns.Kit, ns.Filters
 local W, PAD = 220, 8
 local MINT = Kit.Palette.brand
-local DIFF = { { "N", { 0.12, 1, 0 } }, { "H", { 0, 0.44, 0.87 } }, { "M", { 1, 0.5, 0 } } }
 
 local frame, editing
 local keysBox, raidBox
-local dungeonButtons, checks, diffButtons = {}, {}, {}
+local dungeonButtons, checks = {}, {}
 local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
@@ -117,23 +116,9 @@ local WANT_LOOK = { [false] = { "Either", { 0.55, 0.55, 0.55 } }, alive = { "Ali
 
 local function PaintRaid(f)
     PaintRegions(f)
-    for _, b in ipairs(diffButtons) do
-        local on = not f.difficulties or f.difficulties[b.diff]
-        b:Paint(on, on and b.color or nil)
-    end
-    -- Lockouts differ per difficulty, but boss rules don't: with several
-    -- difficulties on, the same rules judge every one of them.
-    local nDiff, nRules = 0, 0
-    for _, b in ipairs(diffButtons) do if not f.difficulties or f.difficulties[b.diff] then nDiff = nDiff + 1 end end
-    for _, raid in pairs(f.bosses or {}) do for _ in pairs(raid) do nRules = nRules + 1 end end
-    if nDiff > 1 and nRules > 0 then
-        bossLabel:SetText("Boss rules apply to every difficulty that's on, and lockouts differ by difficulty, "
-            .. "so results can't be accurate. Keep one difficulty per filter (e.g. \"Raid H\", \"Raid M\").")
-        bossLabel:SetTextColor(1, 0.72, 0.3)
-    else
-        bossLabel:SetText("Bosses in the group's lockout")
-        bossLabel:SetTextColor(0.55, 0.55, 0.55)
-    end
+    -- Boss rules judge every difficulty in the results: pick one of
+    -- Blizzard's raid + difficulty suggestions for accurate results.
+    bossLabel:SetText("Bosses in the group's lockout (pick a raid and difficulty in Blizzard's search for accurate results)")
     -- Boss rows, pooled: a raid heading, then one row per boss.
     local y, n = 0, 0
     local function Line()
@@ -172,8 +157,8 @@ local function PaintRaid(f)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText("Match my lockout", 1, 1, 1)
                 GameTooltip:AddLine("Bosses you've killed this week: Dead. Bosses you still need: Alive. "
-                    .. "Uses your Normal or Heroic lockout (the highest this filter looks for). "
-                    .. "Mythic lockouts are whole: a Mythic-only filter tells you whether any group can take you.", 0.8, 0.8, 0.8, true)
+                    .. "Uses your highest Normal or Heroic lockout. "
+                    .. "Mythic lockouts are whole: saved on Mythic, only your own lockout's group can take you.", 0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end)
             l.want:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -321,21 +306,8 @@ end
 
 local function BuildRaid(parent)
     local box = CreateFrame("Frame", nil, parent)
-    local head = Label(box, "Difficulty")
-    head:SetPoint("TOPLEFT")
-    local cellW = (W - 2 * PAD - 2 * 3) / 3
-    for i, d in ipairs(DIFF) do
-        local b = Toggle(box, d[1], cellW, function(self)
-            editing.difficulties = editing.difficulties or { N = true, H = true, M = true }
-            editing.difficulties[self.diff] = not editing.difficulties[self.diff] or nil
-            Sidecar.Paint(); Changed()
-        end)
-        b.diff, b.color = d[1], d[2]
-        b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), -16)
-        diffButtons[i] = b
-    end
     bossLabel = Label(box, "")
-    local y = RegionRow(box, -46)
+    local y = RegionRow(box, 0)
     bossLabel:SetPoint("TOPLEFT", 0, y - 8)
     bossLabel:SetWidth(W - 2 * PAD)
     bossLabel:SetJustifyH("LEFT")
