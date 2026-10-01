@@ -73,6 +73,9 @@ local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
 local function Eligible()
     local p = Panel()
     if not (p and p:IsShown()) then return false end
+    -- While the player's group is listed, step aside as Blizzard does (its
+    -- listing view: members can't act, the leader manages applicants).
+    if C_LFGList.HasActiveEntryInfo() then return false end
     if p.categoryID == 2 then return true end  -- Dungeons
     local recommended = Enum.LFGListFilter and Enum.LFGListFilter.Recommended or 1
     return p.categoryID == 3 and bit.band(p.filters or 0, recommended) ~= 0  -- Raids - current
@@ -745,6 +748,7 @@ end)
 ns.On("LFG_LIST_SEARCH_RESULT_UPDATED", RenderSoon)
 ns.On("GROUP_ROSTER_UPDATE", RenderSoon)
 ns.On("PARTY_LEADER_CHANGED", RenderSoon)
+ns.On("LFG_LIST_ACTIVE_ENTRY_UPDATE", function() Pane.Update() end)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
     local o = OUTCOME[new]
