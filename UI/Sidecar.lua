@@ -595,7 +595,11 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
                 e:HookScript("OnTextChanged", function(self, user)
                     if user then self:SetText(self.note or ""); self:HighlightText() end
                 end)
-                e:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+                -- Select on the next frame: a selection made while the box is
+                -- still taking focus doesn't stick.
+                e:HookScript("OnEditFocusGained", function(self)
+                    C_Timer.After(0, function() if self:HasFocus() then self:HighlightText() end end)
+                end)
                 strip.boxes[i] = e
             end
         end
@@ -607,7 +611,6 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
         strip:SetHeight(26 + #notes * 24)
         strip:Show()
         strip.boxes[1]:SetFocus()
-        strip.boxes[1]:HighlightText()
     end)
     dialog:HookScript("OnHide", function() if strip then strip:Hide() end end)
 end)
