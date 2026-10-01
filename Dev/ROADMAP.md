@@ -20,8 +20,12 @@ cheap.
 HISTORY). Design pause over; the decisions and plan are under "Resume
 here" item 1 and 3. Still unverified: greyed-out Apply tooltips (party /
 no seat), the key-run secret-listing trace; both stay on the DevChecklist.
-Next candidates: accessibility + ponytail pass (both addons), party-aware
-room (needs friends), teleport button (needs a party), final name.
+**Party-aware room built and seen working on dev (2026-10-01, player +
+Tripolos, 2 DPS: only groups with 2 open damage seats).** Roles from
+assigned role, else spec (GetInspectSpecialization), else any seat; the
+"party roles:" trace (next saved log) shows which source each member used.
+Next candidates: accessibility + ponytail pass (both addons), teleport
+button (needs a party), sign-up history view, final name.
 
 **Testing note (player, 2026-10-01):** the tester plays casually and doesn't
 take notes, so his reports are leads, not repro steps. To answer an issue
@@ -158,7 +162,7 @@ Next, in order:
    (StockClerk's setup). Before 1.0 every version is `-alphaN`. Still
    open: the final name (display name can change, the slug can't); the
    zlib credit if the realm library ships.
-1. **Party-aware room** (player): "Room for my role" must mean "room for
+1. **Party-aware room** (player; **built on dev 2026-10-01, works**): "Room for my role" must mean "room for
    my group" in a party: the group's open seats fit every party member's
    assigned role (UnitGroupRolesAssigned on party units; the leader's
    sign-up carries the party) and members + party <= 5. The mint ring on
