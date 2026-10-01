@@ -105,8 +105,12 @@ local function PaintKeys(f)
     local best = {}
     for _, d in ipairs(Filters.Dungeons()) do best[d.name] = d.best end
     for _, b in ipairs(dungeonButtons) do
-        b:SetText(b.code .. (best[b.dungeon] and (" +" .. best[b.dungeon]) or ""))
-        b:Paint(not f.dungeons or f.dungeons[b.dungeon] == true)
+        local on = not f.dungeons or f.dungeons[b.dungeon] == true
+        -- The key in white while the dungeon is on (grey with it when off);
+        -- an em dash where there's no timed key.
+        local key = best[b.dungeon] and ("+" .. best[b.dungeon]) or "\226\128\148"
+        b:SetText(b.code .. " " .. (on and ("|cffffffff" .. key .. "|r") or key))
+        b:Paint(on)
     end
     for key, c in pairs(checks) do c:Set(f[key]) end
     scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
@@ -260,7 +264,7 @@ local function BuildKeys(parent)
         b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 23)
         b:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(self.dungeon)
-            local best = self:GetText():match("%+(%d+)")
+            local best = self:GetText():match("%+(%d+)")  -- colour codes have no "+"
             GameTooltip:AddLine(best and ("Your best timed key this season: +" .. best) or "No timed key here this season.", 0.74, 0.74, 0.74)
             GameTooltip:Show()
         end)
