@@ -93,6 +93,9 @@ end
 -- ---------------------------------------------------------------------------
 -- Actions (each runs straight from a click: the game requires it)
 -- ---------------------------------------------------------------------------
+-- Only a party's leader can sign it up; the game ignores anyone else silently.
+local function NotLeader() return IsInGroup() and not UnitIsGroupLeader("player") end
+
 local function Apply(row)
     local r = Groups.MyRoles()
     C_LFGList.ApplyToGroup(row.id, r.TANK, r.HEALER, r.DAMAGER)
@@ -162,6 +165,7 @@ local function ActionTooltip(btn)
     local tip
     if row.status == "applied" then tip = "Click to cancel this sign-up."
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
+    elseif NotLeader() then tip = "Only your party leader can sign the party up."
     elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click twice to sign up again."
     elseif not row.fits then tip = "No open seat for the roles you sign up as."
     elseif btn.full then tip = "All five sign-ups are in use." end
@@ -363,6 +367,8 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         label = "Invited"
     elseif row.status == "inviteaccepted" then
         label, enabled = "Joined", false
+    elseif NotLeader() then
+        label, enabled = "Leader", false
     elseif OVER[row.status] then
         label = (armed == row.id) and "Sure?" or "Reapply"
     elseif not row.fits or full then
@@ -737,6 +743,8 @@ ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
     RenderSoon()
 end)
 ns.On("LFG_LIST_SEARCH_RESULT_UPDATED", RenderSoon)
+ns.On("GROUP_ROSTER_UPDATE", RenderSoon)
+ns.On("PARTY_LEADER_CHANGED", RenderSoon)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
     local o = OUTCOME[new]
