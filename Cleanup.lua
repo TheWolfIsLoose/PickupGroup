@@ -51,6 +51,11 @@ function Cleanup.Reason(row)
     end
 end
 
+function Cleanup.IsBlacklisted(name)
+    name = Full(name)
+    return name and ns.db.blacklist[name] ~= nil
+end
+
 function Cleanup.Blacklist(name, why)
     name = Full(name)
     if not name or ns.db.blacklist[name] then return end

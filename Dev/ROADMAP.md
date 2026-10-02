@@ -94,6 +94,18 @@ applicants: score 0, keys fields empty. Raider.IO (when loaded):
 maxDungeonLevel, milestones...), raidProfile (progress, sortedProgress,
 mainProgress tables: drill into these for raid progress).
 
+**Keys leader view, first cut (0.6.2-alpha2, untested; new file
+UI/Leader.lua, game restart):** our frame over Blizzard's ApplicationViewer
+(Name column header to ScrollBox bottom) while leading a key and leader or
+solo; top bar "Needs <seats>, Bloodlust, battle rez" (invited applicants count
+as seated); rows per applicant member (spec icon, mint ring = fills an open
+seat; name; ilvl; score; best run in the listed dungeon, white timed / amber
+not; "Lust" / "Rez" adds); note line under the applicant (protected text,
+shown only); dimmed = no seat for the role, region off in the keys filter,
+blacklisted; Invite / Decline buttons (C_LFGList.InviteApplicant /
+DeclineApplicant from our click: spike whether blocked). WCAG note: timed
+vs not is colour only (tooltip says it) — fix in the 1.0 pass.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

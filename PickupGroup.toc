@@ -2,7 +2,7 @@
 ## Title: PickupGroup
 ## Notes: Premade groups inside the Group Finder: a filter per content type, a compact results table, sign-up notes.
 ## Author: Jakerator
-## Version: 0.6.2-alpha1
+## Version: 0.6.2-alpha2
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
 ## X-Curse-Project-ID: 1718475
@@ -17,3 +17,4 @@ UI\Kit.lua
 UI\LogPopup.lua
 UI\Pane.lua
 UI\Sidecar.lua
+UI\Leader.lua

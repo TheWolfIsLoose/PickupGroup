@@ -27,6 +27,7 @@ local T, H, D = "TANK", "HEALER", "DAMAGER"
 local function Roles(...) local o = {} for _, r in ipairs({ ... }) do o[r] = true end return o end
 local LUST = { SHAMAN = Roles(H, D), MAGE = Roles(D), HUNTER = Roles(D), EVOKER = Roles(H, D) }
 local BREZ = { DRUID = Roles(T, H, D), DEATHKNIGHT = Roles(T, D), WARLOCK = Roles(D), PALADIN = Roles(T, H, D) }
+Filters.LUST, Filters.BREZ = LUST, BREZ  -- the leader view reads them too
 
 local function All()
     ns.db.filters = ns.db.filters or {}
