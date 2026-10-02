@@ -146,6 +146,7 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     local tint = Kit.Glyph(btn, bars)
     btn:SetScript("OnEnter", function(self)
         tint(Palette.brand)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText(tip)
         GameTooltip:Show()

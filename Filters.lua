@@ -115,7 +115,7 @@ end
 
 function Filters.MatchLockout(f, raidName, diff)
     if not DIFF_WORD[diff] then
-        return "Search this raid with a difficulty first (pick Blizzard's raid + difficulty suggestion): the lockout follows the groups listed."
+        return "Search this raid with a difficulty first (pick Blizzard's raid + difficulty suggestion)."
     end
     local i = Saved(raidName, diff)
     local killed, n = {}, 0

@@ -108,6 +108,10 @@ function Notes.List()
     return out
 end
 
+-- Tooltips that explain how a control works; Options can hide them all.
+-- Tooltips with information (groups, reasons, results) always show.
+function ns.Hints() return not ns.db.noHints end
+
 function ns.Version()
     return C_AddOns.GetAddOnMetadata(addonName, "Version") or "?"
 end

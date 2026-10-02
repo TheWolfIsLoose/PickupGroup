@@ -48,6 +48,15 @@ Blizzard's Filter button tooltip says our keys filter sets it; trace
 lines "levels", "update: category" and empty "reattached" dropped.
 StockClerk gets the same grey rings in its own pass.
 
+**Round 8 (2026-10-02, player): all pass** except Normal lockout (button
+read "My lockout" with no Normal groups listed), teleport in a 5/5 and a key
+run (both carried to round 9). **0.6.1-alpha2:** My lockout's difficulty
+comes from the searched text "<raid> (Normal)" first (`Pane.RaidDifficulty`,
+PLAYER_DIFFICULTY1/2/6), listings second; Options "Hide hint tooltips"
+(`db.noHints`, `ns.Hints()`; player: veterans want the how-to tooltips gone;
+information tooltips — rows, reasons, results, dungeon best keys — stay).
+Noted: the notes strip traces twice per open (OnShow + the _Show hook), harmless.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still

@@ -208,13 +208,12 @@ local function ActionTooltip(btn)
         tip = "All five sign-ups are in use. Click to withdraw the oldest"
             .. (o and (" (" .. (o.code or "?") .. ", " .. (o.leader or "?") .. ")") or "") .. ", then Apply here."
     elseif btn.full then tip = "All five sign-ups are in use (Options: Swap can make room)." end
+    if not (tip or ns.Hints()) then return end
     GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
-    if tip then
-        GameTooltip:SetText(tip, 1, 1, 1, 1, true)
-    else
-        GameTooltip:SetText("Click: sign up with a note. Shift-click: sign up at once.", 1, 1, 1, 1, true)
+    GameTooltip:SetText(tip or "Click: sign up with a note. Shift-click: sign up at once.", 1, 1, 1, 1, true)
+    if ns.Hints() then
+        GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55, true)
     end
-    GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55, true)
     GameTooltip:Show()
 end
 
@@ -433,7 +432,17 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
 end
 
 -- The difficulty most groups listed for a raid are on, or nil.
+-- The difficulty the player searched ("<raid> (Normal)", Blizzard's
+-- suggestion) wins, so it holds with no groups listed; else the one most
+-- listed groups for that raid are on.
+local SEARCH_DIFF = { N = PLAYER_DIFFICULTY1, H = PLAYER_DIFFICULTY2, M = PLAYER_DIFFICULTY6 }
 function Pane.RaidDifficulty(raid)
+    local ok, text = pcall(function() return panel.SearchBox:GetText() end)
+    if ok and type(text) == "string" and not issecretvalue(text) and raid and text:find(raid, 1, true) then
+        for d, word in pairs(SEARCH_DIFF) do
+            if text:find("(" .. word .. ")", 1, true) then return d end
+        end
+    end
     local best, n = nil, 0
     for d, c in pairs(raidDiff[raid] or {}) do if c > n then best, n = d, c end end
     return best
@@ -558,6 +567,7 @@ local function BuildBars()
     hiddenButton:SetPoint("RIGHT", countText, "LEFT", -8, 0)
     hiddenButton:SetScript("OnClick", function() showHidden = not showHidden; offset = 0; Pane.Render() end)
     hiddenButton:SetScript("OnEnter", function(self)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText(showHidden and "Showing what clean-up hid: click to go back" or "Hidden by clean-up: click to review")
         GameTooltip:Show()
@@ -580,7 +590,7 @@ local function BuildBars()
         summary:SetTextColor(MINT[1], MINT[2], MINT[3])
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText("Filter: " .. summary:GetText())
-        GameTooltip:AddLine("Click to set it up.", 0.74, 0.74, 0.74)
+        if ns.Hints() then GameTooltip:AddLine("Click to set it up.", 0.74, 0.74, 0.74) end
         GameTooltip:Show()
     end)
     sb:SetScript("OnLeave", function() summary:SetTextColor(0.74, 0.74, 0.74); GameTooltip:Hide() end)
@@ -614,6 +624,7 @@ local function BuildBars()
             Pane.Render()
         end)
         b:SetScript("OnEnter", function(self)
+            if not ns.Hints() then return end
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText("Sign up as " .. _G[self.role]:lower() .. ": click to switch")
             GameTooltip:Show()
@@ -761,7 +772,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     local fb = p.FilterButton
     if not fb then return ns.Trace("pane", "no Filter button") end
     fb:HookScript("OnEnter", function(self)
-        if not (pane and pane:IsShown() and ns.Filters.Kind() == "keys") then return end
+        if not (ns.Hints() and pane and pane:IsShown() and ns.Filters.Kind() == "keys") then return end
         if not GameTooltip:IsOwned(self) then GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(FILTER) end
         GameTooltip:AddLine("Set by PickupGroup's filter: change it there (click the summary above the list).", 0.74, 0.74, 0.74, true)
         GameTooltip:Show()
@@ -869,7 +880,7 @@ local function UpdateTeleport()
         teleport:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
             GameTooltip:SetSpellByID(self:GetAttribute("spell"))
-            GameTooltip:AddLine("Shift-drag to move.", 0.55, 0.55, 0.55)
+            if ns.Hints() then GameTooltip:AddLine("Shift-drag to move.", 0.55, 0.55, 0.55) end
             GameTooltip:Show()
         end)
         teleport:HookScript("OnLeave", function() GameTooltip:Hide() end)

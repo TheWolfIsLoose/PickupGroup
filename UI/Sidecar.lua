@@ -85,6 +85,7 @@ local function RegionRow(box, y)
         b.region = code
         b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), y - 16)
         b:HookScript("OnEnter", function(self)
+            if not ns.Hints() then return end
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText(ns.Groups.REGION_NAME[self.region])
             GameTooltip:AddLine("Groups whose leader plays on a realm in this region.", 0.74, 0.74, 0.74, true)
@@ -156,12 +157,13 @@ local function PaintRaid(f)
             l.want:SetHeight(16)
             l.want:SetPoint("RIGHT")
             l.want:HookScript("OnEnter", function(self)
+                if not ns.Hints() then return end
                 local d = ns.Pane.RaidDifficulty(self.raid)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText("My lockout", 1, 1, 1)
                 GameTooltip:AddLine("Ticks the bosses this character hasn't killed this week"
-                    .. (DIFF_WORD[d] and (" on " .. DIFF_WORD[d] .. ", the difficulty of the groups listed.")
-                        or ". Search the raid with a difficulty first: the lockout follows the groups listed."),
+                    .. (DIFF_WORD[d] and (" on " .. DIFF_WORD[d] .. ", the difficulty you searched.")
+                        or ". Search the raid with a difficulty first (Blizzard's raid + difficulty suggestion)."),
                     0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end)
@@ -286,6 +288,7 @@ local function BuildKeys(parent)
         cb:SetPoint("TOPLEFT", 0, y)
         if c[3] then
             cb:HookScript("OnEnter", function(self)
+                if not ns.Hints() then return end
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText(c[2])
                 GameTooltip:AddLine(c[3], 0.74, 0.74, 0.74, true)
@@ -384,6 +387,7 @@ local function BuildOptions(parent)
     end)
     names:SetPoint("TOPLEFT", 0, y)
     names:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Colour names for friends / guild")
         GameTooltip:AddLine("Like Blizzard's list: group names turn green with a guildmate in, blue with a friend. Replaces the marks.", 0.74, 0.74, 0.74, true)
@@ -399,6 +403,7 @@ local function BuildOptions(parent)
     end)
     swap:SetPoint("TOPLEFT", 0, y)
     swap:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Swap when all sign-ups are out")
         GameTooltip:AddLine("With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.", 0.74, 0.74, 0.74, true)
@@ -406,6 +411,14 @@ local function BuildOptions(parent)
     end)
     swap:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.swap = swap
+    y = y - 22
+    -- Opt-in (player): veterans can turn off the how-to tooltips.
+    local hints = Kit.Check(box, "Hide hint tooltips", function(on)
+        ns.db.noHints = on or nil
+        ns.Log.Emit("setting", { key = "noHints", on = on })
+    end)
+    hints:SetPoint("TOPLEFT", 0, y)
+    box.hints = hints
     y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
@@ -473,6 +486,7 @@ local function PaintOptions()
     o.blizz:Set(ns.db.useBlizzard)
     o.names:Set(ns.db.nameColors)
     o.swap:Set(ns.db.swap)
+    o.hints:Set(ns.db.noHints)
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
