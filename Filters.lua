@@ -9,7 +9,7 @@
           else set of dungeon names)
     raid: room (difficulty comes from Blizzard's search: the raid suggestion
           picked in its search box carries it),
-          bosses[raid name][boss name] = "alive" | "dead" (absent = either)
+          bosses[raid name][boss name] = true (must be alive; absent = either)
 --]]
 
 local _, ns = ...
@@ -22,9 +22,11 @@ local DEFAULT = {
     raid = { id = "raid", name = "Raids", kind = "raid" },
 }
 
--- Classes that bring Bloodlust / a battle rez.
-local LUST = { SHAMAN = true, MAGE = true, HUNTER = true, EVOKER = true }
-local BREZ = { DRUID = true, DEATHKNIGHT = true, WARLOCK = true, PALADIN = true }
+-- Classes that bring Bloodlust / a battle rez: class file -> the roles it can fill (seats it could take).
+local T, H, D = "TANK", "HEALER", "DAMAGER"
+local function Roles(...) local o = {} for _, r in ipairs({ ... }) do o[r] = true end return o end
+local LUST = { SHAMAN = Roles(H, D), MAGE = Roles(D), HUNTER = Roles(D), EVOKER = Roles(H, D) }
+local BREZ = { DRUID = Roles(T, H, D), DEATHKNIGHT = Roles(T, D), WARLOCK = Roles(D), PALADIN = Roles(T, H, D) }
 
 local function All()
     ns.db.filters = ns.db.filters or {}
@@ -59,7 +61,7 @@ function Filters.Summary(f)
     if f.kind == "raid" then
         local rules = 0
         for _, bosses in pairs(f.bosses or {}) do for _ in pairs(bosses) do rules = rules + 1 end end
-        if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss rule" or " boss rules") end
+        if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss alive" or " bosses alive") end
     else
         local n = 0
         for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
@@ -79,70 +81,68 @@ function Filters.Summary(f)
     return #out > 0 and table.concat(out, ", ") or "No rules"
 end
 
--- This season's dungeons, as { name, code }, from the game.
+-- This season's dungeons, as { name, code, best }, from the game.
 function Filters.Dungeons()
     local out = {}
     for _, mapID in ipairs(C_ChallengeMode.GetMapTable() or {}) do
         local name = C_ChallengeMode.GetMapUIInfo(mapID)
-        if name then out[#out + 1] = { name = name, code = ns.Groups.Code(name) } end
+        if name then
+            -- The player's best in-time key there this season, if any.
+            local timed = C_MythicPlus.GetSeasonBestForMap(mapID)
+            out[#out + 1] = { name = name, code = ns.Groups.Code(name), best = timed and timed.level }
+        end
     end
     table.sort(out, function(a, b) return a.code < b.code end)
     return out
 end
 
-local function Brings(classes, set)
-    for file in pairs(classes or {}) do if set[file] then return true end end
-    return false
-end
-
--- Match my lockout, for one raid. Normal and Heroic lockouts are per boss:
--- bosses killed this week become Dead, the rest Alive, from the highest
--- Normal/Heroic lockout. Mythic lockouts are whole (shared by everyone
--- present at the first kill): a Mythic save only adds a note. Returns a
--- line saying what it did.
-local DIFF_ID, RANK = { [14] = "N", [15] = "H", [16] = "M" }, { N = 1, H = 2 }
+-- My lockout, for one raid at one difficulty (the difficulty of the groups
+-- listed for it: Blizzard's search carries it). Normal and Heroic lockouts
+-- are separate and per boss: bosses this character hasn't killed at that
+-- difficulty this week get ticked "must be alive", the rest cleared. A
+-- Mythic lockout is whole (only the group on the same lockout can take
+-- you): it's matched the same way, with a note. Returns a line saying what
+-- it did.
+local DIFF_ID = { [14] = "N", [15] = "H", [16] = "M" }
 local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
 
-local function Saved(raidName)
-    local out = {}  -- difficulty letter -> saved-instance index
+local function Saved(raidName, diff)
     for i = 1, GetNumSavedInstances() do
         local name, _, _, diffID, locked, _, _, isRaid = GetSavedInstanceInfo(i)
-        local d = DIFF_ID[diffID]
-        if isRaid and locked and name == raidName and d then out[d] = i end
+        if isRaid and locked and name == raidName and DIFF_ID[diffID] == diff then return i end
     end
-    return out
 end
 
-function Filters.MatchLockout(f, raidName)
-    local saved = Saved(raidName)
-    f.bosses = f.bosses or {}
-    local text
-
-    local best, bestDiff
-    for d, i in pairs(saved) do
-        if RANK[d] and (not bestDiff or RANK[d] > RANK[bestDiff]) then best, bestDiff = i, d end
+function Filters.MatchLockout(f, raidName, diff)
+    if not DIFF_WORD[diff] then
+        return "Search this raid with a difficulty first (pick Blizzard's raid + difficulty suggestion): the lockout follows the groups listed."
     end
+    local i = Saved(raidName, diff)
     local killed, n = {}, 0
-    if best then
-        local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(best)
+    if i then
+        local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(i)
         for j = 1, count or 0 do
-            local boss, _, isKilled = GetSavedInstanceEncounterInfo(best, j)
+            local boss, _, isKilled = GetSavedInstanceEncounterInfo(i, j)
             if boss and isKilled then killed[boss] = true; n = n + 1 end
         end
     end
+    f.bosses = f.bosses or {}
     f.bosses[raidName] = {}
+    local alive = 0
     for _, raid in ipairs(ns.Groups.Raids()) do
         if raid.name == raidName then
-            for _, boss in ipairs(raid.bosses) do f.bosses[raidName][boss] = killed[boss] and "dead" or "alive" end
+            for _, boss in ipairs(raid.bosses) do
+                if not killed[boss] then f.bosses[raidName][boss] = true; alive = alive + 1 end
+            end
         end
     end
-    text = best
-        and ("Matched your %s lockout: %d killed set to Dead, the rest Alive."):format(DIFF_WORD[bestDiff], n)
-        or "No Normal or Heroic lockout for this raid this week: every boss set to Alive."
-    if saved.M then
-        text = text .. " Mythic groups: you're saved on Mythic, so only your own lockout's group can take you."
+    local text = i
+        and ("Your %s lockout: %d killed, %d still alive (ticked)."):format(DIFF_WORD[diff], n, alive)
+        or ("No %s lockout this week: every boss ticked."):format(DIFF_WORD[diff])
+    if diff == "M" and i then
+        text = text .. " Mythic lockouts are whole: only a group on your own lockout can take you."
     end
-    ns.Log.Emit("filter", { action = "match lockout", name = f.name .. ", " .. raidName .. ": " .. text })
+    ns.Log.Emit("filter", { action = "match lockout", name = raidName .. " " .. diff .. ": " .. text })
     return text
 end
 
@@ -216,17 +216,15 @@ function Filters.Pass(row)
     -- Full raids delist themselves, so "room" only means something for keys.
     if f.room and not row.fits and not row.isRaid then return false end
     if row.isRaid then
-        -- Raids aren't cleared in order, so each boss can be asked for alive
-        -- or dead in the listing.
-        for boss, want in pairs(f.bosses and f.bosses[row.activity] or {}) do
-            local dead = row.killed and row.killed[boss]
-            if (want == "alive" and dead) or (want == "dead" and not dead) then return false end
+        -- Raids aren't cleared in order: each ticked boss must be alive.
+        for boss, on in pairs(f.bosses and f.bosses[row.activity] or {}) do
+            if on and row.killed and row.killed[boss] then return false end
         end
         return true
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
-    if f.lust and not Brings(row.classes, LUST) then return false end
-    if f.brez and not Brings(row.classes, BREZ) then return false end
+    if f.lust and not ns.Groups.CanHave(row, LUST) then return false end
+    if f.brez and not ns.Groups.CanHave(row, BREZ) then return false end
     if f.noMyClass and row.classes and row.classes[select(2, UnitClass("player"))] then return false end
     local score = row.score or 0
     if (f.minScore or 0) > 0 and score < f.minScore then return false end

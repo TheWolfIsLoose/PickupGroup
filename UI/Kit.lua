@@ -177,6 +177,7 @@ function Kit.Check(parent, label, onChange)
     local on = false
     function b:Set(v) on = v and true or false; mark:SetShown(on) end
     function b:Get() return on end
+    function b:SetLabel(t) text:SetText(t); self:SetWidth(18 + text:GetStringWidth() + 4) end
     b:SetScript("OnClick", function(self) self:Set(not on); onChange(on) end)
     b:Set(false)
     return b

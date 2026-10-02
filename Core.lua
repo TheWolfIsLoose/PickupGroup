@@ -14,7 +14,7 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 3
+local SCHEMA = 4
 local DEFAULTS = {
     schema = SCHEMA,
     trace  = true,   -- record trace steps; on by default until v1.0.0
@@ -43,6 +43,14 @@ local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
             f.lust = f.lust == "has" or nil
             f.brez = f.brez == "has" or nil
             f.text = nil  -- leftover from 0.3.4's saved search text
+        end
+    end,
+    -- 4: boss rules are "must be alive" (true) or nothing.
+    [4] = function(db)
+        for _, f in ipairs(db.filters or {}) do
+            for _, bosses in pairs(f.bosses or {}) do
+                for boss, want in pairs(bosses) do bosses[boss] = (want == "alive") or nil end
+            end
         end
     end,
 }
@@ -177,6 +185,11 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
+    elseif cmd == "tp" then
+        -- Dev check: which of this season's dungeons have a known teleport.
+        for _, d in ipairs(ns.Filters.Dungeons()) do
+            ns.Print(d.code .. ": " .. tostring(ns.Pane.TeleportSpell(d.name) or "no teleport known"))
+        end
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

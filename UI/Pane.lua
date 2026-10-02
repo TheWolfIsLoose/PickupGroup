@@ -21,8 +21,8 @@ ns.Pane = Pane
 
 local Kit, Groups = ns.Kit, ns.Groups
 local ROW_H, BAR_H, HEAD_H = 24, 26, 20
-local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 56, 6, 6
-local TILE = 14
+local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 97, 34, 56, 6, 6
+local TILE, TILE_GAP = 17, 3  -- five tiles: 5 x 17 + 4 x 3 = W_COMP
 local W_DIFF = 16
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
 -- M legendary orange (epic purple skipped: too dark to read here).
@@ -51,6 +51,7 @@ local panel, pane, backButton, cooldown, countText, summary, hiddenButton
 local showHidden = false
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
+local raidDiff = {}  -- raid name -> { difficulty letter -> groups in view }
 local offset = 0
 local lastSearch, armed = 0, nil
 -- New mark: listings not in the previous search's results (leader + activity),
@@ -149,17 +150,18 @@ end
 local function RowTooltip(frame)
     local row = frame.row
     if not row then return end
+    local GREY_T = 0.55
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
     if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
-    GameTooltip:AddLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), 0.85, 0.85, 0.85)
-    GameTooltip:AddDoubleLine("Leader", row.leader or "?", 0.55, 0.55, 0.55, 1, 1, 1)
-    if row.region then GameTooltip:AddDoubleLine("Realm region", Groups.REGION_NAME[row.region], 0.55, 0.55, 0.55, 1, 1, 1) end
+    GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
+        0.85, 0.85, 0.85, GREY_T, GREY_T, GREY_T)
     if row.isRaid then
-        GameTooltip:AddDoubleLine("Members", ("%d: %d tank, %d healer, %d damage"):format(row.members or 0,
-            row.counts.TANK, row.counts.HEALER, row.counts.DAMAGER), 0.55, 0.55, 0.55, 1, 1, 1)
-        GameTooltip:AddDoubleLine("Bosses down", row.total and (row.down .. "/" .. row.total) or row.down,
-            0.55, 0.55, 0.55, 1, 1, 1)
+        GameTooltip:AddLine(row.leader or "?", 1, 1, 1)
+        GameTooltip:AddLine(("|A:%s:14:14|a %d   |A:%s:14:14|a %d   |A:%s:14:14|a %d"):format(
+            ROLE_ATLAS.TANK, row.counts.TANK, ROLE_ATLAS.HEALER, row.counts.HEALER, ROLE_ATLAS.DAMAGER, row.counts.DAMAGER), 1, 1, 1)
+        GameTooltip:AddLine(row.total and (row.down .. "/" .. row.total .. " bosses down") or (row.down .. " bosses down"),
+            GREY_T, GREY_T, GREY_T)
         -- Which bosses, by name: a lockout isn't cleared in order.
         local listed = {}
         for _, boss in ipairs(row.bosses) do
@@ -172,22 +174,23 @@ local function RowTooltip(frame)
             if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.72, 0.3) end
         end
     else
-        GameTooltip:AddDoubleLine("Leader score", row.score or 0, 0.55, 0.55, 0.55, 1, 1, 1)
+        local score = row.score or 0
+        local c = score > 0 and C_ChallengeMode.GetDungeonScoreRarityColor(score)
+        GameTooltip:AddDoubleLine(row.leader or "?", score > 0 and score or "-", 1, 1, 1,
+            c and c.r or GREY_T, c and c.g or GREY_T, c and c.b or GREY_T)
+        -- Members as their spec icons: each spec's icon is its own.
+        local icons = {}
         for _, s in ipairs(row.specs) do
-            local c = RAID_CLASS_COLORS[s.file or ""]
-            GameTooltip:AddLine(("%s %s"):format(s.spec or "", s.class or ""), c and c.r or 1, c and c.g or 1, c and c.b or 1)
+            if s.icon then icons[#icons + 1] = ("|T%s:20:20:0:0:64:64:5:59:5:59|t"):format(s.icon) end
         end
+        if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
     end
-    if row.friends > 0 then GameTooltip:AddDoubleLine("Friends in group", row.friends, 0.55, 0.55, 0.55, FRIEND[1], FRIEND[2], FRIEND[3]) end
+    if row.friends > 0 then GameTooltip:AddLine(row.friends .. (row.friends == 1 and " friend" or " friends") .. " in the group", FRIEND[1], FRIEND[2], FRIEND[3]) end
     if row.guild > 0 then
         local g = GuildColor()
-        GameTooltip:AddDoubleLine("Guildmates in group", row.guild, 0.55, 0.55, 0.55, g[1], g[2], g[3])
+        GameTooltip:AddLine(row.guild .. (row.guild == 1 and " guildmate" or " guildmates") .. " in the group", g[1], g[2], g[3])
     end
-    GameTooltip:AddDoubleLine("Listed", Clock(row.age), 0.55, 0.55, 0.55, 1, 1, 1)
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
-    GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Click Apply: sign up with a note.  Shift-click: sign up at once.", 0.55, 0.55, 0.55)
-    GameTooltip:AddLine("Right-click the row: report, blacklist or hide the leader.", 0.55, 0.55, 0.55)
     GameTooltip:Show()
 end
 
@@ -199,17 +202,20 @@ local function ActionTooltip(btn)
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
     elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Shift-click twice to sign up again at once."
-    elseif not row.fits then tip = "No open seat for the roles you sign up as."
+    elseif not row.fits then tip = Groups.Party() and "Not enough open seats for your party's roles." or "No open seat for the roles you sign up as."
     elseif btn.full and ns.db.swap then
         local o = Oldest()
         tip = "All five sign-ups are in use. Click to withdraw the oldest"
             .. (o and (" (" .. (o.code or "?") .. ", " .. (o.leader or "?") .. ")") or "") .. ", then Apply here."
     elseif btn.full then tip = "All five sign-ups are in use (Options: Swap can make room)." end
+    GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
     if tip then
-        GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
         GameTooltip:SetText(tip, 1, 1, 1, 1, true)
-        GameTooltip:Show()
+    else
+        GameTooltip:SetText("Click: sign up with a note. Shift-click: sign up at once.", 1, 1, 1, 1, true)
     end
+    GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55, true)
+    GameTooltip:Show()
 end
 
 -- ---------------------------------------------------------------------------
@@ -223,9 +229,9 @@ local function Tile(parent)
     f.icon = f:CreateTexture(nil, "ARTWORK")
     f.icon:SetPoint("TOPLEFT", 1, -1)
     f.icon:SetPoint("BOTTOMRIGHT", -1, 1)
-    f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    f.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)  -- icon border trimmed, plus a ~10% zoom
     f.role = f:CreateTexture(nil, "ARTWORK")
-    f.role:SetSize(10, 10)
+    f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
     return f
 end
@@ -269,7 +275,7 @@ local function BuildRow(i)
     r.tiles = {}
     for t = 1, 5 do
         r.tiles[t] = Tile(r.comp)
-        r.tiles[t]:SetPoint("LEFT", (t - 1) * (TILE + 2), 0)
+        r.tiles[t]:SetPoint("LEFT", (t - 1) * (TILE + TILE_GAP), 0)
     end
     r.counts = {}
     for c, role in ipairs(ROLES) do
@@ -308,13 +314,17 @@ local function BuildRow(i)
     r.name:SetPoint("LEFT", PAD + 5, 0)  -- room for the new mark
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
-    -- Right-click: report, blacklist or hide the leader.
+    -- Right-click: whisper, report, blacklist or hide the leader.
     r:RegisterForClicks("RightButtonUp")
     r:SetScript("OnClick", function(self)
         local row = self.row
         if not (row and row.leader and MenuUtil) then return end
         MenuUtil.CreateContextMenu(self, function(_, root)
             root:CreateTitle(row.leader)
+            root:CreateButton("Whisper leader", function()
+                local tell = ChatFrameUtil and ChatFrameUtil.SendTell or ChatFrame_SendTell
+                if tell then tell(row.leader) end
+            end)
             root:CreateButton("Report and hide", function()
                 ns.Cleanup.HideForSession(row.leader)
                 if LFGList_ReportListing then LFGList_ReportListing(row.id, row.leader) end
@@ -422,6 +432,13 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
+-- The difficulty most groups listed for a raid are on, or nil.
+function Pane.RaidDifficulty(raid)
+    local best, n = nil, 0
+    for d, c in pairs(raidDiff[raid] or {}) do if c > n then best, n = d, c end end
+    return best
+end
+
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     ns.Filters.Sync()  -- before Blizzard's search on a category change, too
@@ -429,6 +446,17 @@ function Pane.Render()
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
     if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
+    -- Difficulty per raid in view (My lockout follows it).
+    wipe(raidDiff)
+    for _, list in ipairs({ pinned, results }) do
+        for _, row in ipairs(list) do
+            if row.isRaid and row.difficulty then
+                local c = raidDiff[row.activity] or {}
+                c[row.difficulty] = (c[row.difficulty] or 0) + 1
+                raidDiff[row.activity] = c
+            end
+        end
+    end
     hiddenButton.text:SetText(showHidden and "|cffffb84dshowing hidden|r" or (hiddenCount > 0 and (hiddenCount .. " hidden") or ""))
     hiddenButton.text:SetTextColor(0.55, 0.55, 0.55)
     hiddenButton:SetWidth(math.max(1, hiddenButton.text:GetStringWidth()))
@@ -771,3 +799,81 @@ ns.On("LFG_LIST_SEARCH_FAILED", function(reason)
     lastSearch = GetTime()
     if cooldown then cooldown:Show() end
 end)
+
+-- ---------------------------------------------------------------------------
+-- Teleport: a standalone button while the party is full (5/5) for a known
+-- dungeon and not yet inside, casting that dungeon's teleport (the "Path
+-- of ..." spells in the Hero's Path flyouts, matched by their description).
+-- The dungeon: the party's listing, else the group last joined through a
+-- sign-up. A secure button: shown, hidden and set up only out of combat.
+-- Shift-drag moves it.
+-- ---------------------------------------------------------------------------
+local teleport, teleportCache = nil, {}
+
+function Pane.TeleportSpell(dungeon)
+    if teleportCache[dungeon] ~= nil then return teleportCache[dungeon] or nil end
+    local found = false
+    for i = 1, GetNumFlyouts() do
+        local fid = GetFlyoutID(i)
+        local _, _, slots, known = GetFlyoutInfo(fid)
+        for s = 1, (known and slots or 0) do
+            local spellID, _, isKnown = GetFlyoutSlotInfo(fid, s)
+            local desc = spellID and C_Spell.GetSpellDescription(spellID) or ""
+            if isKnown and desc:lower():find(dungeon:lower(), 1, true) then found = spellID end
+        end
+    end
+    -- Descriptions can load late: only remember a hit.
+    if found then teleportCache[dungeon] = found end
+    ns.Trace("teleport", "spell for", dungeon, tostring(found))
+    return found or nil
+end
+
+local function PartyDungeon()
+    local entry = C_LFGList.GetActiveEntryInfo()
+    local act = entry and entry.activityIDs and entry.activityIDs[1]
+    local info = act and C_LFGList.GetActivityInfoTable(act)
+    if info and (info.maxNumPlayers or 5) <= 5 then return Groups.BaseName(info.fullName) end
+    return ns.Applications.LastJoined()
+end
+
+local function UpdateTeleport()
+    if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
+    local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
+        and not IsInInstance() and PartyDungeon()
+    local spell = dungeon and Pane.TeleportSpell(dungeon)
+    if not spell then if teleport then teleport:Hide() end return end
+    if not teleport then
+        Kit.ApplyFontFace()
+        teleport = CreateFrame("Button", "PickupGroupTeleport", UIParent, "SecureActionButtonTemplate")
+        teleport:SetSize(150, 26)
+        local p = ns.db.teleportPoint or { "TOP", "TOP", 0, -140 }
+        teleport:SetPoint(p[1], UIParent, p[2], p[3], p[4])
+        teleport:SetFrameStrata("HIGH")
+        Kit.Button(teleport)
+        teleport:RegisterForClicks("AnyUp", "AnyDown")
+        teleport:SetAttribute("type", "spell")
+        teleport:SetMovable(true)
+        teleport:RegisterForDrag("LeftButton")
+        teleport:SetScript("OnDragStart", function(self) if IsShiftKeyDown() then self:StartMoving() end end)
+        teleport:SetScript("OnDragStop", function(self)
+            self:StopMovingOrSizing()
+            local a, _, b, x, y = self:GetPoint()
+            ns.db.teleportPoint = { a, b, x, y }
+        end)
+        teleport:HookScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:SetSpellByID(self:GetAttribute("spell"))
+            GameTooltip:AddLine("Shift-drag to move.", 0.55, 0.55, 0.55)
+            GameTooltip:Show()
+        end)
+        teleport:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    end
+    teleport:SetAttribute("spell", spell)
+    teleport:SetText("Teleport: " .. Groups.Code(dungeon))
+    teleport:Show()
+end
+
+for _, ev in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LFG_LIST_ACTIVE_ENTRY_UPDATE",
+    "PLAYER_REGEN_ENABLED", "ZONE_CHANGED_NEW_AREA", "SPELLS_CHANGED" }) do
+    ns.On(ev, UpdateTeleport)
+end

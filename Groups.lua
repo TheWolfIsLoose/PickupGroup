@@ -136,6 +136,70 @@ function Groups.MyRoles()
     return { TANK = tank, HEALER = healer, DAMAGER = dps }
 end
 
+-- In a party (not a raid): seats needed per role, from each member's
+-- assigned role, else their spec's role, else unknown (any seat); the
+-- player falls back to a single role picked in Blizzard's role choice.
+-- nil when solo.
+local lastParty
+function Groups.Party()
+    if not IsInGroup() or IsInRaid() then return nil end
+    local need = { TANK = 0, HEALER = 0, DAMAGER = 0, size = 0, classes = {} }
+    local seen = {}
+    for _, unit in ipairs({ "player", "party1", "party2", "party3", "party4" }) do
+        if UnitExists(unit) then
+            need.size = need.size + 1
+            need.classes[select(2, UnitClass(unit)) or "?"] = true
+            local role = UnitGroupRolesAssigned(unit)
+            if role == "NONE" and unit ~= "player" then
+                local spec = GetInspectSpecialization(unit)
+                role = spec and spec > 0 and GetSpecializationRoleByID(spec) or "NONE"
+            elseif role == "NONE" then
+                local r, n = Groups.MyRoles(), 0
+                for k, on in pairs(r) do if on then role, n = k, n + 1 end end
+                if n ~= 1 then role = "NONE" end
+            end
+            if need[role] then need[role] = need[role] + 1 end
+            seen[#seen + 1] = unit .. "=" .. role
+        end
+    end
+    local key = table.concat(seen, " ")
+    if key ~= lastParty then lastParty = key; ns.Trace("groups", "party roles:", key) end
+    return need
+end
+
+-- Seats the player (or the party) takes: per known role, plus "flex" for
+-- members whose role is unknown (or a solo player with several roles).
+function Groups.Need()
+    local need = Groups.Party()
+    if not need then
+        need = { TANK = 0, HEALER = 0, DAMAGER = 0, size = 1, classes = { [select(2, UnitClass("player"))] = true } }
+        local r, n, role = Groups.MyRoles(), 0, nil
+        for k, on in pairs(r) do if on then role, n = k, n + 1 end end
+        if n == 1 then need[role] = 1 end
+    end
+    need.flex = need.size - need.TANK - need.HEALER - need.DAMAGER
+    return need
+end
+
+-- Can the group end up with a class from `set` (class file -> roles it can
+-- fill)? Yes if (1) the group has one; or, with room for the player's party,
+-- (2) the party brings one, or (3) after the party sits down a seat is left
+-- that such a class can fill (unknown roles take the other seats first).
+function Groups.CanHave(row, set)
+    for file in pairs(row.classes or {}) do if set[file] then return true end end
+    if not row.fits or not row.left then return false end
+    local need = Groups.Need()
+    for file in pairs(need.classes) do if set[file] then return true end end
+    local buffRoles = {}
+    for _, roles in pairs(set) do for r in pairs(roles) do buffRoles[r] = true end end
+    local buffSeats, otherSeats = 0, 0
+    for _, r in ipairs({ "TANK", "HEALER", "DAMAGER" }) do
+        local left = math.max(0, row.left[r] - need[r])
+        if buffRoles[r] then buffSeats = buffSeats + left else otherSeats = otherSeats + left end
+    end
+    return buffSeats - math.max(0, need.flex - otherSeats) >= 1
+end
+
 local function Application(id)
     local _, status, pending, remaining = C_LFGList.GetApplicationInfo(id)
     return status, pending, remaining
@@ -169,8 +233,22 @@ function Groups.Read(id)
     if isRaid then
         fits = (info.numMembers or 0) < (activity.maxNumPlayers or 30)
     else
-        for role, on in pairs(mine) do
-            if on and (counts[role .. "_REMAINING"] or 0) > 0 then fits = true end
+        local party = Groups.Party()
+        if party then
+            -- Room for the whole party: every known role has its seats, and
+            -- enough seats are open for everyone.
+            local open = 0
+            fits = true
+            for _, role in ipairs({ "TANK", "HEALER", "DAMAGER" }) do
+                local left = counts[role .. "_REMAINING"] or 0
+                open = open + left
+                if party[role] > left then fits = false end
+            end
+            if open < party.size then fits = false end
+        else
+            for role, on in pairs(mine) do
+                if on and (counts[role .. "_REMAINING"] or 0) > 0 then fits = true end
+            end
         end
     end
 
@@ -212,11 +290,14 @@ function Groups.Read(id)
                         break
                     end
                 end
-                row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename }
+                row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename,
+                    icon = SpecIcon(p.classFilename, p.specName) }
                 if p.classFilename then row.classes[p.classFilename] = true end
             end
         end
         row.tiles = tiles
+        row.left = { TANK = counts.TANK_REMAINING or 0, HEALER = counts.HEALER_REMAINING or 0,
+                     DAMAGER = counts.DAMAGER_REMAINING or 0 }
     end
     return row
 end

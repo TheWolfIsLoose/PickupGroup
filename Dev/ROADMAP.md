@@ -16,12 +16,36 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-10-01 15:20 ET: v0.5.0 (stable) released from `main`** (see
-HISTORY). Design pause over; the decisions and plan are under "Resume
-here" item 1 and 3. Still unverified: greyed-out Apply tooltips (party /
-no seat), the key-run secret-listing trace; both stay on the DevChecklist.
-Next candidates: accessibility + ponytail pass (both addons), party-aware
-room (needs friends), teleport button (needs a party), final name.
+**State, 2026-10-02 01:10 ET: v0.6.0 (stable) released** with everything
+below (player's call, before the round-8 checks; see HISTORY for what
+shipped untested). Built 2026-10-01 (all installed in the
+player's AddOns; the player works through the DevChecklist, round 8, by
+area, tonight / tomorrow):
+- Party-aware room for my role (**works**, player + Tripolos).
+- Whisper leader in the row menu.
+- Raid boss rules = "must be alive" checkboxes; My lockout reads the
+  lockout of the difficulty in view (Pane.RaidDifficulty), button shows
+  it, e.g. "My lockout (H)"; schema 4.
+- Notes strip refreshes when Blizzard's dialog is reused (raid sign-up
+  bug; cause not confirmed, trace "strip shown ... focused").
+- Sign-up history view (Options > Sign-up history; newest 300).
+- Teleport button (5/5 party, not inside; untested; `/pug tp` dev check).
+- Group tooltip trimmed (no labels / realm / hints; spec icons); hints on
+  the Apply tooltip.
+- Dungeon buttons show the best timed key, "AOF (+18)", key white while
+  on, "(—)" for none (measured: fits with 3-letter codes).
+- Has Bloodlust / battle rez: the group has it, the party brings it, or a
+  seat that such a class can fill stays open after the party joins
+  (Groups.CanHave; self-check `lua5.1 Dev/test_canhave.lua`).
+- Raider.IO's profile panel moves to the sidecar's right edge (2px gap)
+  while it's open.
+
+**Next session:** read the saved log + DevChecklist ticks (no paste:
+stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
+what fails, then a v0.6.x patch for anything that fails. Still
+parked: greyed-out Apply tooltip "no seat"; key-run trace; teleport in a
+real 5/5. After that: accessibility + ponytail pass (player decides grey
+vs black rest outlines first), final name before 1.0.
 
 **Testing note (player, 2026-10-01):** the tester plays casually and doesn't
 take notes, so his reports are leads, not repro steps. To answer an issue
@@ -141,7 +165,9 @@ under 2.5.8's 24px (the label widens the checkbox's click area).
 dev-only addon installed as `Interface\AddOns\DevChecklist` (never
 shipped; works for StockClerk too). Each test round, rewrite
 `Checklist.lua` (round name; items as { addon, what to do / expect, what to
-send: SS, log, ... }) and install it; a `/reload` picks it up. It shows at
+send: SS, log, ... }) and install it; a `/reload` picks it up. Group the
+items by area (dungeon view, raid view, notes / sign-ups, options, party,
+...): player, 2026-10-01; keep each area's items together in the list. It shows at
 login while anything is unticked; `/dc` toggles it. Ticks are saved per
 item text in `WTF\Account\SAVAGEFEARLESS\SavedVariables\DevChecklist.lua`:
 read them with the log.
@@ -158,7 +184,7 @@ Next, in order:
    (StockClerk's setup). Before 1.0 every version is `-alphaN`. Still
    open: the final name (display name can change, the slug can't); the
    zlib credit if the realm library ships.
-1. **Party-aware room** (player): "Room for my role" must mean "room for
+1. **Party-aware room** (player; **built on dev 2026-10-01, works**): "Room for my role" must mean "room for
    my group" in a party: the group's open seats fit every party member's
    assigned role (UnitGroupRolesAssigned on party units; the leader's
    sign-up carries the party) and members + party <= 5. The mint ring on
@@ -537,8 +563,12 @@ show hidden, blacklist); alpha3 = per-boss raid rules, search text.
   season.
 - Hint when a raid filter mixes difficulties with boss rules (results
   can't be accurate across lockouts); one difficulty per filter.
-- The sidecar hangs off the Group Finder's right edge and covers
-  Raider.IO's panel while open (Raider.IO's frame is never moved).
+- The sidecar hangs off the Group Finder's right edge. **Changed
+  2026-10-01 (player):** Raider.IO's profile panel moves to the sidecar's
+  right edge while it's open (its anchor frame
+  `RaiderIO_ProfileTooltipAnchor` is re-pointed from PVEFrame to the
+  sidecar, hooked on its SetPoint since Raider.IO re-places it on updates;
+  a user-placed panel is left alone).
 
 Filter setup (keys and raid), save / delete / new tab, Options tab,
 clean-up switches, re-apply friction, blacklist entry.
