@@ -40,6 +40,14 @@ area, tonight / tomorrow):
 - Raider.IO's profile panel moves to the sidecar's right edge (2px gap)
   while it's open.
 
+**0.6.1-alpha1 on dev (2026-10-02, installed, untested; checks added to
+round 8):** grey rest rings on controls (Kit `ringRest` 0.4, 3.3:1; hover
+0.7; window edges and comp tiles stay black: player chose grey);
+checkbox click area 20px (`SetHitRectInsets`; 24px needs 24px rows);
+Blizzard's Filter button tooltip says our keys filter sets it; trace
+lines "levels", "update: category" and empty "reattached" dropped.
+StockClerk gets the same grey rings in its own pass.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still

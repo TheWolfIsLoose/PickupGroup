@@ -138,7 +138,7 @@ local function Reattach()
             elseif not id and time() - (e.ts or 0) > STALE then e.result, e.ended = "unknown", time(); closed = closed + 1 end
         end
     end
-    ns.Trace("apply", "reattached", n, "closed unseen", closed)
+    if n + closed > 0 then ns.Trace("apply", "reattached", n, "closed unseen", closed) end
 end
 
 -- Also fires entering instances, where listings can be secret: errors are logged.

@@ -679,8 +679,6 @@ local function Build()
     -- Our rows nest about 3 levels deep, so the pane sits 5 under.
     local ac = panel.AutoCompleteFrame
     pane:SetFrameLevel(ac and ac:GetFrameLevel() - 5 or panel:GetFrameLevel() + 50)
-    ns.Trace("pane", "levels: panel", panel:GetFrameLevel(), "suggestions", ac and ac:GetFrameLevel(),
-        "list", panel.ScrollBox and panel.ScrollBox:GetFrameLevel(), "pane", pane:GetFrameLevel())
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
@@ -746,8 +744,6 @@ function Pane.Update()
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
     if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
-    ns.Trace("pane", "update: category", tostring(panel.categoryID), "filters", tostring(panel.filters),
-        "shown", tostring(pane:IsShown()))
 end
 
 -- ---------------------------------------------------------------------------
@@ -761,6 +757,16 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     hooksecurefunc("LFGListSearchPanel_SetCategory", function() seen = nil; Pane.Update() end)
     -- Every search restarts the cooldown line.
     hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); if cooldown then cooldown:Show() end end)
+    -- Blizzard's Filter button: our keys filter writes its settings, so say so.
+    local fb = p.FilterButton
+    if not fb then return ns.Trace("pane", "no Filter button") end
+    fb:HookScript("OnEnter", function(self)
+        if not (pane and pane:IsShown() and ns.Filters.Kind() == "keys") then return end
+        if not GameTooltip:IsOwned(self) then GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(FILTER) end
+        GameTooltip:AddLine("Set by PickupGroup's filter: change it there (click the summary above the list).", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    fb:HookScript("OnLeave", function(self) if GameTooltip:IsOwned(self) then GameTooltip:Hide() end end)
 end)
 
 ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
