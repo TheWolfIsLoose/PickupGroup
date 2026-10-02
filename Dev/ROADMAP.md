@@ -68,6 +68,145 @@ Blizzard's list); pinned sign-ups get the marks / name colour too.
 
 **v0.6.1 (stable) released 2026-10-02** with all of the 0.6.1 alphas.
 
+**Parked until the player calls a 1.0 release candidate (2026-10-02):** one
+bundled task = ponytail sweep + WCAG 2.2 pass + roadmap clean-up (prune dead
+items: best-group sort, keys that beat my best, filter picker, release CI,
+"whether to publish"). Left for WCAG: focus cues, 24px targets (18px action
+buttons, 12px checkboxes), friend/guild marks differ by colour only;
+StockClerk's grey rings in its own pass.
+
+**Leader view (player, 2026-10-02): now in design, split into dungeon and
+raid tracks.** 0.6.2-alpha1 adds a temporary probe: each new applicant to
+your listing is traced once (tag "probe": applicant fields, member fields,
+GetApplicantDungeonScoreForListing / GetApplicantBestDungeonScore, Raider.IO
+profile keys); `/pug applicants` logs all. Remove the probe once designed.
+
+**Probe results (2026-10-02, player led a KR key and VA H / M raids):**
+nothing secret out of combat. Per applicant: applicantID, numMembers
+(premades of 2+ seen), isNew, status; note = protected string (`|Kv|k`:
+shown, never read or filtered). Per member: Name-Realm (realm suffix always
+present, so the region filter works), class, specID, offered roles + assigned
+role, ilvl, M+ score. `GetApplicantDungeonScoreForListing(id, m, activityID)`:
+best run in the listed dungeon (bestRunLevel, finishedSuccess = timed,
+duration, mapScore); `GetApplicantBestDungeonScore`: overall best run. Raid
+applicants: score 0, keys fields empty. Raider.IO (when loaded):
+`RaiderIO.GetProfile(name)` -> mythicKeystoneProfile (currentScore,
+maxDungeonLevel, milestones...), raidProfile (progress, sortedProgress,
+mainProgress tables: drill into these for raid progress).
+
+**Keys leader view, first cut (0.6.2-alpha2, untested; new file
+UI/Leader.lua, game restart):** our frame over Blizzard's ApplicationViewer
+(Name column header to ScrollBox bottom) while leading a key and leader or
+solo; top bar "Needs <seats>, Bloodlust, battle rez" (invited applicants count
+as seated); rows per applicant member (spec icon, mint ring = fills an open
+seat; name; ilvl; score; best run in the listed dungeon, white timed / amber
+not; "Lust" / "Rez" adds); note line under the applicant (protected text,
+shown only); dimmed = no seat for the role, region off in the keys filter,
+blacklisted; Invite / Decline buttons (C_LFGList.InviteApplicant /
+DeclineApplicant from our click: spike whether blocked). WCAG note: timed
+vs not is colour only (tooltip says it) — fix in the 1.0 pass.
+
+**Round 12 (player): keys leader view works.** Invite / Decline from our
+buttons went through, nothing blocked (an invitee joined). Fixed in alpha3:
+"lead" log kind was missing (entries dropped as "unknown kind"); a duo's
+second member is indented and joined by a line; Blizzard's scroll bar is
+covered by our own track + thumb.
+**Tester reports (Tripoloski's saved file, 0.6.1):** (1) applying to the
+player's group showed no friend cue (his nameColors is on, so it'd be a blue
+name) and it didn't sort to the top: alpha3 sorts friends, then guild, first
+(as Blizzard); the cue itself is unexplained, so alpha3 traces each Apply
+click with the listing's numBNetFriends / numCharFriends / numGuildMates.
+(2) a plain click signed up with no dialog: his log shows our direct-apply
+path ran (13:30:59, 13:35:29, 13:35:40) while other clicks opened the
+dialog, alternating; cause unknown (shift held? another addon?): the same
+trace logs mouse button, shift state and whether Blizzard's dialog function
+exists. Needs his file after another try on dev.
+
+**EllesmereUI (player, 2026-10-02):** its "Quick Signup" and "Persistent
+Signup Note" clash with our notes (likely behind the tester's no-dialog
+sign-ups). alpha4: Options "My notes under Blizzard's sign-up window" (on by
+default, `db.noteStrip = false` turns it off); trace whether EllesmereUI is
+loaded. Also fixed: a note box kept its selection after losing focus.
+
+**Apply flipped back + EllesmereUI clash handled (player, 2026-10-02;
+0.6.2-alpha6):** click Apply = sign up at once (no note); shift-click =
+Blizzard's sign-up window with our notes (deliberate). Reapply: click twice
+= at once; shift-click = the window. EllesmereUI (QoL module, read from
+`EllesmereUIDB`, compatibility only): `quickSignup` auto-presses Sign Up
+when the window shows unless Shift is held, so our shift-click (Shift held
+as the window opens) keeps it open: no clash. `persistSignupNote` replaces
+LFGListApplicationDialog_Show and adds its own copy helper: clash, so
+`Notes.Conflict()` turns our strip off (`Notes.StripOn()`), an alert window
+says why and how to change it (once per onset: `db.noteConflict`, checked
+at login and on every sign-up window / Options paint), Options shows an
+amber "Off: ..." line, the Notes tab an amber notice.
+
+**Round 13 (player, 2026-10-02):** new clicks pass (log: shift true ->
+dialog, false -> direct); EllesmereUI detection follows its toggles live (log
+14:29:05 clash on, 14:31:39 gone, no reload): we read its in-memory
+`EllesmereUIDB`, which its option toggles write at once. Issues ->
+0.6.2-alpha7: leader scroll ran past the last applicant (now stops when the
+last one is in view); "Use Blizzard's list instead" left our narrowing in
+Blizzard's filter (now cleared: every dungeon, no role / class / score;
+`Filters.RestoreBlizzard`); friends / guild groups always show (our rules and
+clean-up skip them; Blizzard's search still applies) and sort first. **Open:**
+a BNet friend's listed group showed no cue and didn't sort first: our read
+gave 0 friends (traces: bnet 0 char 0 guild 0 on every click). `/pug friends`
+probe dumps listing fields + GetSearchResultFriends. Friend couldn't see the
+player's listing even in Blizzard's list: unexplained, his file from that
+attempt needed. Mint border on sign-ups "a bit much" (player): revisit.
+
+**Mint rings trimmed (player, 2026-10-02; 0.6.2-alpha8):** search comp tiles
+no longer ring your role's empty seat in mint (an empty seat already reads as
+open; the layout is consistent and scans well). Leader view: the spec icon's
+mint "fills a seat" ring only from 3 in the group (`RING_FROM`); at 1-2 comp
+is wide open and the ring cluttered the spec icon, a primary decision cue.
+
+**Round 14 (player, 2026-10-02): all pass** but party items. A BNet friend's
+group (Twompy, MR) sorted to the top with the friend mark and "1 friend in the
+group" in its tooltip, so the friend counts do come through (the earlier
+zero is unexplained; /pug friends probe removed in alpha9). Use Blizzard's
+list cleared our narrowing (menu screenshot); the PickupGroup button that
+switches back now logs the setting too. Leader: duo rows joined, scroll stops
+at the end, no rings solo. Still open: the friend who couldn't see the
+player's listing (needs his file), teleport, key run.
+
+**Leader "fills a seat" cue (player, 2026-10-02; alpha10):** mint stays, moved
+from a ring on the spec icon to a 2px mint edge on the row's left (from 3
+in the group); with the dimming of non-fits, that pair is the cue.
+
+**Round 15 (player, 2026-10-02): pass.** Leader panel is one piece (header
+to the viewer's right edge, up to the refresh corner) with our refresh; mint
+edges from 3 in the group. Checklist pruned to round 16: only the friend
+test, teleport and key run remain.
+
+**Teleport (testers, 2026-10-02): works** (shows on a full group, casts);
+it stayed until inside the instance. alpha13 hides it once the cast
+succeeds (UNIT_SPELLCAST_SUCCEEDED for its spell); it comes back for the
+next full group.
+
+Leader view design notes (player, 2026-10-02):
+- **Target comp** the leader sets per listing kind: raid sizes like
+  2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.
+  Applicant rows get contextual cues against it: fills an open seat,
+  over target for that role (dimmed, never hidden), plus the filter logic
+  we already have (score floor, realm region, blacklist).
+- **Rounding out the comp:** contextual highlights / nods when an applicant
+  brings something the group lacks: Bloodlust, battle rez, and (raids)
+  class-provided raid buffs or utility not yet covered. A highlight on the
+  applicant, phrased as what they'd add ("adds Bloodlust"), never as what
+  someone lacks. The buff/utility table is per class, checked in game each
+  season.
+- **No class / spec filters for leaders (player, Decided):** they create
+  blind spots and gaps and invite toxic behaviour. Cues only point at what
+  an applicant adds; nothing hides or ranks people by class or spec.
+- Tracks: dungeon (keys) and raid, designed and built separately.
+
+**v0.7.0 (stable) released 2026-10-02** with all 0.6.2 alphas. Next: raid
+leader view (target comp, seats per role, raid buffs an applicant adds,
+Raider.IO progress); open: friend couldn't see the player's listing (his
+file), key run, teleport hide-on-cast check.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still

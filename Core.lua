@@ -101,6 +101,19 @@ function Notes.Set(i, text)
     Notes.All()[i] = text ~= "" and text or nil
 end
 
+-- Another addon's sign-up note tool on Blizzard's window clashes with ours:
+-- a sentence saying which, or nil. Read from its saved settings, so a change
+-- there counts at once. (Its auto-sign-up doesn't clash: our shift-click
+-- holds Shift while the window opens, and it leaves the window open then.)
+function Notes.Conflict()
+    if C_AddOns.IsAddOnLoaded("EllesmereUIQoL") and type(EllesmereUIDB) == "table" and EllesmereUIDB.persistSignupNote then
+        return "EllesmereUI's Persistent Signup Note is on"
+    end
+end
+
+-- Our notes under Blizzard's window: the player's choice, unless something clashes.
+function Notes.StripOn() return ns.db.noteStrip ~= false and not Notes.Conflict() end
+
 -- The notes in slot order, gaps closed.
 function Notes.List()
     local out, all = {}, Notes.All()
@@ -194,6 +207,8 @@ function ns.OnSlash(msg)
         for _, d in ipairs(ns.Filters.Dungeons()) do
             ns.Print(d.code .. ": " .. tostring(ns.Pane.TeleportSpell(d.name) or "no teleport known"))
         end
+    elseif cmd == "applicants" then
+        ns.Applications.ProbeApplicants(true)  -- dev probe (leader side)
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

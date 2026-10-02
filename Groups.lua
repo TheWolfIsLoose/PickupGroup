@@ -329,8 +329,11 @@ function Groups.List(showHidden)
     for _, id in ipairs(results or {}) do
         if not seen[id] then
             local row = SafeRead(id)
-            if row and (row.status or ns.Filters.Pass(row)) then
-                row.hidden = ns.Cleanup.Reason(row)
+            -- People you know always show (player): Blizzard's search already
+            -- narrowed them; our own rules and clean-up don't.
+            local known = row and (row.friends > 0 or row.guild > 0)
+            if row and (row.status or known or ns.Filters.Pass(row)) then
+                row.hidden = not known and ns.Cleanup.Reason(row) or nil
                 if row.hidden then hidden = hidden + 1 end
                 if (row.hidden ~= nil) == (showHidden == true) then rows[#rows + 1] = row end
             end
@@ -340,6 +343,9 @@ function Groups.List(showHidden)
         -- Must agree whichever row comes first, or table.sort breaks: a
         -- raid category can return a non-raid listing. Raids go first.
         if a.isRaid ~= b.isRaid then return a.isRaid == true end
+        -- People you know first, as Blizzard's list does (friends, then guild).
+        if (a.friends > 0) ~= (b.friends > 0) then return a.friends > 0 end
+        if (a.guild > 0) ~= (b.guild > 0) then return a.guild > 0 end
         if a.isRaid then
             if (a.down or 0) ~= (b.down or 0) then return (a.down or 0) < (b.down or 0) end
             return (a.age or 0) < (b.age or 0)

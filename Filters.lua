@@ -27,6 +27,7 @@ local T, H, D = "TANK", "HEALER", "DAMAGER"
 local function Roles(...) local o = {} for _, r in ipairs({ ... }) do o[r] = true end return o end
 local LUST = { SHAMAN = Roles(H, D), MAGE = Roles(D), HUNTER = Roles(D), EVOKER = Roles(H, D) }
 local BREZ = { DRUID = Roles(T, H, D), DEATHKNIGHT = Roles(T, D), WARLOCK = Roles(D), PALADIN = Roles(T, H, D) }
+Filters.LUST, Filters.BREZ = LUST, BREZ  -- the leader view reads them too
 
 local function All()
     ns.db.filters = ns.db.filters or {}
@@ -206,6 +207,22 @@ function Filters.Sync()
     local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating .. (mine and "|no other mine" or "")
     ns.Log.Emit("filter", { action = "blizzard filter", name = f.name .. ": " .. key
         .. (missing and (" (unmapped: " .. missing .. ")") or "") })
+end
+
+-- "Use Blizzard's group list instead": hand Blizzard's filter back clear of
+-- what we wrote (every dungeon, no role / class / score narrowing), so
+-- Blizzard's list isn't quietly narrowed by our filter. Its other settings
+-- (playstyle, difficulty) were never ours and stay.
+function Filters.RestoreBlizzard()
+    local adv = C_LFGList.SaveAdvancedFilter and C_LFGList.GetAdvancedFilter()
+    if not adv then return end
+    local acts = {}
+    for _, id in pairs(GroupIDs()) do acts[#acts + 1] = id end
+    adv.activities = acts
+    adv.needsTank, adv.needsHealer, adv.needsDamage, adv.needsMyClass = false, false, false, false
+    adv.minimumRating = 0
+    C_LFGList.SaveAdvancedFilter(adv)
+    ns.Log.Emit("filter", { action = "blizzard filter cleared", name = #acts .. " dungeons" })
 end
 
 -- Does a row pass the active filter of its kind?
