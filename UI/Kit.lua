@@ -2,7 +2,7 @@
     PickupGroup - UI/Kit.lua
     The look, shared by every window: fonts, palette and the style helpers.
     Same visual language as StockClerk (its Dev/STYLE.md): flat fills, 1px
-    black lines, mint accent, drawn glyphs, no Blizzard templates.
+    black lines (grey rings on controls), mint accent, drawn glyphs, no Blizzard templates.
 --]]
 
 local _, ns = ...
@@ -46,10 +46,11 @@ Kit.Palette = {
     panelBg   = { 0.060, 0.060, 0.060, 0.98 }, -- sidecar, log window
     btnRest   = { 1, 1, 1, 0.07 },
     well      = { 1, 1, 1, 0.08 },             -- text boxes, checkboxes: visibly "fill me"
-    ringHover = { 0.55, 0.55, 0.55, 1 },       -- input under the mouse
+    ringRest  = { 0.4, 0.4, 0.4, 1 },          -- controls at rest: 3.3:1 on the panel (WCAG 1.4.11)
+    ringHover = { 0.7, 0.7, 0.7, 1 },          -- control under the mouse
     hoverWash = { 0.851, 0.851, 0.851, 0.15 },
     pressFill = { 0.851, 0.851, 0.851, 0.22 },
-    border    = { 0, 0, 0, 1 },
+    border    = { 0, 0, 0, 1 },                -- window edges, tiles (not controls)
     brand     = { 0.596, 1, 0.596, 1 },        -- mint
     glyphRest = { 0.85, 0.85, 0.85, 1 },
 }
@@ -80,7 +81,7 @@ function Kit.Band(frame, color)
     frame._band:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
 end
 
--- Ring colour for an input: mint while typing, grey under the mouse, else black.
+-- Ring colour for an input: mint while typing, light grey under the mouse, else grey.
 local function Ring(frame, c)
     for _, t in ipairs(frame._border) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
 end
@@ -101,12 +102,12 @@ function Kit.Border(frame, color)
     return ring
 end
 
--- Flat button: base + band, hover wash, press flash, black ring. Scripts are
+-- Flat button: base + band, hover wash, press flash, grey ring. Scripts are
 -- hooked, so callers must HookScript too or the wash dies.
 function Kit.Button(btn)
     Kit.Fill(btn, Palette.bgMedium)
     Kit.Band(btn, Palette.btnRest)
-    Kit.Border(btn)
+    Kit.Border(btn, Palette.ringRest)
     local wash = Solid(btn, "ARTWORK", 7, Palette.hoverWash)
     wash:SetPoint("TOPLEFT", 1, -1)
     wash:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -145,6 +146,7 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     local tint = Kit.Glyph(btn, bars)
     btn:SetScript("OnEnter", function(self)
         tint(Palette.brand)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText(tip)
         GameTooltip:Show()
@@ -159,13 +161,15 @@ end
 function Kit.Check(parent, label, onChange)
     local b = CreateFrame("Button", nil, parent)
     b:SetHeight(16)
+    -- ponytail: 20px tall to click (rows sit 20px apart); 24px (WCAG 2.5.8) needs 24px rows.
+    b:SetHitRectInsets(0, 0, -2, -2)
     local well = CreateFrame("Frame", nil, b)
     well:SetSize(12, 12)
     well:SetPoint("LEFT")
     Kit.Fill(well, Palette.well)
-    Kit.Border(well)
+    Kit.Border(well, Palette.ringRest)
     b:SetScript("OnEnter", function() Ring(well, Palette.ringHover) end)
-    b:SetScript("OnLeave", function() Ring(well, Palette.border) end)
+    b:SetScript("OnLeave", function() Ring(well, Palette.ringRest) end)
     local mark = well:CreateTexture(nil, "OVERLAY")
     mark:SetSize(8, 8)
     mark:SetPoint("CENTER")
@@ -183,7 +187,7 @@ function Kit.Check(parent, label, onChange)
     return b
 end
 
--- Text box: light well + black ring (grey on hover, mint while typing). onCommit(text) on Enter or losing
+-- Text box: light well + grey ring (grey on hover, mint while typing). onCommit(text) on Enter or losing
 -- focus. Clears focus when hidden (a hidden focused box eats every key).
 function Kit.Edit(parent, width, onCommit, numeric)
     local e = CreateFrame("EditBox", nil, parent)
@@ -193,7 +197,7 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetTextInsets(6, 6, 0, 0)
     if numeric then e:SetNumeric(true) end
     Kit.Fill(e, Palette.well)
-    Kit.Border(e)
+    Kit.Border(e, Palette.ringRest)
     -- SetScript drops any hooks already on that script, so set before hooking
     -- (the rest ring after typing never came back while this ran last).
     e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
@@ -201,9 +205,9 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetScript("OnEditFocusLost", function(self) onCommit(self:GetText()) end)
     e:SetScript("OnHide", function(self) self:ClearFocus() end)
     e:HookScript("OnEnter", function(self) if not self:HasFocus() then Ring(self, Palette.ringHover) end end)
-    e:HookScript("OnLeave", function(self) if not self:HasFocus() then Ring(self, Palette.border) end end)
+    e:HookScript("OnLeave", function(self) if not self:HasFocus() then Ring(self, Palette.ringRest) end end)
     e:HookScript("OnEditFocusGained", function(self) Ring(self, Palette.brand) end)
-    e:HookScript("OnEditFocusLost", function(self) Ring(self, self:IsMouseOver() and Palette.ringHover or Palette.border) end)
+    e:HookScript("OnEditFocusLost", function(self) Ring(self, self:IsMouseOver() and Palette.ringHover or Palette.ringRest) end)
     return e
 end
 

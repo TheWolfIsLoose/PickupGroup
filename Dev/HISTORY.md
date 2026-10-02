@@ -2,6 +2,26 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.6.1 (2026-10-02)
+
+Code jam (alpha1-4), rounds 8-10 tested in game except teleport in a 5/5
+and a key run (player: don't hold the release for them).
+- Kit palette `ringRest` 0.4 grey on buttons, text boxes, checkbox wells
+  and off toggles (3.3:1 against the panel, WCAG 1.4.11); `ringHover` 0.7;
+  window edges and comp tiles stay black. Checkbox hit rect +2px top and
+  bottom (20px; 24px needs 24px rows).
+- `ns.Hints()` / `db.noHints`: Options "Hide hint tooltips" hides how-to
+  tooltips (Apply hint, checkbox / region / role / header icon / hidden
+  count / My lockout / Filter button / teleport move line); information
+  tooltips stay.
+- `Pane.RaidDifficulty`: the searched text "<raid> (Normal|Heroic|Mythic)"
+  (PLAYER_DIFFICULTY1/2/6) first, listings second.
+- My lockout toggles: session-only undo of the raid's boss rules; mint
+  while applied; a hand edit or Reset drops it.
+- Blizzard's Filter button tooltip line (keys only).
+- Friends mark on pinned rows; coloured names: friend blue wins.
+- Trace lines "levels", "update: category" and empty "reattached" dropped.
+
 ## v0.6.0 (2026-10-02)
 
 Player asked for a quick release of the day's work; DevChecklist round 8

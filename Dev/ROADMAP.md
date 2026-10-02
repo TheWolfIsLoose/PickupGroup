@@ -40,6 +40,34 @@ area, tonight / tomorrow):
 - Raider.IO's profile panel moves to the sidecar's right edge (2px gap)
   while it's open.
 
+**0.6.1-alpha1 on dev (2026-10-02, installed, untested; checks added to
+round 8):** grey rest rings on controls (Kit `ringRest` 0.4, 3.3:1; hover
+0.7; window edges and comp tiles stay black: player chose grey);
+checkbox click area 20px (`SetHitRectInsets`; 24px needs 24px rows);
+Blizzard's Filter button tooltip says our keys filter sets it; trace
+lines "levels", "update: category" and empty "reattached" dropped.
+StockClerk gets the same grey rings in its own pass.
+
+**Round 8 (2026-10-02, player): all pass** except Normal lockout (button
+read "My lockout" with no Normal groups listed), teleport in a 5/5 and a key
+run (both carried to round 9). **0.6.1-alpha2:** My lockout's difficulty
+comes from the searched text "<raid> (Normal)" first (`Pane.RaidDifficulty`,
+PLAYER_DIFFICULTY1/2/6), listings second; Options "Hide hint tooltips"
+(`db.noHints`, `ns.Hints()`; player: veterans want the how-to tooltips gone;
+information tooltips — rows, reasons, results, dungeon best keys — stay).
+Noted: the notes strip traces twice per open (OnShow + the _Show hook), harmless.
+
+**Round 9 (2026-10-02, player): all pass** — Normal lockout label with no
+groups, My lockout toggle (alpha3: second click restores the earlier boss
+picks, mint while applied; a hand edit or Reset drops the undo), Hide hint
+tooltips on/off. Still open: teleport in a 5/5, key run (need a group).
+
+**Friends mark settled (player, 2026-10-02; 0.6.1-alpha4):** mixed group =
+two marks (blue + green); "Colour names" goes friend blue when both (as
+Blizzard's list); pinned sign-ups get the marks / name colour too.
+
+**v0.6.1 (stable) released 2026-10-02** with all of the 0.6.1 alphas.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still

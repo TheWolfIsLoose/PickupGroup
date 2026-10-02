@@ -31,6 +31,7 @@ local bossLabel
 local filterView, optionsView, notesView, view = nil, nil, nil, "filter"
 local headTabs = {}
 local open = {}  -- raid name -> heading unfolded (this session)
+local undo = {}  -- raid name -> boss rules before My lockout (false: none); a second click restores them
 
 local function Changed()
     ns.Pane.Render()
@@ -52,11 +53,11 @@ local function Toggle(parent, text, w, onClick)
     b:SetHighlightFontObject("PickupGroupFontSmall")
     b:SetText(text)
     -- On: the choice's colour as text and a 1px ring on a neutral fill, so
-    -- every colour reads (no colour-on-green). Off: grey, black ring.
+    -- every colour reads (no colour-on-green). Off: grey text, grey ring.
     function b:Paint(on, color)
         local c = on and (color or MINT) or { 0.6, 0.6, 0.6 }
         self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
-        local ring = on and c or Kit.Palette.border
+        local ring = on and c or Kit.Palette.ringRest
         for _, t in ipairs(self._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
     end
     b:SetScript("OnClick", onClick)
@@ -85,6 +86,7 @@ local function RegionRow(box, y)
         b.region = code
         b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), y - 16)
         b:HookScript("OnEnter", function(self)
+            if not ns.Hints() then return end
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText(ns.Groups.REGION_NAME[self.region])
             GameTooltip:AddLine("Groups whose leader plays on a realm in this region.", 0.74, 0.74, 0.74, true)
@@ -144,24 +146,38 @@ local function PaintRaid(f)
                 editing.bosses = rules
                 rules[l.bossRaid] = rules[l.bossRaid] or {}
                 rules[l.bossRaid][l.boss] = on or nil
+                undo[l.bossRaid] = nil  -- edited by hand: My lockout starts over
                 Sidecar.Paint(); Changed()
             end)
             l.check:SetPoint("LEFT")
+            -- My lockout toggles: on ticks the lockout, off puts back what was ticked before.
             l.want = Toggle(l, "", 80, function(self)
-                local text = Filters.MatchLockout(editing, self.raid, ns.Pane.RaidDifficulty(self.raid))
-                open[self.raid] = true
+                local raid, text = self.raid, nil
+                editing.bosses = editing.bosses or {}
+                if undo[raid] ~= nil then
+                    editing.bosses[raid] = undo[raid] or nil
+                    undo[raid] = nil
+                    text = "Your earlier boss picks are back."
+                else
+                    local d = ns.Pane.RaidDifficulty(raid)
+                    if DIFF_WORD[d] then undo[raid] = CopyTable(editing.bosses[raid] or {}) end
+                    text = Filters.MatchLockout(editing, raid, d)
+                end
+                open[raid] = true
                 Sidecar.Paint(); Changed()
                 GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
             end)
             l.want:SetHeight(16)
             l.want:SetPoint("RIGHT")
             l.want:HookScript("OnEnter", function(self)
+                if not ns.Hints() then return end
                 local d = ns.Pane.RaidDifficulty(self.raid)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText("My lockout", 1, 1, 1)
                 GameTooltip:AddLine("Ticks the bosses this character hasn't killed this week"
-                    .. (DIFF_WORD[d] and (" on " .. DIFF_WORD[d] .. ", the difficulty of the groups listed.")
-                        or ". Search the raid with a difficulty first: the lockout follows the groups listed."),
+                    .. (DIFF_WORD[d] and (" on " .. DIFF_WORD[d] .. ", the difficulty you searched.")
+                        or ". Search the raid with a difficulty first (Blizzard's raid + difficulty suggestion).")
+                    .. " Click again to put your earlier picks back.",
                     0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end)
@@ -196,7 +212,7 @@ local function PaintRaid(f)
         local d = ns.Pane.RaidDifficulty(raid.name)
         h.want.raid = raid.name
         h.want:SetText("My lockout" .. (d and (" (" .. d .. ")") or ""))
-        h.want:Paint(false)
+        h.want:Paint(undo[raid.name] ~= nil)
         h.want:Show()
         for _, boss in ipairs(open[raid.name] and raid.bosses or {}) do
             local l = Line()
@@ -286,6 +302,7 @@ local function BuildKeys(parent)
         cb:SetPoint("TOPLEFT", 0, y)
         if c[3] then
             cb:HookScript("OnEnter", function(self)
+                if not ns.Hints() then return end
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText(c[2])
                 GameTooltip:AddLine(c[3], 0.74, 0.74, 0.74, true)
@@ -384,9 +401,10 @@ local function BuildOptions(parent)
     end)
     names:SetPoint("TOPLEFT", 0, y)
     names:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Colour names for friends / guild")
-        GameTooltip:AddLine("Like Blizzard's list: group names turn green with a guildmate in, blue with a friend. Replaces the marks.", 0.74, 0.74, 0.74, true)
+        GameTooltip:AddLine("Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.", 0.74, 0.74, 0.74, true)
         GameTooltip:Show()
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -399,6 +417,7 @@ local function BuildOptions(parent)
     end)
     swap:SetPoint("TOPLEFT", 0, y)
     swap:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Swap when all sign-ups are out")
         GameTooltip:AddLine("With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.", 0.74, 0.74, 0.74, true)
@@ -406,6 +425,14 @@ local function BuildOptions(parent)
     end)
     swap:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.swap = swap
+    y = y - 22
+    -- Opt-in (player): veterans can turn off the how-to tooltips.
+    local hints = Kit.Check(box, "Hide hint tooltips", function(on)
+        ns.db.noHints = on or nil
+        ns.Log.Emit("setting", { key = "noHints", on = on })
+    end)
+    hints:SetPoint("TOPLEFT", 0, y)
+    box.hints = hints
     y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
@@ -473,6 +500,7 @@ local function PaintOptions()
     o.blizz:Set(ns.db.useBlizzard)
     o.names:Set(ns.db.nameColors)
     o.swap:Set(ns.db.swap)
+    o.hints:Set(ns.db.noHints)
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
@@ -550,6 +578,7 @@ local function Build()
             C_Timer.After(3, function() self.armed = nil; self:SetText("Reset") end)
             return
         end
+        wipe(undo)
         self.armed = nil
         self:SetText("Reset")
         Filters.Reset(editing)
