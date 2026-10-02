@@ -30,7 +30,7 @@ local STATUS = { invited = "Invited", inviteaccepted = "Joined", invitedeclined 
                  declined_full = "Declined", declined_delisted = "Declined", cancelled = "Withdrew",
                  timedout = "Expired", failed = "Failed" }
 
-local viewer, pane, needText, countText, keyHead
+local viewer, pane, needText, countText, keyHead, track, thumb
 local lines = {}
 local offset = 0
 
@@ -167,6 +167,15 @@ local function Line(i)
     l.icon:SetPoint("TOPLEFT", 1, -1)
     l.icon:SetPoint("BOTTOMRIGHT", -1, 1)
     l.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
+    -- A second member of the same application: indented, joined to the row above.
+    l.linkV = l:CreateTexture(nil, "ARTWORK")
+    l.linkV:SetColorTexture(0.4, 0.4, 0.4, 1)
+    l.linkV:SetSize(1, ROW_H / 2 + 4)
+    l.linkV:SetPoint("TOPLEFT", PAD + 6, 4)
+    l.linkH = l:CreateTexture(nil, "ARTWORK")
+    l.linkH:SetColorTexture(0.4, 0.4, 0.4, 1)
+    l.linkH:SetSize(6, 1)
+    l.linkH:SetPoint("LEFT", PAD + 6, 0)
 
     l.x = CreateFrame("Button", nil, l)
     l.x:SetSize(W_X, 18)
@@ -231,6 +240,9 @@ local function PaintMember(l, a, m, first, index)
     l.note:Hide()
     for _, f in ipairs({ l.tile, l.name, l.ilvl, l.score, l.key, l.adds }) do f:Show() end
     l.new:SetShown(first and a.isNew == true)
+    l.tile:ClearAllPoints()
+    l.tile:SetPoint("LEFT", first and PAD or (PAD + 12), 0)
+    l.linkV:SetShown(not first); l.linkH:SetShown(not first)
     l.icon:SetTexture(m.icon)
     local ring = m.fills and MINT or Kit.Palette.border
     for _, t in ipairs(l.tile._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
@@ -257,7 +269,7 @@ local function PaintNote(l, a)
     l.member, l.app = nil, a
     l:SetHeight(NOTE_H)
     l.stripe:SetColorTexture(0, 0, 0, 0)
-    for _, f in ipairs({ l.tile, l.name, l.ilvl, l.score, l.key, l.adds, l.inv, l.x, l.new }) do f:Hide() end
+    for _, f in ipairs({ l.tile, l.name, l.ilvl, l.score, l.key, l.adds, l.inv, l.x, l.new, l.linkV, l.linkH }) do f:Hide() end
     l.note:SetText(a.comment)
     l.note:Show()
     l:SetAlpha(a.applicationStatus == "applied" and 1 or 0.5)
@@ -312,6 +324,14 @@ function Leader.Render()
         end
     end
     for i = n + 1, #lines do lines[i]:Hide() end
+    -- Our own scroll cue over Blizzard's scroll bar: a thumb for the part in view.
+    local h = track:GetHeight()
+    local total, first = math.max(1, #apps), offset
+    local inView = 0
+    for _, l in ipairs(lines) do if l:IsShown() and l.member and l.member == (l.app and l.app.members[1]) then inView = inView + 1 end end
+    thumb:SetShown(inView < #apps)
+    thumb:SetHeight(math.max(12, h * inView / total))
+    thumb:SetPoint("TOP", 0, -(h - thumb:GetHeight()) * (total > inView and first / (total - inView) or 0))
 end
 
 -- ---------------------------------------------------------------------------
@@ -359,6 +379,27 @@ local function Build()
     name:SetPoint("LEFT", PAD, 0)
     name:SetText("Name")
     name:SetTextColor(GREY[1], GREY[2], GREY[3])
+    -- Blizzard's scroll bar scrolls Blizzard's list, not ours: cover it with our own track.
+    local bar = viewer.ScrollBar
+    if bar then
+        track = CreateFrame("Frame", nil, pane)
+        track:SetPoint("TOPLEFT", bar, "TOPLEFT")
+        track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT")
+        track:SetFrameLevel(pane:GetFrameLevel())
+        track:EnableMouse(true)
+        track:EnableMouseWheel(true)
+        track:SetScript("OnMouseWheel", function(_, d) offset = math.max(0, offset - d); Leader.Render() end)
+        Kit.Fill(track, { 0.031, 0.031, 0.031, 1 })
+    else
+        track = CreateFrame("Frame", nil, pane)
+        track:SetPoint("TOPRIGHT", 0, -(BAR_H + HEAD_H))
+        track:SetPoint("BOTTOMRIGHT")
+        track:SetWidth(6)
+    end
+    thumb = track:CreateTexture(nil, "ARTWORK")
+    thumb:SetWidth(4)
+    thumb:SetColorTexture(0.4, 0.4, 0.4, 1)
+    thumb:SetPoint("TOP")
     pane:SetScript("OnShow", function() offset = 0; Leader.Render() end)
     pane:Hide()
 end

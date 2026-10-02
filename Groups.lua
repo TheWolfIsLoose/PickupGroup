@@ -340,6 +340,9 @@ function Groups.List(showHidden)
         -- Must agree whichever row comes first, or table.sort breaks: a
         -- raid category can return a non-raid listing. Raids go first.
         if a.isRaid ~= b.isRaid then return a.isRaid == true end
+        -- People you know first, as Blizzard's list does (friends, then guild).
+        if (a.friends > 0) ~= (b.friends > 0) then return a.friends > 0 end
+        if (a.guild > 0) ~= (b.guild > 0) then return a.guild > 0 end
         if a.isRaid then
             if (a.down or 0) ~= (b.down or 0) then return (a.down or 0) < (b.down or 0) end
             return (a.age or 0) < (b.age or 0)

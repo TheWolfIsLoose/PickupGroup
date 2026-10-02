@@ -106,6 +106,22 @@ blacklisted; Invite / Decline buttons (C_LFGList.InviteApplicant /
 DeclineApplicant from our click: spike whether blocked). WCAG note: timed
 vs not is colour only (tooltip says it) — fix in the 1.0 pass.
 
+**Round 12 (player): keys leader view works.** Invite / Decline from our
+buttons went through, nothing blocked (an invitee joined). Fixed in alpha3:
+"lead" log kind was missing (entries dropped as "unknown kind"); a duo's
+second member is indented and joined by a line; Blizzard's scroll bar is
+covered by our own track + thumb.
+**Tester reports (Tripoloski's saved file, 0.6.1):** (1) applying to the
+player's group showed no friend cue (his nameColors is on, so it'd be a blue
+name) and it didn't sort to the top: alpha3 sorts friends, then guild, first
+(as Blizzard); the cue itself is unexplained, so alpha3 traces each Apply
+click with the listing's numBNetFriends / numCharFriends / numGuildMates.
+(2) a plain click signed up with no dialog: his log shows our direct-apply
+path ran (13:30:59, 13:35:29, 13:35:40) while other clicks opened the
+dialog, alternating; cause unknown (shift held? another addon?): the same
+trace logs mouse button, shift state and whether Blizzard's dialog function
+exists. Needs his file after another try on dev.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

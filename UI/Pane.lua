@@ -117,6 +117,11 @@ end
 local function OnAction(btn, mouse)
     local row = btn.row
     if not row then return end
+    -- Trace (tester: a plain click once signed up with no dialog; a friend's group showed no cue).
+    local info = C_LFGList.GetSearchResultInfo(row.id) or {}
+    ns.Trace("pane", "action", tostring(row.code), tostring(row.leader), "status", tostring(row.status),
+        "mouse", tostring(mouse), "shift", tostring(IsShiftKeyDown()), "dialogFn", tostring(LFGListApplicationDialog_Show ~= nil),
+        "bnet", tostring(info.numBNetFriends), "char", tostring(info.numCharFriends), "guild", tostring(info.numGuildMates))
     if row.status == "applied" then
         C_LFGList.CancelApplication(row.id)
         ns.Log.Emit("cancel", { code = row.code, leader = row.leader })
