@@ -162,8 +162,8 @@ local function Line(i)
     l.stripe = l:CreateTexture(nil, "BACKGROUND", nil, -7)
     l.stripe:SetAllPoints()
     l.new = l:CreateTexture(nil, "OVERLAY")
-    l.new:SetSize(4, 4)
-    l.new:SetPoint("LEFT", 2, 0)
+    l.new:SetSize(3, 3)
+    l.new:SetPoint("LEFT", 3, 0)  -- clear of the 2px edge, clear of the icon
     -- Fills an open seat (from RING_FROM in the group): a mint edge on the
     -- row's left, clear of the spec icon (player: a ring on the icon cluttered it).
     l.edge = l:CreateTexture(nil, "OVERLAY")
@@ -255,10 +255,10 @@ local function PaintMember(l, a, m, first, index)
     for _, f in ipairs({ l.tile, l.name, l.ilvl, l.score, l.key, l.adds }) do f:Show() end
     l.new:SetShown(first and a.isNew == true)
     l.tile:ClearAllPoints()
-    l.tile:SetPoint("LEFT", first and PAD or (PAD + 12), 0)
+    l.tile:SetPoint("LEFT", first and (PAD + 1) or (PAD + 13), 0)
     l.linkV:SetShown(not first); l.linkH:SetShown(not first)
     l.icon:SetTexture(m.icon)
-    l.edge:SetShown(m.ring == true)
+    l.edge:SetShown(m.ring == true and a.applicationStatus == "applied")
     l.name:SetText((m.name or "?"):match("^[^%-]+") or "?")
     l.ilvl:SetText(("%.0f"):format(m.ilvl))
     l.score:SetText(m.score > 0 and m.score or "-")
@@ -366,7 +366,9 @@ local function Build()
     local corner = viewer.RefreshButton or viewer.ScrollBar or viewer.ScrollBox
     pane:SetPoint("LEFT", top, "LEFT")
     pane:SetPoint("TOP", corner, "TOP")
-    pane:SetPoint("RIGHT", viewer.ScrollBar or corner, "RIGHT")
+    -- To the viewer's own right edge: a skinned refresh button's backdrop can be
+    -- wider than the scroll bar and showed past ours (player screenshot).
+    pane:SetPoint("RIGHT", viewer, "RIGHT")
     pane:SetPoint("BOTTOM", viewer.ScrollBox, "BOTTOM")
     pane:SetFrameLevel(viewer.ScrollBox:GetFrameLevel() + 20)
     pane:EnableMouse(true)
