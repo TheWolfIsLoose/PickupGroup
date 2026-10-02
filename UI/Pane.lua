@@ -11,7 +11,8 @@
       rows      sign-ups pinned first (mint edge), then results; wheel scrolls
 
     Action button: Apply (click: Blizzard's sign-up dialog, for a note;
-    shift-click: sign up at once) / time left (hover: Cancel) / Reapply (second click confirms).
+    shift-click: sign up at once) / time left (hover: Cancel) / Reapply (click: the dialog
+    again; shift-click twice: at once).
 --]]
 
 local _, ns = ...
@@ -206,7 +207,7 @@ local function ActionTooltip(btn)
     if row.status == "applied" then tip = "Click to cancel this sign-up."
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
-    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Shift-click twice to sign up again at once."
+    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click: sign up again with a note. Shift-click twice: sign up again at once."
     elseif not row.fits then tip = Groups.Party() and "Not enough open seats for your party's roles." or "No open seat for the roles you sign up as."
     elseif btn.full and ns.db.swap then
         local o = Oldest()
