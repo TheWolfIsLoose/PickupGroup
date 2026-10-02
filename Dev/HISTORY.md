@@ -2,6 +2,32 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.6.0 (2026-10-02)
+
+Player asked for a quick release of the day's work; DevChecklist round 8
+was still open, so items below marked (untested) shipped on code review.
+- Party-aware room: `Groups.Party` (assigned role, else spec via
+  GetInspectSpecialization, else any seat); verified with a 2-DPS party.
+- `Groups.CanHave` (lust / brez): group has it; or with room, the party
+  brings it, or a seat a buff class can fill stays open after the party
+  sits (unknown roles take other seats first). Self-check:
+  `Dev/test_canhave.lua` (10 cases). (untested in game)
+- Dungeon buttons: best timed key (`C_MythicPlus.GetSeasonBestForMap`),
+  "AOF (+19)", key white while on, "(—)" for none. Verified (screenshot).
+- Raid boss rules "must be alive" (schema 4); My lockout reads the saved
+  instance for the difficulty most listed groups for that raid are on
+  (`Pane.RaidDifficulty`). (untested)
+- Tooltip trimmed; hints on the Apply tooltip; Whisper leader
+  (`ChatFrameUtil.SendTell`, as Blizzard's menu). (untested)
+- Sign-up history popup (in LogPopup.lua; newest 300). (untested)
+- Teleport: secure button, Hero's Path flyout spell matched by its
+  description; `/pug tp` dev check. (untested)
+- Raider.IO: `RaiderIO_ProfileTooltipAnchor` re-pointed to the sidecar
+  (2px gap) while open, via a SetPoint hook. Verified (screenshot, 4px).
+- Notes strip: refreshes on `LFGListApplicationDialog_Show` too; focus on
+  the next frame. (raid case untested)
+- Comp tiles 17px, 3px gaps, icons zoomed ~10%. (untested)
+
 ## v0.5.0 (2026-10-01)
 
 Design pause ended (player decisions, see ROADMAP). Verified in game in five

@@ -1,15 +1,13 @@
-## v0.5.0
+## v0.6.0
 
-- One filter per content type (Dungeons, Raids) instead of tabs. The top bar sums it up in a line; click it to set it up. Your active filters carry over.
-- Apply: click opens Blizzard's sign-up window with your notes ready to copy; shift-click signs up at once.
-- Notes tab: keep up to five sign-up notes. They're listed under Blizzard's sign-up window: click one, Ctrl+C, then Ctrl+V into the note.
-- Leader's realm filter: North America, Oceanic, Brazil, Latin America. The region shows in each group's tooltip.
-- "Group has Bloodlust" and "Group has battle rez" are now one checkbox each.
-- New: "No other <your class> in the group" (Blizzard's matching filter is set too).
-- Raids: the difficulty buttons are gone (pick the raid and difficulty in Blizzard's search). Tooltips list every boss as Dead or Alive, since lockouts aren't cleared in order.
-- New option: Swap. With all five sign-ups out, a group's button reads Swap to withdraw your oldest sign-up.
-- Blizzard's own filter is put back in line with yours if it's reset or changed.
-- Blizzard's search suggestions show over the list again.
-- Sign-ups still out after a /reload are tracked to their end.
-- The "new since the last search" dot is bigger.
-- Text boxes go back to their normal outline after typing.
+- In a party, "Room for my role" makes sure there's a seat for everyone's role.
+- "Group has Bloodlust" / "Group has battle rez" also keep groups that will have it: you or your party bring it, or a seat is left after you join that such a class can take.
+- Dungeon buttons show your best timed key there, e.g. AOF (+19).
+- Raids: each boss is a checkbox, "must be alive". My lockout ticks the bosses you haven't killed this week on the difficulty you searched (Normal and Heroic are separate).
+- Group tooltips are leaner: spec icons instead of names, no labels. The click / shift-click hint moved to the Apply button.
+- Right-click a group to whisper its leader.
+- Sign-up history: a new button in Options lists your sign-ups and how they ended, for this character or all of them.
+- Teleport: with a full party for a dungeon you know the teleport to, a Teleport button appears until you're inside (shift-drag to move).
+- Raider.IO's profile panel moves beside the side panel while it's open.
+- Sign-up notes refresh when Blizzard's sign-up window is reused.
+- Bigger group comp icons.

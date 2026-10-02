@@ -16,8 +16,9 @@ cheap.
 
 ## Next session: start here
 
-**State, 2026-10-01 18:10 ET (parked for the night).** v0.5.0 (stable) is
-on `main`. On `dev`, built since and **not released** (all installed in the
+**State, 2026-10-02 01:10 ET: v0.6.0 (stable) released** with everything
+below (player's call, before the round-8 checks; see HISTORY for what
+shipped untested). Built 2026-10-01 (all installed in the
 player's AddOns; the player works through the DevChecklist, round 8, by
 area, tonight / tomorrow):
 - Party-aware room for my role (**works**, player + Tripolos).
@@ -41,7 +42,7 @@ area, tonight / tomorrow):
 
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
-what fails, then cut v0.6.0 (CHANGELOG / HISTORY per RELEASING). Still
+what fails, then a v0.6.x patch for anything that fails. Still
 parked: greyed-out Apply tooltip "no seat"; key-run trace; teleport in a
 real 5/5. After that: accessibility + ponytail pass (player decides grey
 vs black rest outlines first), final name before 1.0.
