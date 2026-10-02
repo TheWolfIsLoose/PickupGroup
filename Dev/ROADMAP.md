@@ -57,6 +57,11 @@ PLAYER_DIFFICULTY1/2/6), listings second; Options "Hide hint tooltips"
 information tooltips — rows, reasons, results, dungeon best keys — stay).
 Noted: the notes strip traces twice per open (OnShow + the _Show hook), harmless.
 
+**Round 9 (2026-10-02, player): all pass** — Normal lockout label with no
+groups, My lockout toggle (alpha3: second click restores the earlier boss
+picks, mint while applied; a hand edit or Reset drops the undo), Hide hint
+tooltips on/off. Still open: teleport in a 5/5, key run (need a group).
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still
