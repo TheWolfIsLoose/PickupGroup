@@ -404,7 +404,7 @@ local function BuildOptions(parent)
         if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Colour names for friends / guild")
-        GameTooltip:AddLine("Like Blizzard's list: group names turn green with a guildmate in, blue with a friend. Replaces the marks.", 0.74, 0.74, 0.74, true)
+        GameTooltip:AddLine("Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.", 0.74, 0.74, 0.74, true)
         GameTooltip:Show()
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)

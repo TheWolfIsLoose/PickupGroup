@@ -1,12 +1,10 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "PickupGroup dev, round 9 (0.6.1-alpha3)"
-local R, O, P = "PickupGroup: Raid view", "PickupGroup: Options", "PickupGroup: Party / later"
+DevChecklist_Round = "PickupGroup dev, round 10 (0.6.1-alpha4)"
+local S, P = "PickupGroup: Sign-ups", "PickupGroup: Party / later"
 DevChecklist_Items = {
-    { R, "Search \"<raid> (Normal)\" when no groups are listed: the button reads My lockout (N); hover says Normal; click it: message names your Normal lockout.", "SS" },
-    { R, "Tick a few bosses by hand, click My lockout: lockout applied, button turns mint. Click it again: your hand picks are back, button grey. (Ticking a boss while it's mint drops back to grey.)", "SS (both states)" },
-    { O, "Tick \"Hide hint tooltips\": no tooltip on Apply (a greyed one still says why), the filter checkboxes, regions, role icons, header icons, the hidden count, My lockout, Blizzard's Filter button. Group rows and dungeon buttons still show theirs.", "SS of one row tooltip" },
-    { O, "Untick it: the hints come back.", "" },
+    { S, "Sign up to a group with a friend or guildmate in it (when you see one): the pinned sign-up keeps the blue / green mark at the end of its name.", "SS" },
+    { S, "Options > Colour names on: a group with a friend AND a guildmate shows its name blue (rare; tick if never seen).", "SS if seen" },
     { P, "In a full 5/5 party from a listing: Teleport button appears, casts the right teleport, gone once inside.", "SS + say done (log)" },
     { P, "Run a key with the Group Finder open at some point.", "say done (log)" },
 }

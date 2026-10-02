@@ -351,10 +351,12 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r.new:SetShown(not isPinned and fresh[row.id] == true)
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.05 or 0)  -- every other row: easier to track across
     r.name:SetText(row.name or "?")
-    local byName, marks, ink = ns.db.nameColors and not isPinned, {}, { 1, 1, 1 }
-    if byName then
-        ink = row.guild > 0 and GuildColor() or row.friends > 0 and FRIEND or ink
-    elseif not isPinned then
+    -- Pinned sign-ups too (player). A mixed group: two marks; a coloured name
+    -- goes friend blue, as Blizzard's list does.
+    local marks, ink = {}, { 1, 1, 1 }
+    if ns.db.nameColors then
+        ink = row.friends > 0 and FRIEND or row.guild > 0 and GuildColor() or ink
+    else
         if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
         if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
     end
