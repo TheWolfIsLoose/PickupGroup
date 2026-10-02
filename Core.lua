@@ -207,27 +207,6 @@ function ns.OnSlash(msg)
         for _, d in ipairs(ns.Filters.Dungeons()) do
             ns.Print(d.code .. ": " .. tostring(ns.Pane.TeleportSpell(d.name) or "no teleport known"))
         end
-    elseif cmd == "friends" then
-        -- Dev probe: what the game says about people you know in each listing.
-        local _, ids = C_LFGList.GetSearchResults()
-        local keys
-        for _, id in ipairs(ids or {}) do
-            local info = C_LFGList.GetSearchResultInfo(id)
-            if info then
-                if not keys then
-                    keys = {}
-                    for k in pairs(info) do keys[#keys + 1] = k end
-                    table.sort(keys)
-                    ns.Trace("probe", "listing fields:", table.concat(keys, " "))
-                end
-                local f = C_LFGList.GetSearchResultFriends and { C_LFGList.GetSearchResultFriends(id) } or {}
-                local parts = {}
-                for i, v in ipairs(f) do parts[i] = type(v) == "table" and ("#" .. #v) or tostring(v) end
-                ns.Trace("probe", "friends", id, tostring(info.leaderName), "bnet", tostring(info.numBNetFriends),
-                    "char", tostring(info.numCharFriends), "guild", tostring(info.numGuildMates), "GetSearchResultFriends", table.concat(parts, " "))
-            end
-        end
-        ns.Print("Logged " .. #(ids or {}) .. " listings.")
     elseif cmd == "applicants" then
         ns.Applications.ProbeApplicants(true)  -- dev probe (leader side)
     elseif cmd == "debug" then

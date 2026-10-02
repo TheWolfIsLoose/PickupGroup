@@ -2,7 +2,7 @@
 ## Title: PickupGroup
 ## Notes: Premade groups inside the Group Finder: a filter per content type, a compact results table, sign-up notes.
 ## Author: Jakerator
-## Version: 0.6.2-alpha8
+## Version: 0.6.2-alpha9
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
 ## X-Curse-Project-ID: 1718475

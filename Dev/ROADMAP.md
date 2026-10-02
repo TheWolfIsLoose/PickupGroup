@@ -162,6 +162,15 @@ open; the layout is consistent and scans well). Leader view: the spec icon's
 mint "fills a seat" ring only from 3 in the group (`RING_FROM`); at 1-2 comp
 is wide open and the ring cluttered the spec icon, a primary decision cue.
 
+**Round 14 (player, 2026-10-02): all pass** but party items. A BNet friend's
+group (Twompy, MR) sorted to the top with the friend mark and "1 friend in the
+group" in its tooltip, so the friend counts do come through (the earlier
+zero is unexplained; /pug friends probe removed in alpha9). Use Blizzard's
+list cleared our narrowing (menu screenshot); the PickupGroup button that
+switches back now logs the setting too. Leader: duo rows joined, scroll stops
+at the end, no rings solo. Still open: the friend who couldn't see the
+player's listing (needs his file), teleport, key run.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

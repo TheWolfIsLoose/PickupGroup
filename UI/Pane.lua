@@ -742,7 +742,11 @@ local function Build()
     Kit.Button(backButton)
     backButton:SetNormalFontObject("PickupGroupFontSmall")
     backButton:SetText("|cff98ff98Pickup|rGroup")
-    backButton:SetScript("OnClick", function() ns.db.useBlizzard = false; Pane.Update() end)
+    backButton:SetScript("OnClick", function()
+        ns.db.useBlizzard = false
+        ns.Log.Emit("setting", { key = "useBlizzard", on = false })
+        Pane.Update()
+    end)
     backButton:Hide()
 
     C_Timer.NewTicker(1, Tick)
