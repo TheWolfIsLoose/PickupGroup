@@ -192,10 +192,31 @@ local function RowTooltip(frame)
         end
         if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
     end
-    if row.friends > 0 then GameTooltip:AddLine(row.friends .. (row.friends == 1 and " friend" or " friends") .. " in the group", FRIEND[1], FRIEND[2], FRIEND[3]) end
-    if row.guild > 0 then
+    -- People you know, by name (the game gives Battle.net friends, character
+    -- friends and guildmates as name lists); counts if the names don't come.
+    if row.friends > 0 or row.guild > 0 then
+        local ok, bnet, chars, guild = pcall(C_LFGList.GetSearchResultFriends, row.id)
+        local function Names(list)
+            local out = {}
+            for _, n in ipairs(type(list) == "table" and list or {}) do
+                if type(n) == "string" and not issecretvalue(n) then out[#out + 1] = n end
+            end
+            return out
+        end
+        local friends = ok and Names(bnet) or {}
+        for _, n in ipairs(ok and Names(chars) or {}) do friends[#friends + 1] = n end
+        local mates = ok and Names(guild) or {}
         local g = GuildColor()
-        GameTooltip:AddLine(row.guild .. (row.guild == 1 and " guildmate" or " guildmates") .. " in the group", g[1], g[2], g[3])
+        if #friends > 0 then
+            GameTooltip:AddLine((#friends == 1 and "Friend: " or "Friends: ") .. table.concat(friends, ", "), FRIEND[1], FRIEND[2], FRIEND[3], true)
+        elseif row.friends > 0 then
+            GameTooltip:AddLine(row.friends .. (row.friends == 1 and " friend" or " friends") .. " in the group", FRIEND[1], FRIEND[2], FRIEND[3])
+        end
+        if #mates > 0 then
+            GameTooltip:AddLine((#mates == 1 and "Guildmate: " or "Guildmates: ") .. table.concat(mates, ", "), g[1], g[2], g[3], true)
+        elseif row.guild > 0 then
+            GameTooltip:AddLine(row.guild .. (row.guild == 1 and " guildmate" or " guildmates") .. " in the group", g[1], g[2], g[3])
+        end
     end
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:Show()

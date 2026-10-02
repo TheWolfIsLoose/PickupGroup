@@ -22,6 +22,11 @@ friends first, Use Blizzard clears our filter, teleport hides on cast).
 Installed in the player's AddOns; main and dev both at v0.7.0. DevChecklist
 round 16 is installed with the three open items below.
 
+**0.7.1-alpha1 on dev (2026-10-02, installed, untested):** group tooltip names
+the friends / guildmates in a listing (C_LFGList.GetSearchResultFriends:
+Battle.net friends, character friends, guildmates), as Blizzard's tooltip
+does; falls back to counts. Checklist round 17.
+
 **Next session, in order:**
 1. Read the saved log + DevChecklist ticks (stage `PickupGroup.lua` and
    `DevChecklist.lua` from SavedVariables; never ask for a paste).
