@@ -10,9 +10,10 @@
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
       rows      sign-ups pinned first (mint edge), then results; wheel scrolls
 
-    Action button: Apply (click: Blizzard's sign-up dialog, for a note;
-    shift-click: sign up at once) / time left (hover: Cancel) / Reapply (click: the dialog
-    again; shift-click twice: at once).
+    Action button: Apply (click: sign up at once; shift-click: Blizzard's sign-up
+    dialog, for a note) / time left (hover: Cancel) / Reapply (click twice: at once;
+    shift-click: the dialog). Shift held while the dialog opens also keeps another
+    addon's auto-sign-up from pressing Sign Up for the player (EllesmereUI's).
 --]]
 
 local _, ns = ...
@@ -135,8 +136,8 @@ local function OnAction(btn, mouse)
             C_LFGList.CancelApplication(o.id)
             ns.Log.Emit("cancel", { code = o.code, leader = o.leader })
         end
-    elseif not IsShiftKeyDown() and LFGListApplicationDialog_Show then
-        -- Click: Blizzard's sign-up dialog, for a note (our notes show under it).
+    elseif IsShiftKeyDown() and LFGListApplicationDialog_Show then
+        -- Shift-click: Blizzard's sign-up dialog, for a note (our notes show under it).
         armed = nil
         LFGListApplicationDialog_Show(LFGListApplicationDialog, row.id)
     elseif OVER[row.status] and armed ~= row.id then
@@ -207,7 +208,7 @@ local function ActionTooltip(btn)
     if row.status == "applied" then tip = "Click to cancel this sign-up."
     elseif row.status == "invited" then tip = "You're invited: answer in Blizzard's invite window."
     elseif NotLeader() then tip = "Only your party leader can sign the party up."
-    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click: sign up again with a note. Shift-click twice: sign up again at once."
+    elseif OVER[row.status] then tip = "You signed up here before (" .. row.status:gsub("_", " ") .. "). Click twice: sign up again at once. Shift-click: sign up again with a note."
     elseif not row.fits then tip = Groups.Party() and "Not enough open seats for your party's roles." or "No open seat for the roles you sign up as."
     elseif btn.full and ns.db.swap then
         local o = Oldest()
@@ -216,7 +217,7 @@ local function ActionTooltip(btn)
     elseif btn.full then tip = "All five sign-ups are in use (Options: Swap can make room)." end
     if not (tip or ns.Hints()) then return end
     GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
-    GameTooltip:SetText(tip or "Click: sign up with a note. Shift-click: sign up at once.", 1, 1, 1, 1, true)
+    GameTooltip:SetText(tip or "Click: sign up at once. Shift-click: sign up with a note.", 1, 1, 1, 1, true)
     if ns.Hints() then
         GameTooltip:AddLine("Right-click the row: whisper, report, blacklist or hide the leader.", 0.55, 0.55, 0.55, true)
     end

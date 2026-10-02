@@ -128,6 +128,19 @@ sign-ups). alpha4: Options "My notes under Blizzard's sign-up window" (on by
 default, `db.noteStrip = false` turns it off); trace whether EllesmereUI is
 loaded. Also fixed: a note box kept its selection after losing focus.
 
+**Apply flipped back + EllesmereUI clash handled (player, 2026-10-02;
+0.6.2-alpha6):** click Apply = sign up at once (no note); shift-click =
+Blizzard's sign-up window with our notes (deliberate). Reapply: click twice
+= at once; shift-click = the window. EllesmereUI (QoL module, read from
+`EllesmereUIDB`, compatibility only): `quickSignup` auto-presses Sign Up
+when the window shows unless Shift is held, so our shift-click (Shift held
+as the window opens) keeps it open: no clash. `persistSignupNote` replaces
+LFGListApplicationDialog_Show and adds its own copy helper: clash, so
+`Notes.Conflict()` turns our strip off (`Notes.StripOn()`), an alert window
+says why and how to change it (once per onset: `db.noteConflict`, checked
+at login and on every sign-up window / Options paint), Options shows an
+amber "Off: ..." line, the Notes tab an amber notice.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

@@ -351,12 +351,18 @@ end
 local noteBoxes = {}
 local function BuildNotes(parent)
     local box = CreateFrame("Frame", nil, parent)
-    local intro = Label(box, "Click Apply to sign up with a note: these are offered to copy under Blizzard's sign-up window. Shift-click Apply signs up at once, no note.")
+    local intro = Label(box, "Shift-click Apply to sign up with a note: these are offered to copy under Blizzard's sign-up window. A plain click signs up at once, no note.")
     intro:SetPoint("TOPLEFT")
     intro:SetPoint("RIGHT")
     intro:SetJustifyH("LEFT")
     intro:SetWordWrap(true)
-    local prev = intro
+    box.why = Label(box, "")
+    box.why:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -6)
+    box.why:SetPoint("RIGHT")
+    box.why:SetJustifyH("LEFT")
+    box.why:SetWordWrap(true)
+    box.why:SetTextColor(1, 0.72, 0.3)
+    local prev = box.why
     for i = 1, ns.Notes.MAX do
         local e = Kit.Edit(box, W - 2 * PAD, function(text) ns.Notes.Set(i, text) end)
         e:SetMaxLetters(255)
@@ -369,6 +375,10 @@ local function BuildNotes(parent)
 end
 
 local function PaintNotes()
+    local why = ns.Notes.Conflict()
+    if notesView then
+        notesView.why:SetText(why and ("Not shown under Blizzard's window: " .. why .. ". Turn it off in EllesmereUI (Quality of Life > Group Finder) to use these.") or "")
+    end
     local list = ns.Notes.All()
     for i, e in ipairs(noteBoxes) do e:SetText(list[i] or "") end
 end
@@ -441,7 +451,11 @@ local function BuildOptions(parent)
     end)
     strip:SetPoint("TOPLEFT", 0, y)
     box.strip = strip
-    y = y - 30
+    y = y - 18
+    box.stripWhy = Label(box, "")
+    box.stripWhy:SetPoint("TOPLEFT", 18, y)
+    box.stripWhy:SetTextColor(1, 0.72, 0.3)
+    y = y - 22
 
     local head = Label(box, "Clean-up: hide listings that...")
     head:SetPoint("TOPLEFT", 0, y)
@@ -509,7 +523,10 @@ local function PaintOptions()
     o.names:Set(ns.db.nameColors)
     o.swap:Set(ns.db.swap)
     o.hints:Set(ns.db.noHints)
-    o.strip:Set(ns.db.noteStrip ~= false)
+    o.strip:Set(ns.Notes.StripOn())
+    local why = ns.Notes.Conflict()
+    o.stripWhy:SetText(why and ("Off: " .. why .. ".") or "")
+    Sidecar.CheckConflict()
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
@@ -662,6 +679,64 @@ function Sidecar.Hide()
     if frame then frame:Hide() end
 end
 
+-- ---------------------------------------------------------------------------
+-- Clash alert: another addon's note tool on Blizzard's sign-up window turns
+-- our notes off. Said once, in a window you can't miss, each time the clash
+-- starts (login, or the other addon's option switched on mid-session).
+-- ---------------------------------------------------------------------------
+local alert
+local function Alert(why)
+    if not alert then
+        Kit.ApplyFontFace()
+        alert = CreateFrame("Frame", "PickupGroupConflictAlert", UIParent)
+        alert:SetWidth(360)
+        alert:SetPoint("TOP", 0, -180)
+        alert:SetFrameStrata("DIALOG")
+        alert:SetToplevel(true)
+        alert:EnableMouse(true)
+        alert:SetClampedToScreen(true)
+        tinsert(UISpecialFrames, "PickupGroupConflictAlert")  -- Escape closes it
+        Kit.Fill(alert, Kit.Palette.panelBg)
+        Kit.Border(alert, { 1, 0.72, 0.3, 1 })
+        alert.title = alert:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
+        alert.title:SetPoint("TOPLEFT", 14, -12)
+        alert.title:SetTextColor(1, 0.72, 0.3)
+        alert.title:SetText("PickupGroup: sign-up notes are off")
+        alert.body = alert:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+        alert.body:SetPoint("TOPLEFT", alert.title, "BOTTOMLEFT", 0, -10)
+        alert.body:SetWidth(332)
+        alert.body:SetJustifyH("LEFT")
+        alert.body:SetWordWrap(true)
+        local ok = CreateFrame("Button", nil, alert)
+        ok:SetSize(90, 24)
+        ok:SetPoint("BOTTOMRIGHT", -12, 12)
+        Kit.Button(ok)
+        ok:SetText("Got it")
+        ok:SetScript("OnClick", function() alert:Hide() end)
+    end
+    alert.body:SetText(why .. ". It and PickupGroup both put a note helper on Blizzard's sign-up window, "
+        .. "so PickupGroup's notes are off while it's on.\n\n"
+        .. "|cffffffffTo use PickupGroup's notes:|r in EllesmereUI's options, Quality of Life > Group Finder, "
+        .. "turn off Persistent Signup Note. PickupGroup's notes come back by themselves.\n\n"
+        .. "|cffffffffTo keep EllesmereUI's:|r nothing to do. Shift-click Apply still opens the sign-up window.")
+    alert.body:SetTextColor(0.85, 0.85, 0.85)
+    alert:SetHeight(12 + alert.title:GetStringHeight() + 10 + alert.body:GetStringHeight() + 16 + 24 + 12)
+    alert:Show()
+end
+
+function Sidecar.CheckConflict()
+    local why = ns.Notes.Conflict()
+    if why and ns.db.noteConflict ~= why then
+        ns.db.noteConflict = why
+        ns.Log.Emit("setting", { key = "notes under Blizzard's window (" .. why .. ")", on = false })
+        Alert(why)
+    elseif not why and ns.db.noteConflict then
+        ns.db.noteConflict = nil
+        ns.Log.Emit("setting", { key = "notes under Blizzard's window (clash gone)", on = true })
+    end
+end
+ns.On("PLAYER_ENTERING_WORLD", function() C_Timer.After(4, Sidecar.CheckConflict) end)
+
 -- The notes, ready to copy, under Blizzard's sign-up dialog while it's open:
 -- click one to select it, then Ctrl+C and Ctrl+V into Blizzard's note box.
 EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
@@ -672,7 +747,8 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     ns.Trace("notes", "EllesmereUI loaded:", tostring(C_AddOns.IsAddOnLoaded("EllesmereUI")))
     local function Refresh()
         local notes = ns.Notes.List()
-        if #notes == 0 or ns.db.noteStrip == false then if strip then strip:Hide() end return end
+        Sidecar.CheckConflict()
+        if #notes == 0 or not ns.Notes.StripOn() then if strip then strip:Hide() end return end
         if not strip then
             Kit.ApplyFontFace()
             strip = CreateFrame("Frame", nil, dialog)
