@@ -21,8 +21,8 @@ ns.Pane = Pane
 
 local Kit, Groups = ns.Kit, ns.Groups
 local ROW_H, BAR_H, HEAD_H = 24, 26, 20
-local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 78, 34, 56, 6, 6
-local TILE = 14
+local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 97, 34, 56, 6, 6
+local TILE, TILE_GAP = 17, 3  -- five tiles: 5 x 17 + 4 x 3 = W_COMP
 local W_DIFF = 16
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
 -- M legendary orange (epic purple skipped: too dark to read here).
@@ -229,9 +229,9 @@ local function Tile(parent)
     f.icon = f:CreateTexture(nil, "ARTWORK")
     f.icon:SetPoint("TOPLEFT", 1, -1)
     f.icon:SetPoint("BOTTOMRIGHT", -1, 1)
-    f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    f.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)  -- icon border trimmed, plus a ~10% zoom
     f.role = f:CreateTexture(nil, "ARTWORK")
-    f.role:SetSize(10, 10)
+    f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
     return f
 end
@@ -275,7 +275,7 @@ local function BuildRow(i)
     r.tiles = {}
     for t = 1, 5 do
         r.tiles[t] = Tile(r.comp)
-        r.tiles[t]:SetPoint("LEFT", (t - 1) * (TILE + 2), 0)
+        r.tiles[t]:SetPoint("LEFT", (t - 1) * (TILE + TILE_GAP), 0)
     end
     r.counts = {}
     for c, role in ipairs(ROLES) do
