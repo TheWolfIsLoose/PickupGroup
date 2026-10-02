@@ -171,6 +171,10 @@ switches back now logs the setting too. Leader: duo rows joined, scroll stops
 at the end, no rings solo. Still open: the friend who couldn't see the
 player's listing (needs his file), teleport, key run.
 
+**Leader "fills a seat" cue (player, 2026-10-02; alpha10):** mint stays, moved
+from a ring on the spec icon to a 2px mint edge on the row's left (from 3
+in the group); with the dimming of non-fits, that pair is the cue.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

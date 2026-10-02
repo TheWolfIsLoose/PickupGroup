@@ -10,7 +10,7 @@
                 applicant who wrote one (shown, never read: the game protects it)
 
     Cues point at what an applicant adds, never at who they are: no class or
-    spec filter (player, Decided). A mint ring on the spec icon = fills an
+    spec filter (player, Decided). A mint edge on the row's left = fills an
     open seat (from 3 in the group); "Lust" / "Rez" = brings what the group lacks; dimmed = over
     the seats for that role, a realm region the keys filter has off, or
     blacklisted (the tooltip says which). Nothing is hidden.
@@ -93,8 +93,8 @@ local function Group(apps)
     return left, has(ns.Filters.LUST), has(ns.Filters.BREZ), size
 end
 
--- The mint ring on a spec icon waits until the group has this many (player):
--- with one or two seated, comp is wide open and the ring is just noise.
+-- The mint "fills a seat" edge waits until the group has this many (player):
+-- with one or two seated, comp is wide open and the cue is just noise.
 local RING_FROM = 3
 
 -- Cues per member: fills (an open seat), adds ("Lust" / "Rez"), why dimmed.
@@ -162,7 +162,14 @@ local function Line(i)
     l.stripe:SetAllPoints()
     l.new = l:CreateTexture(nil, "OVERLAY")
     l.new:SetSize(4, 4)
-    l.new:SetPoint("LEFT", 1, 0)
+    l.new:SetPoint("LEFT", 2, 0)
+    -- Fills an open seat (from RING_FROM in the group): a mint edge on the
+    -- row's left, clear of the spec icon (player: a ring on the icon cluttered it).
+    l.edge = l:CreateTexture(nil, "OVERLAY")
+    l.edge:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+    l.edge:SetPoint("TOPLEFT")
+    l.edge:SetPoint("BOTTOMLEFT")
+    l.edge:SetWidth(2)
     l.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
     l.tile = CreateFrame("Frame", nil, l)
     l.tile:SetSize(W_ICON, W_ICON)
@@ -250,8 +257,7 @@ local function PaintMember(l, a, m, first, index)
     l.tile:SetPoint("LEFT", first and PAD or (PAD + 12), 0)
     l.linkV:SetShown(not first); l.linkH:SetShown(not first)
     l.icon:SetTexture(m.icon)
-    local ring = m.ring and MINT or Kit.Palette.border
-    for _, t in ipairs(l.tile._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
+    l.edge:SetShown(m.ring == true)
     l.name:SetText((m.name or "?"):match("^[^%-]+") or "?")
     l.ilvl:SetText(("%.0f"):format(m.ilvl))
     l.score:SetText(m.score > 0 and m.score or "-")
@@ -275,7 +281,7 @@ local function PaintNote(l, a)
     l.member, l.app = nil, a
     l:SetHeight(NOTE_H)
     l.stripe:SetColorTexture(0, 0, 0, 0)
-    for _, f in ipairs({ l.tile, l.name, l.ilvl, l.score, l.key, l.adds, l.inv, l.x, l.new, l.linkV, l.linkH }) do f:Hide() end
+    for _, f in ipairs({ l.tile, l.name, l.ilvl, l.score, l.key, l.adds, l.inv, l.x, l.new, l.linkV, l.linkH, l.edge }) do f:Hide() end
     l.note:SetText(a.comment)
     l.note:Show()
     l:SetAlpha(a.applicationStatus == "applied" and 1 or 0.5)
