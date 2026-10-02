@@ -16,6 +16,31 @@ cheap.
 
 ## Next session: start here
 
+**State, 2026-10-02 16:40 ET: v0.7.0 (stable) released** (keys leader
+view, Apply click / shift-click flip, EllesmereUI note clash handling,
+friends first, Use Blizzard clears our filter, teleport hides on cast).
+Installed in the player's AddOns; main and dev both at v0.7.0. DevChecklist
+round 16 is installed with the three open items below.
+
+**Next session, in order:**
+1. Read the saved log + DevChecklist ticks (stage `PickupGroup.lua` and
+   `DevChecklist.lua` from SavedVariables; never ask for a paste).
+2. Open items (organic, need a group): teleport hides once the cast lands
+   (alpha13, untested); a key run with the Group Finder open (secret-listing
+   guard); the friend who couldn't see the player's listing, even in
+   Blizzard's list (his PickupGroup.lua from a retry on v0.7.0).
+3. **Raid leader view** (player's next feature): design on the probe facts
+   below (`/pug applicants` while leading a raid; drill into Raider.IO's
+   raidProfile.progress / sortedProgress for progress). Target comp per
+   listing (2/4/14, 2/3/10, ...), seats left per role, raid buffs / utility
+   an applicant adds (per-class table, checked in game), same region /
+   blacklist dimming, mint edge + dim as on keys. No class / spec filters.
+4. Parked until the player calls a 1.0 release candidate: the ponytail +
+   WCAG 2.2 + roadmap clean-up bundle (below); final name.
+
+Session log of 2026-10-02 (rounds 8-16) follows; the newest notes are at
+the top of each block.
+
 **State, 2026-10-02 01:10 ET: v0.6.0 (stable) released** with everything
 below (player's call, before the round-8 checks; see HISTORY for what
 shipped untested). Built 2026-10-01 (all installed in the
