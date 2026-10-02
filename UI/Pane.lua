@@ -838,6 +838,7 @@ end)
 -- Shift-drag moves it.
 -- ---------------------------------------------------------------------------
 local teleport, teleportCache = nil, {}
+local ported  -- the teleport already cast for this group (testers: the button stayed until inside)
 
 function Pane.TeleportSpell(dungeon)
     if teleportCache[dungeon] ~= nil then return teleportCache[dungeon] or nil end
@@ -870,7 +871,8 @@ local function UpdateTeleport()
     local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
         and not IsInInstance() and PartyDungeon()
     local spell = dungeon and Pane.TeleportSpell(dungeon)
-    if not spell then if teleport then teleport:Hide() end return end
+    if not dungeon then ported = nil end  -- group changed or inside: the next full group gets one again
+    if not spell or spell == ported then if teleport then teleport:Hide() end return end
     if not teleport then
         Kit.ApplyFontFace()
         teleport = CreateFrame("Button", "PickupGroupTeleport", UIParent, "SecureActionButtonTemplate")
@@ -901,6 +903,16 @@ local function UpdateTeleport()
     teleport:SetText("Teleport: " .. Groups.Code(dungeon))
     teleport:Show()
 end
+
+-- A successful cast of the button's teleport: its job is done.
+ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
+    if issecretvalue(spellID) then return end
+    if unit == "player" and teleport and teleport:IsShown() and spellID == teleport:GetAttribute("spell") then
+        ported = spellID
+        ns.Trace("teleport", "cast", spellID)
+        UpdateTeleport()
+    end
+end)
 
 for _, ev in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LFG_LIST_ACTIVE_ENTRY_UPDATE",
     "PLAYER_REGEN_ENABLED", "ZONE_CHANGED_NEW_AREA", "SPELLS_CHANGED" }) do

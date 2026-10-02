@@ -180,6 +180,11 @@ to the viewer's right edge, up to the refresh corner) with our refresh; mint
 edges from 3 in the group. Checklist pruned to round 16: only the friend
 test, teleport and key run remain.
 
+**Teleport (testers, 2026-10-02): works** (shows on a full group, casts);
+it stayed until inside the instance. alpha13 hides it once the cast
+succeeds (UNIT_SPELLCAST_SUCCEEDED for its spell); it comes back for the
+next full group.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.
