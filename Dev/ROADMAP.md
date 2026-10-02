@@ -81,6 +81,23 @@ your listing is traced once (tag "probe": applicant fields, member fields,
 GetApplicantDungeonScoreForListing / GetApplicantBestDungeonScore, Raider.IO
 profile keys); `/pug applicants` logs all. Remove the probe once designed.
 
+Leader view design notes (player, 2026-10-02):
+- **Target comp** the leader sets per listing kind: raid sizes like
+  2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.
+  Applicant rows get contextual cues against it: fills an open seat,
+  over target for that role (dimmed, never hidden), plus the filter logic
+  we already have (score floor, realm region, blacklist).
+- **Rounding out the comp:** contextual highlights / nods when an applicant
+  brings something the group lacks: Bloodlust, battle rez, and (raids)
+  class-provided raid buffs or utility not yet covered. A highlight on the
+  applicant, phrased as what they'd add ("adds Bloodlust"), never as what
+  someone lacks. The buff/utility table is per class, checked in game each
+  season.
+- **No class / spec filters for leaders (player, Decided):** they create
+  blind spots and gaps and invite toxic behaviour. Cues only point at what
+  an applicant adds; nothing hides or ranks people by class or spec.
+- Tracks: dungeon (keys) and raid, designed and built separately.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still
