@@ -24,6 +24,7 @@ ns.Leader = Leader
 local Kit, Groups = ns.Kit, ns.Groups
 local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }
 local ROW_H, NOTE_H, BAR_H, HEAD_H, PAD, GAP = 24, 16, 26, 20, 6, 6
+local INSET = 10  -- right-hand column kept for the scroll track
 local W_ICON, W_ILVL, W_SCORE, W_KEY, W_ADDS, W_INV, W_X = 17, 26, 30, 30, 40, 44, 18
 local SEATS = { TANK = 1, HEALER = 1, DAMAGER = 3 }
 local STATUS = { invited = "Invited", inviteaccepted = "Joined", invitedeclined = "Passed", declined = "Declined",
@@ -328,7 +329,7 @@ function Leader.Render()
         for m, member in ipairs(a.members) do
             n = n + 1
             local l = Line(n)
-            l:ClearAllPoints(); l:SetPoint("TOPLEFT", 1, y); l:SetPoint("TOPRIGHT", -1, y)
+            l:ClearAllPoints(); l:SetPoint("TOPLEFT", 1, y); l:SetPoint("TOPRIGHT", -INSET, y)
             PaintMember(l, a, member, m == 1, i)
             l:Show()
             y = y - ROW_H
@@ -336,7 +337,7 @@ function Leader.Render()
         if (a.comment or "") ~= "" then
             n = n + 1
             local l = Line(n)
-            l:ClearAllPoints(); l:SetPoint("TOPLEFT", 1, y); l:SetPoint("TOPRIGHT", -1, y)
+            l:ClearAllPoints(); l:SetPoint("TOPLEFT", 1, y); l:SetPoint("TOPRIGHT", -INSET, y)
             PaintNote(l, a)
             l:Show()
             y = y - NOTE_H
@@ -359,9 +360,14 @@ end
 local function Build()
     Kit.ApplyFontFace()
     pane = CreateFrame("Frame", nil, viewer)
+    -- One panel from the column headers' left edge across Blizzard's scroll bar,
+    -- up to the top of its refresh button (our own refresh sits in that corner).
     local top = viewer.NameColumnHeader or viewer.ScrollBox
-    pane:SetPoint("TOPLEFT", top, "TOPLEFT", 0, top == viewer.ScrollBox and 24 or 0)
-    pane:SetPoint("BOTTOMRIGHT", viewer.ScrollBox, "BOTTOMRIGHT")
+    local corner = viewer.RefreshButton or viewer.ScrollBar or viewer.ScrollBox
+    pane:SetPoint("LEFT", top, "LEFT")
+    pane:SetPoint("TOP", corner, "TOP")
+    pane:SetPoint("RIGHT", viewer.ScrollBar or corner, "RIGHT")
+    pane:SetPoint("BOTTOM", viewer.ScrollBox, "BOTTOM")
     pane:SetFrameLevel(viewer.ScrollBox:GetFrameLevel() + 20)
     pane:EnableMouse(true)
     pane:EnableMouseWheel(true)
@@ -372,13 +378,30 @@ local function Build()
     needText:SetPoint("TOPLEFT", PAD + 2, -8)
     needText:SetPoint("RIGHT", -90, 0)
     needText:SetTextColor(0.74, 0.74, 0.74)
+    -- Refresh (the game's own applicant refresh), drawn in our style.
+    local refresh = CreateFrame("Button", nil, pane)
+    refresh:SetSize(18, 18)
+    refresh:SetPoint("TOPRIGHT", -PAD, -4)
+    local icon = refresh:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints()
+    icon:SetTexture("Interface\\Buttons\\UI-RefreshButton")
+    icon:SetDesaturated(true)
+    local rest = Kit.Palette.glyphRest
+    icon:SetVertexColor(rest[1], rest[2], rest[3])
+    refresh:SetScript("OnClick", function() C_LFGList.RefreshApplicants() end)
+    refresh:SetScript("OnEnter", function(self)
+        icon:SetVertexColor(MINT[1], MINT[2], MINT[3])
+        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(REFRESH or "Refresh"); GameTooltip:Show()
+    end)
+    refresh:SetScript("OnLeave", function() icon:SetVertexColor(rest[1], rest[2], rest[3]); GameTooltip:Hide() end)
     countText = Text(pane, "RIGHT")
-    countText:SetPoint("TOPRIGHT", -PAD - 2, -8)
+    countText:SetPoint("RIGHT", refresh, "LEFT", -6, 0)
     countText:SetTextColor(GREY[1], GREY[2], GREY[3])
     -- Column headers, aligned with the row columns (right to left).
     local head = CreateFrame("Frame", nil, pane)
     head:SetPoint("TOPLEFT", 0, -BAR_H)
-    head:SetPoint("TOPRIGHT", 0, -BAR_H)
+    head:SetPoint("TOPRIGHT", -INSET, -BAR_H)
     head:SetHeight(HEAD_H)
     local x = -(PAD + W_X + 2 + W_INV + GAP)
     local function H(text, w, justify)
@@ -398,23 +421,12 @@ local function Build()
     name:SetPoint("LEFT", PAD, 0)
     name:SetText("Name")
     name:SetTextColor(GREY[1], GREY[2], GREY[3])
-    -- Blizzard's scroll bar scrolls Blizzard's list, not ours: cover it with our own track.
-    local bar = viewer.ScrollBar
-    if bar then
-        track = CreateFrame("Frame", nil, pane)
-        track:SetPoint("TOPLEFT", bar, "TOPLEFT")
-        track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT")
-        track:SetFrameLevel(pane:GetFrameLevel())
-        track:EnableMouse(true)
-        track:EnableMouseWheel(true)
-        track:SetScript("OnMouseWheel", function(_, d) offset = math.max(0, offset - d); Leader.Render() end)
-        Kit.Fill(track, { 0.031, 0.031, 0.031, 1 })
-    else
-        track = CreateFrame("Frame", nil, pane)
-        track:SetPoint("TOPRIGHT", 0, -(BAR_H + HEAD_H))
-        track:SetPoint("BOTTOMRIGHT")
-        track:SetWidth(6)
-    end
+    -- Our scroll track, in the column over Blizzard's scroll bar (which scrolls
+    -- Blizzard's list, not ours).
+    track = CreateFrame("Frame", nil, pane)
+    track:SetPoint("TOPRIGHT", -3, -(BAR_H + HEAD_H))
+    track:SetPoint("BOTTOMRIGHT", -3, 3)
+    track:SetWidth(4)
     thumb = track:CreateTexture(nil, "ARTWORK")
     thumb:SetWidth(4)
     thumb:SetColorTexture(0.4, 0.4, 0.4, 1)
