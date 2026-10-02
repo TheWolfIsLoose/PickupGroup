@@ -68,6 +68,19 @@ Blizzard's list); pinned sign-ups get the marks / name colour too.
 
 **v0.6.1 (stable) released 2026-10-02** with all of the 0.6.1 alphas.
 
+**Parked until the player calls a 1.0 release candidate (2026-10-02):** one
+bundled task = ponytail sweep + WCAG 2.2 pass + roadmap clean-up (prune dead
+items: best-group sort, keys that beat my best, filter picker, release CI,
+"whether to publish"). Left for WCAG: focus cues, 24px targets (18px action
+buttons, 12px checkboxes), friend/guild marks differ by colour only;
+StockClerk's grey rings in its own pass.
+
+**Leader view (player, 2026-10-02): now in design, split into dungeon and
+raid tracks.** 0.6.2-alpha1 adds a temporary probe: each new applicant to
+your listing is traced once (tag "probe": applicant fields, member fields,
+GetApplicantDungeonScoreForListing / GetApplicantBestDungeonScore, Raider.IO
+profile keys); `/pug applicants` logs all. Remove the probe once designed.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still

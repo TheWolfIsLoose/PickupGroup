@@ -194,6 +194,8 @@ function ns.OnSlash(msg)
         for _, d in ipairs(ns.Filters.Dungeons()) do
             ns.Print(d.code .. ": " .. tostring(ns.Pane.TeleportSpell(d.name) or "no teleport known"))
         end
+    elseif cmd == "applicants" then
+        ns.Applications.ProbeApplicants(true)  -- dev probe (leader side)
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })
