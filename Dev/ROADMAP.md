@@ -81,6 +81,19 @@ your listing is traced once (tag "probe": applicant fields, member fields,
 GetApplicantDungeonScoreForListing / GetApplicantBestDungeonScore, Raider.IO
 profile keys); `/pug applicants` logs all. Remove the probe once designed.
 
+**Probe results (2026-10-02, player led a KR key and VA H / M raids):**
+nothing secret out of combat. Per applicant: applicantID, numMembers
+(premades of 2+ seen), isNew, status; note = protected string (`|Kv|k`:
+shown, never read or filtered). Per member: Name-Realm (realm suffix always
+present, so the region filter works), class, specID, offered roles + assigned
+role, ilvl, M+ score. `GetApplicantDungeonScoreForListing(id, m, activityID)`:
+best run in the listed dungeon (bestRunLevel, finishedSuccess = timed,
+duration, mapScore); `GetApplicantBestDungeonScore`: overall best run. Raid
+applicants: score 0, keys fields empty. Raider.IO (when loaded):
+`RaiderIO.GetProfile(name)` -> mythicKeystoneProfile (currentScore,
+maxDungeonLevel, milestones...), raidProfile (progress, sortedProgress,
+mainProgress tables: drill into these for raid progress).
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.
