@@ -66,6 +66,8 @@ tooltips on/off. Still open: teleport in a 5/5, key run (need a group).
 two marks (blue + green); "Colour names" goes friend blue when both (as
 Blizzard's list); pinned sign-ups get the marks / name colour too.
 
+**v0.6.1 (stable) released 2026-10-02** with all of the 0.6.1 alphas.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still
