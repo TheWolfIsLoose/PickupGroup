@@ -300,7 +300,14 @@ function Leader.Render()
     countText:SetText(#apps .. (#apps == 1 and " applicant" or " applicants"))
     keyHead:SetText(info and info.fullName and Groups.Code((info.fullName:gsub("%s*%(.-%)$", ""))) or "Key")
 
-    offset = math.min(offset, math.max(0, #apps - 1))
+    -- Scroll stops once the last applicant is in view (no empty space below).
+    local roomH, used, maxOffset = pane:GetHeight() - BAR_H - HEAD_H, 0, 0
+    for i = #apps, 1, -1 do
+        local a = apps[i]
+        used = used + #a.members * ROW_H + ((a.comment or "") ~= "" and NOTE_H or 0)
+        if used > roomH then maxOffset = i; break end
+    end
+    offset = math.min(offset, maxOffset)
     local y, n, room = -(BAR_H + HEAD_H), 0, pane:GetHeight() - BAR_H - HEAD_H
     for i = offset + 1, #apps do
         local a = apps[i]

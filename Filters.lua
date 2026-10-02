@@ -209,6 +209,22 @@ function Filters.Sync()
         .. (missing and (" (unmapped: " .. missing .. ")") or "") })
 end
 
+-- "Use Blizzard's group list instead": hand Blizzard's filter back clear of
+-- what we wrote (every dungeon, no role / class / score narrowing), so
+-- Blizzard's list isn't quietly narrowed by our filter. Its other settings
+-- (playstyle, difficulty) were never ours and stay.
+function Filters.RestoreBlizzard()
+    local adv = C_LFGList.SaveAdvancedFilter and C_LFGList.GetAdvancedFilter()
+    if not adv then return end
+    local acts = {}
+    for _, id in pairs(GroupIDs()) do acts[#acts + 1] = id end
+    adv.activities = acts
+    adv.needsTank, adv.needsHealer, adv.needsDamage, adv.needsMyClass = false, false, false, false
+    adv.minimumRating = 0
+    C_LFGList.SaveAdvancedFilter(adv)
+    ns.Log.Emit("filter", { action = "blizzard filter cleared", name = #acts .. " dungeons" })
+end
+
 -- Does a row pass the active filter of its kind?
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")

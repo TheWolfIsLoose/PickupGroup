@@ -141,6 +141,21 @@ says why and how to change it (once per onset: `db.noteConflict`, checked
 at login and on every sign-up window / Options paint), Options shows an
 amber "Off: ..." line, the Notes tab an amber notice.
 
+**Round 13 (player, 2026-10-02):** new clicks pass (log: shift true ->
+dialog, false -> direct); EllesmereUI detection follows its toggles live (log
+14:29:05 clash on, 14:31:39 gone, no reload): we read its in-memory
+`EllesmereUIDB`, which its option toggles write at once. Issues ->
+0.6.2-alpha7: leader scroll ran past the last applicant (now stops when the
+last one is in view); "Use Blizzard's list instead" left our narrowing in
+Blizzard's filter (now cleared: every dungeon, no role / class / score;
+`Filters.RestoreBlizzard`); friends / guild groups always show (our rules and
+clean-up skip them; Blizzard's search still applies) and sort first. **Open:**
+a BNet friend's listed group showed no cue and didn't sort first: our read
+gave 0 friends (traces: bnet 0 char 0 guild 0 on every click). `/pug friends`
+probe dumps listing fields + GetSearchResultFriends. Friend couldn't see the
+player's listing even in Blizzard's list: unexplained, his file from that
+attempt needed. Mint border on sign-ups "a bit much" (player): revisit.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

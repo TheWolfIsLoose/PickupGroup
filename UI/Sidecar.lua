@@ -395,6 +395,7 @@ local function BuildOptions(parent)
     local blizz = Kit.Check(box, "Use Blizzard's group list instead", function(on)
         ns.db.useBlizzard = on
         ns.Log.Emit("setting", { key = "useBlizzard", on = on })
+        if on then ns.Filters.RestoreBlizzard() end
         ns.Pane.Update()
     end)
     blizz:SetPoint("TOPLEFT", 0, y)
