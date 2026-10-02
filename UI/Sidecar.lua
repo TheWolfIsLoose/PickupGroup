@@ -433,6 +433,14 @@ local function BuildOptions(parent)
     end)
     hints:SetPoint("TOPLEFT", 0, y)
     box.hints = hints
+    y = y - 22
+    -- Off for players whose other addons handle sign-up notes (they clash).
+    local strip = Kit.Check(box, "My notes under Blizzard's sign-up window", function(on)
+        ns.db.noteStrip = (not on) and false or nil
+        ns.Log.Emit("setting", { key = "noteStrip", on = on })
+    end)
+    strip:SetPoint("TOPLEFT", 0, y)
+    box.strip = strip
     y = y - 30
 
     local head = Label(box, "Clean-up: hide listings that...")
@@ -501,6 +509,7 @@ local function PaintOptions()
     o.names:Set(ns.db.nameColors)
     o.swap:Set(ns.db.swap)
     o.hints:Set(ns.db.noHints)
+    o.strip:Set(ns.db.noteStrip ~= false)
     for key, cb in pairs(o.checks) do cb:Set(c[key]) end
     o.hours:SetText(tostring(c.staleHours or 3))
     local n = ns.Cleanup.Count()
@@ -659,9 +668,11 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     local dialog = LFGListApplicationDialog
     if not dialog then return end
     local strip
+    -- Other addons can have their own sign-up note tools (logged so reports show it).
+    ns.Trace("notes", "EllesmereUI loaded:", tostring(C_AddOns.IsAddOnLoaded("EllesmereUI")))
     local function Refresh()
         local notes = ns.Notes.List()
-        if #notes == 0 then if strip then strip:Hide() end return end
+        if #notes == 0 or ns.db.noteStrip == false then if strip then strip:Hide() end return end
         if not strip then
             Kit.ApplyFontFace()
             strip = CreateFrame("Frame", nil, dialog)
@@ -688,12 +699,15 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
                 e:HookScript("OnEditFocusGained", function(self)
                     C_Timer.After(0, function() if self:HasFocus() then self:HighlightText() end end)
                 end)
+                -- Only the box you're in shows a selection.
+                e:HookScript("OnEditFocusLost", function(self) self:HighlightText(0, 0) end)
                 strip.boxes[i] = e
             end
         end
         for i, e in ipairs(strip.boxes) do
             e.note = notes[i]
             e:SetText(notes[i] or "")
+            if not e:HasFocus() then e:HighlightText(0, 0) end
             e:SetShown(notes[i] ~= nil)
         end
         strip:SetHeight(26 + #notes * 24)

@@ -122,6 +122,12 @@ dialog, alternating; cause unknown (shift held? another addon?): the same
 trace logs mouse button, shift state and whether Blizzard's dialog function
 exists. Needs his file after another try on dev.
 
+**EllesmereUI (player, 2026-10-02):** its "Quick Signup" and "Persistent
+Signup Note" clash with our notes (likely behind the tester's no-dialog
+sign-ups). alpha4: Options "My notes under Blizzard's sign-up window" (on by
+default, `db.noteStrip = false` turns it off); trace whether EllesmereUI is
+loaded. Also fixed: a note box kept its selection after losing focus.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.
