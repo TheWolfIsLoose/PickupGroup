@@ -11,7 +11,7 @@
 
     Cues point at what an applicant adds, never at who they are: no class or
     spec filter (player, Decided). A mint ring on the spec icon = fills an
-    open seat; "Lust" / "Rez" = brings what the group lacks; dimmed = over
+    open seat (from 3 in the group); "Lust" / "Rez" = brings what the group lacks; dimmed = over
     the seats for that role, a realm region the keys filter has off, or
     blacklisted (the tooltip says which). Nothing is hidden.
 --]]
@@ -79,27 +79,33 @@ end
 local function Group(apps)
     local need = Groups.Need()
     local left = { TANK = SEATS.TANK - need.TANK, HEALER = SEATS.HEALER - need.HEALER, DAMAGER = SEATS.DAMAGER - need.DAMAGER }
-    local classes = CopyTable(need.classes)
+    local classes, size = CopyTable(need.classes), need.size
     for _, a in ipairs(apps) do
         if a.applicationStatus == "invited" then
             for _, m in ipairs(a.members) do
+                size = size + 1
                 if left[m.role] then left[m.role] = left[m.role] - 1 end
                 classes[m.class or "?"] = true
             end
         end
     end
     local has = function(set) for file in pairs(classes) do if set[file] then return true end end end
-    return left, has(ns.Filters.LUST), has(ns.Filters.BREZ)
+    return left, has(ns.Filters.LUST), has(ns.Filters.BREZ), size
 end
+
+-- The mint ring on a spec icon waits until the group has this many (player):
+-- with one or two seated, comp is wide open and the ring is just noise.
+local RING_FROM = 3
 
 -- Cues per member: fills (an open seat), adds ("Lust" / "Rez"), why dimmed.
 local function Cue(apps)
-    local left, lust, brez = Group(apps)
+    local left, lust, brez, size = Group(apps)
     local f = ns.Filters.Active("keys")
     for _, a in ipairs(apps) do
         local seats = CopyTable(left)
         for _, m in ipairs(a.members) do
             m.fills = (seats[m.role] or 0) > 0
+            m.ring = m.fills and size >= RING_FROM
             if m.fills then seats[m.role] = seats[m.role] - 1 end
             local adds = {}
             if not lust and ns.Filters.LUST[m.class or ""] then adds[#adds + 1] = "Lust" end
@@ -244,7 +250,7 @@ local function PaintMember(l, a, m, first, index)
     l.tile:SetPoint("LEFT", first and PAD or (PAD + 12), 0)
     l.linkV:SetShown(not first); l.linkH:SetShown(not first)
     l.icon:SetTexture(m.icon)
-    local ring = m.fills and MINT or Kit.Palette.border
+    local ring = m.ring and MINT or Kit.Palette.border
     for _, t in ipairs(l.tile._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
     l.name:SetText((m.name or "?"):match("^[^%-]+") or "?")
     l.ilvl:SetText(("%.0f"):format(m.ilvl))

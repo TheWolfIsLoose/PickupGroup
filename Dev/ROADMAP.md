@@ -156,6 +156,12 @@ probe dumps listing fields + GetSearchResultFriends. Friend couldn't see the
 player's listing even in Blizzard's list: unexplained, his file from that
 attempt needed. Mint border on sign-ups "a bit much" (player): revisit.
 
+**Mint rings trimmed (player, 2026-10-02; 0.6.2-alpha8):** search comp tiles
+no longer ring your role's empty seat in mint (an empty seat already reads as
+open; the layout is consistent and scans well). Leader view: the spec icon's
+mint "fills a seat" ring only from 3 in the group (`RING_FROM`); at 1-2 comp
+is wide open and the ring cluttered the spec icon, a primary decision cue.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.

@@ -393,10 +393,9 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
             tile.role:SetDesaturated(true)
             tile.role:SetVertexColor(0.6, 0.6, 0.6)
-            -- An open seat for the player's role gets a mint 1px ring (the
-            -- style guide's "on" mark); every other tile keeps a black one.
-            local ring = (s.mine and not s.filled) and MINT or Kit.Palette.border
-            for _, t in ipairs(tile._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
+            -- Every tile keeps a black ring: an empty seat already reads as open
+            -- (player: the mint ring on your role's seat was clutter).
+            for _, t in ipairs(tile._border) do t:SetColorTexture(0, 0, 0, 1) end
         end
     end
     for _, c in ipairs(r.counts) do
