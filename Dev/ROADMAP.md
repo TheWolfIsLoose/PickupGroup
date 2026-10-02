@@ -175,6 +175,11 @@ player's listing (needs his file), teleport, key run.
 from a ring on the spec icon to a 2px mint edge on the row's left (from 3
 in the group); with the dimming of non-fits, that pair is the cue.
 
+**Round 15 (player, 2026-10-02): pass.** Leader panel is one piece (header
+to the viewer's right edge, up to the refresh corner) with our refresh; mint
+edges from 3 in the group. Checklist pruned to round 16: only the friend
+test, teleport and key run remain.
+
 Leader view design notes (player, 2026-10-02):
 - **Target comp** the leader sets per listing kind: raid sizes like
   2/4/14 or 2/3/10 (tanks / healers / damage), dungeons fixed 1/1/3.
