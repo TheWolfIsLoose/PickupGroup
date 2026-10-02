@@ -162,8 +162,8 @@ end
 
 -- ---------------------------------------------------------------------------
 -- Leader-side probe (dev, temporary): what the game and Raider.IO let us read
--- about applicants, so the leader view is designed on facts. Logs each new
--- applicant once while leading a listing; `/pug applicants` logs them all.
+-- about applicants, so the leader view is designed on facts (raid side next).
+-- `/pug applicants` logs every applicant of the listing you lead.
 -- ---------------------------------------------------------------------------
 local function S(v)
     if issecretvalue and issecretvalue(v) then return "<secret>" end
@@ -227,4 +227,4 @@ function Applications.ProbeApplicants(all)
     end
     if all then ns.Print("Logged " .. n .. " applicants.") end
 end
-ns.On("LFG_LIST_APPLICANT_LIST_UPDATED", function() Applications.ProbeApplicants(false) end)
+-- On demand only (`/pug applicants`): logging every applicant bloated the log.

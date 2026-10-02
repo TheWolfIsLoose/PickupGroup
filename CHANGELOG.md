@@ -1,7 +1,14 @@
-## v0.6.1
+## v0.7.0
 
-- Text boxes, checkboxes and buttons have a grey outline, so they're easier to spot. Checkboxes are easier to click.
-- New option: Hide hint tooltips. The how-to tooltips go away; tooltips with group info stay.
-- My lockout follows the difficulty you searched, even with no groups listed. Click it again to put your earlier boss picks back.
-- Blizzard's Filter button says that PickupGroup's filter sets it.
-- Your sign-ups at the top show the friend / guildmate marks too. With "Colour names" on, a group with both a friend and a guildmate shows blue, like Blizzard's list.
+- New: leading a key. While you lead a Mythic Keystone listing, PickupGroup's applicant list covers Blizzard's:
+  - The top line says what your group still needs: seats, Bloodlust, battle rez.
+  - Each applicant shows spec, item level, score and their best run in your dungeon (white timed, amber not), plus "Lust" / "Rez" when they'd bring what you lack.
+  - Once you're 3 in the group, applicants who fill an open seat get a mint edge; anyone without a seat for their role, from a realm region you've switched off, or on your blacklist is dimmed (the tooltip says why).
+  - Notes show under the applicant. Invite and decline from the row. Players who applied together are joined.
+- Apply: a click now signs up at once; shift-click opens Blizzard's sign-up window with your notes. Reapply: click twice, or shift-click for the window.
+- EllesmereUI: its Quick Signup works with PickupGroup (shift-click keeps the window open). If its Persistent Signup Note is on, PickupGroup's notes step aside and a window explains why and how to switch.
+- Options: "My notes under Blizzard's sign-up window" can be turned off.
+- Groups with a friend or guildmate always show and sort to the top.
+- "Use Blizzard's group list instead" now clears PickupGroup's settings from Blizzard's filter.
+- The Teleport button goes away once the teleport succeeds.
+- Fixes: empty seats no longer get a mint ring; a note box no longer keeps its highlight when you leave it; the Reapply tooltip matches the clicks.

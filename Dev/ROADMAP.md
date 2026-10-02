@@ -202,6 +202,11 @@ Leader view design notes (player, 2026-10-02):
   an applicant adds; nothing hides or ranks people by class or spec.
 - Tracks: dungeon (keys) and raid, designed and built separately.
 
+**v0.7.0 (stable) released 2026-10-02** with all 0.6.2 alphas. Next: raid
+leader view (target comp, seats per role, raid buffs an applicant adds,
+Raider.IO progress); open: friend couldn't see the player's listing (his
+file), key run, teleport hide-on-cast check.
+
 **Next session:** read the saved log + DevChecklist ticks (no paste:
 stage `PickupGroup.lua` and `DevChecklist.lua` from SavedVariables), fix
 what fails, then a v0.6.x patch for anything that fails. Still

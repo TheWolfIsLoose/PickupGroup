@@ -2,6 +2,35 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.7.0 (2026-10-02)
+
+0.6.2-alpha1..13 (rounds 11-16). Teleport confirmed by testers; the hide-on-
+cast change and a key run are untested.
+- Leader view, keys (UI/Leader.lua, new file): frame over
+  LFGListFrame.ApplicationViewer from the Name column header to the viewer's
+  right edge, up to the refresh corner; own refresh (C_LFGList.RefreshApplicants)
+  and scroll track; shown while leading a Mythic+ listing as leader or solo.
+  Rows per applicant member: spec icon, name, ilvl, score, best run in the
+  listed dungeon (GetApplicantDungeonScoreForListing; white timed / amber not),
+  "Lust" / "Rez" adds (Filters.LUST / BREZ), note line (protected text, shown
+  only). Needs bar counts invited applicants as seated. Dimmed: no seat for the
+  role, realm region off in the keys filter, blacklisted (Cleanup.IsBlacklisted).
+  Mint 2px row edge = fills an open seat, from 3 in the group (RING_FROM), open
+  applicants only. Invite / Decline from our buttons work (not blocked). Duo
+  rows indented + joined. Scroll clamps at the last applicant. "lead" log kind.
+- Apply flipped: click = ApplyToGroup at once; shift-click = Blizzard's dialog
+  (our notes). Reapply: click twice / shift-click.
+- EllesmereUI (compat, reads EllesmereUIDB live): quickSignup is fine with
+  shift-click (it skips auto Sign Up while Shift is held); persistSignupNote
+  -> Notes.Conflict(): our strip off, one alert per onset (db.noteConflict),
+  amber notices in Options and the Notes tab. Option db.noteStrip.
+- Friends / guild: always shown (skip our rules and clean-up) and sorted first.
+- Use Blizzard's list: Filters.RestoreBlizzard clears our narrowing (every
+  dungeon, no role / class / score); switching back is logged.
+- Teleport hides on UNIT_SPELLCAST_SUCCEEDED of its spell (secret guard).
+- Mint rings removed from empty comp seats; note boxes clear selection on
+  focus loss; Reapply tooltip; `/pug applicants` probe on demand only.
+
 ## v0.6.1 (2026-10-02)
 
 Code jam (alpha1-4), rounds 8-10 tested in game except teleport in a 5/5
