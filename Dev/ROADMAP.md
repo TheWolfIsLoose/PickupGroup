@@ -27,6 +27,14 @@ the friends / guildmates in a listing (C_LFGList.GetSearchResultFriends:
 Battle.net friends, character friends, guildmates), as Blizzard's tooltip
 does; falls back to counts. Checklist round 17.
 
+**2026-10-02 night (player, v0.7.1-alpha1):** key run with the Group Finder
+open: the secret-listing guard held (600+ listings skipped, no errors);
++18 DON timed logged. Teleport: showed again after a successful cast and
+while on cooldown (the hide-on-cast state reset when the group / zone
+changed). alpha2 replaces it: the button hides whenever its spell is on
+cooldown (C_Spell.GetSpellCooldown, > 2 s, refreshed on
+SPELL_UPDATE_COOLDOWN); a successful cast starts that cooldown. Round 18.
+
 **Next session, in order:**
 1. Read the saved log + DevChecklist ticks (stage `PickupGroup.lua` and
    `DevChecklist.lua` from SavedVariables; never ask for a paste).
