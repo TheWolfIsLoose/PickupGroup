@@ -35,7 +35,10 @@ local undo = {}  -- raid name -> boss rules before My lockout (false: none); a s
 
 local function Changed()
     ns.Pane.Render()
+    ns.Leader.Render()
 end
+
+local function Leading(f) return f ~= nil and f.kind:find("^lead_") ~= nil end
 
 local function Label(parent, text)
     local fs = parent:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
@@ -48,8 +51,8 @@ local Toggle = Kit.Toggle
 
 -- Leader's realm region: four toggles, all on by default (regions = nil).
 local regionButtons = {}
-local function RegionRow(box, y)
-    local l = Label(box, "Leader's realm")
+local function RegionRow(box, y, label)
+    local l = Label(box, label or "Leader's realm")
     l:SetPoint("TOPLEFT", 0, y)
     local codes = ns.Groups.REGIONS
     local cellW = (W - 2 * PAD - 3 * (#codes - 1)) / #codes
@@ -220,11 +223,50 @@ local function PaintRaid(f)
     end
 end
 
+local leadBox
+local function PaintLead(f)
+    local keys = f.kind == "lead_keys"
+    leadBox.title:SetText(keys and "Leading a key" or "Leading a raid")
+    leadBox.floorLabel:SetText(keys and "Score at least" or "Item level at least")
+    local n = keys and f.minScore or f.minIlvl
+    leadBox.floor:SetText((n or 0) > 0 and tostring(n) or "")
+    PaintRegions(f)
+end
+
 function Sidecar.Paint()
     if not (frame and editing) then return end
     keysBox:SetShown(editing.kind == "keys")
     raidBox:SetShown(editing.kind == "raid")
-    if editing.kind == "keys" then PaintKeys(editing) else PaintRaid(editing) end
+    leadBox:SetShown(Leading(editing))
+    if editing.kind == "keys" then PaintKeys(editing)
+    elseif editing.kind == "raid" then PaintRaid(editing)
+    else PaintLead(editing) end
+end
+
+-- Leading: applicants who miss these are dimmed, with the reason on hover.
+local function BuildLead(parent)
+    local box = CreateFrame("Frame", nil, parent)
+    box.title = box:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    box.title:SetPoint("TOPLEFT")
+    local y = RegionRow(box, -24, "Applicant's realm")
+    box.floorLabel = Label(box, "")
+    box.floorLabel:SetTextColor(1, 1, 1)
+    box.floorLabel:SetPoint("TOPLEFT", 0, y - 12)
+    box.floor = Kit.Edit(box, 56, function(text)
+        local n = tonumber(text)
+        local key = editing.kind == "lead_keys" and "minScore" or "minIlvl"
+        editing[key] = (n and n > 0) and n or nil
+        Changed()
+    end, true)
+    Kit.Hint(box.floor, "Any")
+    box.floor:SetPoint("TOPRIGHT", 0, y - 8)
+    local note = Label(box, "Applicants who don't match are dimmed, with the reason on hover. Nobody is hidden.")
+    note:SetPoint("TOPLEFT", 0, y - 44)
+    note:SetPoint("RIGHT")
+    note:SetJustifyH("LEFT")
+    note:SetWordWrap(true)
+    box:SetHeight(-y + 80)
+    return box
 end
 
 local function BuildKeys(parent)
@@ -573,6 +615,9 @@ local function Build()
     raidBox = BuildRaid(body)
     raidBox:SetPoint("TOPLEFT")
     raidBox:SetPoint("RIGHT")
+    leadBox = BuildLead(body)
+    leadBox:SetPoint("TOPLEFT")
+    leadBox:SetPoint("RIGHT")
 
     -- Reset: the filter back to its starting rules; a second
     -- click confirms.
@@ -658,8 +703,10 @@ function Sidecar.RefreshBosses()
     if frame and frame:IsShown() and editing and editing.kind == "raid" then PaintRaid(editing) end
 end
 
-function Sidecar.Hide()
-    if frame then frame:Hide() end
+-- Close the sidecar if it's on a filter of that side (leading or searching):
+-- the pane and the leader view each close only their own.
+function Sidecar.Close(leading)
+    if frame and frame:IsShown() and Leading(editing) == leading then frame:Hide() end
 end
 
 -- ---------------------------------------------------------------------------

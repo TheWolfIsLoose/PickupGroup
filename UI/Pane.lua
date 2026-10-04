@@ -576,8 +576,7 @@ local function BuildBars()
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
-    local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
-        "Set up the filter", function() ns.Sidecar.Open() end)
+    local setup = Kit.HeaderIcon(bar, Kit.SLIDERS, "Set up the filter", function() ns.Sidecar.Open() end)
     setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
 
     countText = Text(bar)
@@ -634,7 +633,8 @@ local function BuildBars()
     for i = #ROLES, 1, -1 do
         local b = CreateFrame("Button", nil, head)
         b:SetSize(14, 14)
-        b:SetPoint("RIGHT", x - (#ROLES - i) * 24, 0)  -- 24px apart (WCAG 2.5.8 spacing)
+        -- 17px apart (player: 24 was too far); a 2.5.8 exception, noted in the addendum.
+        b:SetPoint("RIGHT", x - (#ROLES - i) * 17, 0)
         b.role = ROLES[i]
         b.icon = b:CreateTexture(nil, "ARTWORK")
         b.icon:SetAllPoints()
@@ -774,7 +774,7 @@ function Pane.Update()
     end
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
-    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
+    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Close(false) end
 end
 
 -- ---------------------------------------------------------------------------
@@ -889,7 +889,8 @@ local function UpdateTeleport()
         and not IsInInstance() and PartyDungeon()
     if dungeon ~= lastDungeon then
         lastDungeon = dungeon
-        ns.Trace("teleport", "party dungeon", tostring(dungeon), listed and "(party listing)" or "(last sign-up joined)")
+        ns.Trace("teleport", "party dungeon", dungeon or "none",
+            not dungeon and "" or listed and "(party listing)" or "(last sign-up joined)")
     end
     local spell = dungeon and TeleportSpell(dungeon)
     if not spell or OnCooldown(spell) then if teleport then teleport:Hide() end return end

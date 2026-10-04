@@ -10,6 +10,8 @@
     raid: room (difficulty comes from Blizzard's search: the raid suggestion
           picked in its search box carries it),
           bosses[raid name][boss name] = true (must be alive; absent = either)
+    lead_keys / lead_raid: regions, minScore / minIlvl (the leader view dims
+          applicants who miss them)
 --]]
 
 local _, ns = ...
@@ -20,6 +22,9 @@ ns.Filters = Filters
 local DEFAULT = {
     keys = { id = "keys", name = "Dungeons", kind = "keys", room = true },
     raid = { id = "raid", name = "Raids", kind = "raid" },
+    -- Leading: dims applicants in the leader view (never hides them).
+    lead_keys = { id = "lead_keys", name = "Leading: keys", kind = "lead_keys" },
+    lead_raid = { id = "lead_raid", name = "Leading: raids", kind = "lead_raid" },
 }
 
 -- Classes that bring Bloodlust / a battle rez: class file -> the roles it can fill (seats it could take).

@@ -31,6 +31,8 @@ local W_ICON, W_ILVL, W_SCORE, W_KEY, W_ADDS, W_INV, W_X = 17, 26, 30, 30, 40, 4
 local SEATS = { TANK = 1, HEALER = 1, DAMAGER = 3 }
 local PRESETS = { { 10, 2, 2, 6 }, { 20, 2, 4, 14 }, { 25, 2, 5, 18 }, { 30, 2, 6, 22 } }
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
+local PLURAL = { TANK = "tanks", HEALER = "healers", DAMAGER = "damage" }
+local SHORT = { TANK = "T", HEALER = "H", DAMAGER = "D" }
 -- Raid buffs / utility by class (checked in game each season). Lust and battle
 -- rez come from Filters.LUST / BREZ; a raid wants BREZ_WANT battle rezzers.
 local BUFF = { MAGE = "Int", PRIEST = "Stam", WARRIOR = "AP", DRUID = "Vers", SHAMAN = "Skyfury",
@@ -178,7 +180,7 @@ local function Cue(apps, kind)
     -- ponytail: raid edge from half the target comp; tune with play.
     local ringFrom = RING_FROM
     if raid then local t = Target(); ringFrom = math.ceil((t[1] + t[2] + t[3]) / 2) end
-    local f = ns.Filters.Active(kind)
+    local f = ns.Filters.Active("lead_" .. kind)
     for _, a in ipairs(apps) do
         local seats = CopyTable(left)
         for _, m in ipairs(a.members) do
@@ -195,6 +197,8 @@ local function Cue(apps, kind)
             m.region = Groups.Region(m.name)
             m.why = (not m.fills and "no open " .. (_G[m.role] or "seat"):lower() .. " seat")
                 or (f.regions and not f.regions[m.region] and ("realm region " .. m.region .. " is off in your filter"))
+                or (not raid and (f.minScore or 0) > m.score and ("score under " .. f.minScore))
+                or (raid and (f.minIlvl or 0) > m.ilvl and ("item level under " .. f.minIlvl))
                 or (ns.Cleanup.IsBlacklisted(m.name) and "on your blacklist") or nil
         end
     end
@@ -413,14 +417,23 @@ function Leader.Render()
     table.sort(apps, function(x, y) return (x.displayOrderID or 0) < (y.displayOrderID or 0) end)
     local left, lust, brez, wantRez = Cue(apps, kind)
 
-    local needs = {}
-    for _, r in ipairs(ROLES) do
-        if left[r] > 0 then needs[#needs + 1] = (left[r] > 1 and (left[r] .. " ") or "") .. _G[r]:lower() end
+    -- Full words; short ones when that doesn't fit (a 20-player target).
+    local function Needs(short)
+        local out = {}
+        for _, r in ipairs(ROLES) do
+            local n = left[r]
+            if n > 0 then
+                local word = short and SHORT[r] or (n > 1 and PLURAL[r] or _G[r]:lower())
+                out[#out + 1] = (n > 1 and (n .. " ") or "") .. word
+            end
+        end
+        if not lust then out[#out + 1] = short and "Lust" or "Bloodlust" end
+        local rez = wantRez - brez
+        if rez > 0 then out[#out + 1] = (rez > 1 and (rez .. " ") or "") .. (short and "rez" or "battle rez") end
+        return #out > 0 and ("Needs " .. table.concat(out, ", ")) or "Group has everything"
     end
-    if not lust then needs[#needs + 1] = "Bloodlust" end
-    local rez = wantRez - brez
-    if rez > 0 then needs[#needs + 1] = (rez > 1 and (rez .. " ") or "") .. "battle rez" end
-    needText:SetText(#needs > 0 and ("Needs " .. table.concat(needs, ", ")) or "Group has everything")
+    needText:SetText(Needs(false))
+    if needText:IsTruncated() then needText:SetText(Needs(true)) end
     countText:SetText(#apps .. (#apps == 1 and " applicant" or " applicants"))
     keyHead:SetText(raid and "Prog" or (where and Groups.Code(where)) or "Key")
     scoreHead:SetShown(not raid)
@@ -509,7 +522,6 @@ local function Build()
     Kit.Border(pane)
     needText = Text(pane)
     needText:SetPoint("TOPLEFT", PAD + 2, -8)
-    needText:SetPoint("RIGHT", -90, 0)
     needText:SetTextColor(0.74, 0.74, 0.74)
     -- Refresh (the game's own applicant refresh), drawn in our style.
     local refresh = CreateFrame("Button", nil, pane)
@@ -528,8 +540,15 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(REFRESH or "Refresh"); GameTooltip:Show()
     end)
     refresh:SetScript("OnLeave", function() icon:SetVertexColor(rest[1], rest[2], rest[3]); GameTooltip:Hide() end)
+    -- Filter setup for leading (the sidecar's Leading filter for this kind).
+    local setup = Kit.HeaderIcon(pane, Kit.SLIDERS, "Set up who gets dimmed", function()
+        local _, _, kind = Listing()
+        if kind then ns.Sidecar.Open(ns.Filters.Active("lead_" .. kind)) end
+    end)
+    setup:SetPoint("RIGHT", refresh, "LEFT", -2, 0)
     countText = Text(pane, "RIGHT")
-    countText:SetPoint("RIGHT", refresh, "LEFT", -6, 0)
+    countText:SetPoint("RIGHT", setup, "LEFT", -4, 0)
+    needText:SetPoint("RIGHT", countText, "LEFT", -8, 0)
     countText:SetTextColor(GREY[1], GREY[2], GREY[3])
     -- Column headers, aligned with the row columns (right to left).
     head = CreateFrame("Frame", nil, pane)
@@ -625,6 +644,7 @@ function Leader.Update()
     if not viewer then return end
     if not pane then Build() end
     pane:SetShown(Eligible())
+    if not pane:IsShown() then ns.Sidecar.Close(true) end
     Leader.Render()
 end
 

@@ -138,6 +138,7 @@ function Kit.Glyph(frame, bars)
 end
 
 Kit.CLOSE = { { 12, 2, 0, math.pi / 4 }, { 12, 2, 0, -math.pi / 4 } }
+Kit.SLIDERS = { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } }  -- filter setup
 
 -- Header icon: drawn glyph, mint on hover, one-line tooltip.
 function Kit.HeaderIcon(parent, bars, tip, onClick)

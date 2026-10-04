@@ -17,6 +17,13 @@ cheap.
 
 ## Next session: start here
 
+**2026-10-04 (round 19, player): all non-friend items pass**: raid leader
+view works (Prog 4/8 H from Raider.IO, Skyfury / Lust / Rez / Brand adds),
+targets save, sidecar fits after the 24px spacing. Calls: role buttons back
+to 17px apart (24 was too far); leading gets its own filter (below); every
+friend / guild feature moves to the Friends bundle (below). alpha5 builds
+these; round 20.
+
 **State, 2026-10-03 night: 0.7.1-alpha3 on dev, installed.** Since v0.7.0:
 - alpha1: group tooltip names friends / guildmates (GetSearchResultFriends).
 - alpha2: teleport button hides while its spell is on cooldown.
@@ -137,6 +144,20 @@ tooltip.
   Raider.IO: optional, never required); adds = raid buffs the group lacks
   (Int, Stam, AP, Vers, Skyfury, Bronze, Brand, Touch, Mark), Lust, Rez.
 
+**Leading filter (Decided 2026-10-04):** one per kind (`lead_keys`,
+`lead_raid` in `db.filters`), set up in the sidecar from the slider icon in
+the leader view's top bar: applicant's realm region, score floor (keys) /
+item level floor (raids). It only dims, with the reason on hover. The
+leader view no longer borrows the search filters' regions.
+
+**Friends bundle (player, 2026-10-04): tested organically, over time.**
+Hard to stage on demand, so these stay off the checklist and get checked
+when the situation happens: friend / guild marks (person / banner) and
+coloured names, friends first in results, tooltip names
+(GetSearchResultFriends), the friend who couldn't see the player's listing
+(his saved file), the tester's missing friend cue. Report any of them when
+seen; read the log then.
+
 **Constraints (Decided):** no dependencies on other addons (pass-through
 only); no internet data; listing names and notes are protected (shown,
 never read); search text and the sign-up note can't be set by an addon.
@@ -150,8 +171,9 @@ never read); search text and the sign-up note can't be set by an addon.
 controls (3.3:1); toggles show "on" with a bar as well as colour; friend /
 guild marks differ in shape; untimed keys carry an x; checkboxes and
 toggles are 24px targets on 24px rows; header role buttons 24px apart;
-18px action buttons in 24px rows pass by spacing. Still open: role icon
-off-state contrast (atlas art, unmeasured).
+18px action buttons in 24px rows pass by spacing. Accepted exception
+(player, 2026-10-04): header role buttons 17px apart (24 looked too far).
+Still open: role icon off-state contrast (atlas art, unmeasured).
 
 **Known limits:** past-season raids are a named list in Groups.lua
 (update each season); the raid buff table is per class (check each
