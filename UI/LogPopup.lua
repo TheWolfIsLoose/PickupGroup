@@ -41,7 +41,7 @@ local function Build()
     local f = Window("PickupGroupLogPopup", 520, 420, "|cff98ff98Pickup|rGroup log")
     local hint = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     hint:SetPoint("TOPLEFT", 12, -28)
-    hint:SetText("|cff888888Everything is selected: press Ctrl+C and paste it into your bug report.|r")
+    hint:SetText("|cff8c8c8cEverything is selected: press Ctrl+C and paste it into your bug report.|r")
 
     local well = f:CreateTexture(nil, "BACKGROUND")
     well:SetColorTexture(unpack(Kit.Palette.bgDark))
@@ -89,7 +89,7 @@ end
 local History = {}
 ns.History = History
 
-local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.6, 0.6, 0.6 }
+local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }
 -- History is the fun corner: self-deprecating, never mean (player, 2026-10-04).
 local LOOK = {
     pending = { "Waiting...", GREY }, declined = { "Nope", AMBER }, filled = { "Too slow", GREY },

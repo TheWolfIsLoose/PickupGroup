@@ -42,7 +42,7 @@ local OVER = { declined = true, declined_full = true, declined_delisted = true, 
 
 -- How a sign-up ended, as its button shows it for OUTCOME_TTL seconds.
 local OUTCOME_TTL = 5
-local AMBER, GREY, WHITE = { 1, 0.72, 0.3 }, { 0.6, 0.6, 0.6 }, { 1, 1, 1 }
+local AMBER, GREY, WHITE = { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }, { 1, 1, 1 }
 local OUTCOME = {
     declined = { "Declined", AMBER }, declined_full = { "Filled", GREY },
     declined_delisted = { "Delisted", GREY }, cancelled = { "Withdrawn", GREY },
@@ -332,7 +332,7 @@ local function BuildRow(i)
     r.inst = Text(r)
     r.inst:SetWidth(W_INST)
     r.inst:SetPoint("RIGHT", r.comp, "LEFT", -GAP, 0)
-    r.inst:SetTextColor(0.84, 0.84, 0.84)
+    r.inst:SetTextColor(0.85, 0.85, 0.85)
     r.diff = Text(r, nil, "CENTER")
     r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
@@ -427,7 +427,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             tile.role:SetShown(not s.filled)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
             tile.role:SetDesaturated(true)
-            tile.role:SetVertexColor(0.6, 0.6, 0.6)
+            tile.role:SetVertexColor(0.55, 0.55, 0.55)
             -- Black rings (an empty seat already reads as open); the leader's
             -- seat also gets the light outer ring.
             tile.lead:SetShown(s.leader == true)
