@@ -33,7 +33,9 @@ local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
 local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
-local LEADER_RING = { 1, 0.82, 0.4 }  -- soft gold: Blizzard's leader colour, apart from mint and score orange
+-- The leader's seat: a light ring one pixel outside its black ring, so the
+-- black keeps it apart from every spec icon (gold blended into Holy Paladin).
+local LEADER_RING = { 0.9, 0.9, 0.9, 1 }
 local MINT = Kit.Palette.brand
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
@@ -267,6 +269,11 @@ local function Tile(parent)
     f.role = f:CreateTexture(nil, "ARTWORK")
     f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
+    f.lead = CreateFrame("Frame", nil, f)
+    f.lead:SetPoint("TOPLEFT", -1, 1)
+    f.lead:SetPoint("BOTTOMRIGHT", 1, -1)
+    Kit.Border(f.lead, LEADER_RING)
+    f.lead:Hide()
     return f
 end
 
@@ -421,10 +428,9 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
             tile.role:SetDesaturated(true)
             tile.role:SetVertexColor(0.6, 0.6, 0.6)
-            -- Black rings, except the leader's seat in soft gold (player: a
-            -- border, not a crown). An empty seat already reads as open.
-            local ring = s.leader and LEADER_RING or { 0, 0, 0 }
-            for _, t in ipairs(tile._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
+            -- Black rings (an empty seat already reads as open); the leader's
+            -- seat also gets the light outer ring.
+            tile.lead:SetShown(s.leader == true)
         end
     end
     for _, c in ipairs(r.counts) do
