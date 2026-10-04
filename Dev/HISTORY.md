@@ -4,6 +4,7 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 ## 0.9.0 alphas (dev)
 
+- alpha5: the Blizzard-list hint moves into that checkbox's tooltip (hint tooltip, hidden by "Hide hint tooltips"), like every other explainer on Options (player); frees its row.
 - alpha4: the Blizzard-list hint indents 18 to line up with its checkbox's text, like the clash line (player: left-aligned looked jarring).
 - alpha3: login / reload prints "PickupGroup: vX loaded. Type /pug for commands." so the player can see which build is running (alpha2's install didn't land; player asked, like StockClerk's line).
 - alpha2: the Blizzard-list hint wrapped onto the next checkbox; now "Switch back from Blizzard's panel." (one line). Options otherwise fit (player screenshot).

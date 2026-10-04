@@ -426,10 +426,14 @@ local function BuildOptions(parent)
     blizz:SetPoint("TOPLEFT", 0, y)
     box.blizz = blizz
     y = y - 24
-    local hint = Label(box, "Switch back from Blizzard's panel.")
-    hint:SetPoint("TOPLEFT", 18, y)  -- under the checkbox's text, like the clash line
-    hint:SetWidth(W - 2 * PAD - 18); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
-    y = y - 18
+    blizz:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Use Blizzard's group list instead")
+        GameTooltip:AddLine("A PickupGroup button on Blizzard's panel brings this back.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    blizz:HookScript("OnLeave", function() GameTooltip:Hide() end)
     local names = Kit.Check(box, "Colour names for friends / guild", function(on)
         ns.db.nameColors = on or nil
         ns.Log.Emit("setting", { key = "nameColors", on = on })
