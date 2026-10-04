@@ -71,7 +71,6 @@ local function InitDB()
     for n = (db.schema or SCHEMA) + 1, SCHEMA do MIGRATIONS[n](db) end
     ApplyDefaults(db, DEFAULTS)
     db.schema = SCHEMA
-    db.probe = nil  -- leftover from a 0.3.4 dev probe
     ns.db = db
 end
 
@@ -87,13 +86,8 @@ local Notes = { MAX = 5 }
 ns.Notes = Notes
 
 function Notes.All()
-    local db = ns.db
-    db.notes = db.notes or {}
-    if db.note then  -- the single note of an early dev build
-        if not db.notes[1] then db.notes[1] = db.note end
-        db.note = nil
-    end
-    return db.notes
+    ns.db.notes = ns.db.notes or {}
+    return ns.db.notes
 end
 
 function Notes.Set(i, text)
@@ -202,13 +196,6 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
-    elseif cmd == "tp" then
-        -- Dev check: which of this season's dungeons have a known teleport.
-        for _, d in ipairs(ns.Filters.Dungeons()) do
-            ns.Print(d.code .. ": " .. tostring(ns.Pane.TeleportSpell(d.name) or "no teleport known"))
-        end
-    elseif cmd == "applicants" then
-        ns.Applications.ProbeApplicants(true)  -- dev probe (leader side)
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

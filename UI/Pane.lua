@@ -29,8 +29,6 @@ local W_DIFF = 16
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
 -- M legendary orange (epic purple skipped: too dark to read here).
 local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 }, LFR = { 0.7, 0.7, 0.7 } }
-local TITLE_BAND = 30  -- Blizzard's window title and close button stay uncovered
-local BOTTOM_ROW = 30  -- height left for Blizzard's Back / Sign Up buttons
 local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
@@ -60,11 +58,13 @@ local lastSearch, armed = 0, nil
 -- until the next search. Nothing is marked on a category's first search.
 local seen, fresh = nil, {}
 
--- Friends / guild mark: a drawn "people" glyph at the end of the name
--- column, in the colours WoW players know (Battle.net blue, guild chat
--- green). Options can colour the name instead, as Blizzard does.
+-- Friends / guild marks at the end of the name column, in the colours WoW
+-- players know (Battle.net blue, guild chat green) and in two shapes, so
+-- they never differ by colour alone (WCAG 1.4.1): a person for friends, a
+-- banner for the guild. Options can colour the name instead, as Blizzard does.
 local FRIEND = { 0.51, 0.77, 1 }
 local PEOPLE = { { 4, 4, 3 }, { 8, 3, -3 } }
+local BANNER = { { 2, 11, 0, nil, -3 }, { 6, 5, 2.5, nil, 1 } }
 local function GuildColor()
     local c = ChatTypeInfo and ChatTypeInfo.GUILD
     return c and { c.r, c.g, c.b } or { 0.25, 1, 0.25 }
@@ -116,14 +116,10 @@ local function Oldest()
     return o
 end
 
-local function OnAction(btn, mouse)
+local function OnAction(btn)
     local row = btn.row
     if not row then return end
-    -- Trace (tester: a plain click once signed up with no dialog; a friend's group showed no cue).
-    local info = C_LFGList.GetSearchResultInfo(row.id) or {}
-    ns.Trace("pane", "action", tostring(row.code), tostring(row.leader), "status", tostring(row.status),
-        "mouse", tostring(mouse), "shift", tostring(IsShiftKeyDown()), "dialogFn", tostring(LFGListApplicationDialog_Show ~= nil),
-        "bnet", tostring(info.numBNetFriends), "char", tostring(info.numCharFriends), "guild", tostring(info.numGuildMates))
+    ns.Trace("pane", "action", row.code, row.leader, "status", row.status, "shift", IsShiftKeyDown())
     if row.status == "applied" then
         C_LFGList.CancelApplication(row.id)
         ns.Log.Emit("cancel", { code = row.code, leader = row.leader })
@@ -149,7 +145,6 @@ local function OnAction(btn, mouse)
         Apply(row)
     end
 end
-
 
 -- ---------------------------------------------------------------------------
 -- Tooltips
@@ -192,10 +187,31 @@ local function RowTooltip(frame)
         end
         if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
     end
-    if row.friends > 0 then GameTooltip:AddLine(row.friends .. (row.friends == 1 and " friend" or " friends") .. " in the group", FRIEND[1], FRIEND[2], FRIEND[3]) end
-    if row.guild > 0 then
+    -- People you know, by name (the game gives Battle.net friends, character
+    -- friends and guildmates as name lists); counts if the names don't come.
+    if row.friends > 0 or row.guild > 0 then
+        local ok, bnet, chars, guild = pcall(C_LFGList.GetSearchResultFriends, row.id)
+        local function Names(list)
+            local out = {}
+            for _, n in ipairs(type(list) == "table" and list or {}) do
+                if type(n) == "string" and not issecretvalue(n) then out[#out + 1] = n end
+            end
+            return out
+        end
+        local friends = ok and Names(bnet) or {}
+        for _, n in ipairs(ok and Names(chars) or {}) do friends[#friends + 1] = n end
+        local mates = ok and Names(guild) or {}
         local g = GuildColor()
-        GameTooltip:AddLine(row.guild .. (row.guild == 1 and " guildmate" or " guildmates") .. " in the group", g[1], g[2], g[3])
+        if #friends > 0 then
+            GameTooltip:AddLine((#friends == 1 and "Friend: " or "Friends: ") .. table.concat(friends, ", "), FRIEND[1], FRIEND[2], FRIEND[3], true)
+        elseif row.friends > 0 then
+            GameTooltip:AddLine(row.friends .. (row.friends == 1 and " friend" or " friends") .. " in the group", FRIEND[1], FRIEND[2], FRIEND[3])
+        end
+        if #mates > 0 then
+            GameTooltip:AddLine((#mates == 1 and "Guildmate: " or "Guildmates: ") .. table.concat(mates, ", "), g[1], g[2], g[3], true)
+        elseif row.guild > 0 then
+            GameTooltip:AddLine(row.guild .. (row.guild == 1 and " guildmate" or " guildmates") .. " in the group", g[1], g[2], g[3])
+        end
     end
     if row.comment and row.comment ~= "" then GameTooltip:AddLine(row.comment, 0.85, 0.85, 0.85, true) end
     GameTooltip:Show()
@@ -309,10 +325,10 @@ local function BuildRow(i)
     round:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     round:SetAllPoints(r.new)
     r.new:AddMaskTexture(round)
-    for _, key in ipairs({ "friendMark", "guildMark" }) do
+    for key, shape in pairs({ friendMark = PEOPLE, guildMark = BANNER }) do
         local m = CreateFrame("Frame", nil, r)
         m:SetSize(10, 12)
-        m.tint = Kit.Glyph(m, PEOPLE)
+        m.tint = Kit.Glyph(m, shape)
         m:Hide()
         r[key] = m
     end
@@ -516,6 +532,7 @@ function Pane.Render()
         PaintRow(rows[slot] or BuildRow(slot), results[i], false, slot, full, raidView)
     end
     for i = slot + 1, #rows do rows[i]:Hide(); rows[i].row = nil end
+    pane.more:Set(offset + (math.min(slot, fit) - nPinned) < #results)
     ns.Sidecar.RefreshBosses()
     pane.instHead:SetText(raidView and "Raid" or "Dungeon")
     pane.scoreHead:SetText(raidView and "Bosses" or "Score")
@@ -560,8 +577,7 @@ local function BuildBars()
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
-    local setup = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } },
-        "Set up the filter", function() ns.Sidecar.Open() end)
+    local setup = Kit.HeaderIcon(bar, Kit.SLIDERS, "Set up the filter", function() ns.Sidecar.Open() end)
     setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
 
     countText = Text(bar)
@@ -618,6 +634,7 @@ local function BuildBars()
     for i = #ROLES, 1, -1 do
         local b = CreateFrame("Button", nil, head)
         b:SetSize(14, 14)
+        -- 17px apart (player: 24 was too far); a 2.5.8 exception, noted in the addendum.
         b:SetPoint("RIGHT", x - (#ROLES - i) * 17, 0)
         b.role = ROLES[i]
         b.icon = b:CreateTexture(nil, "ARTWORK")
@@ -641,7 +658,7 @@ local function BuildBars()
         roleButtons[#roleButtons + 1] = b
     end
 
-    local function Head(label, width, anchorTo, justify)
+    local function Head(label, width, justify)
         local fs = Text(head, nil, justify)
         fs:SetTextColor(0.55, 0.55, 0.55)
         fs:SetText(label)
@@ -649,7 +666,7 @@ local function BuildBars()
         return fs
     end
     local actRight = -(PAD + W_ACT + GAP)
-    pane.scoreHead = Head("Score", W_SCORE, nil, "RIGHT")
+    pane.scoreHead = Head("Score", W_SCORE, "RIGHT")
     pane.scoreHead:SetPoint("RIGHT", actRight, 0)
     local comp = Head("Comp", W_COMP)
     comp:SetPoint("RIGHT", pane.scoreHead, "LEFT", -GAP, 0)
@@ -681,18 +698,10 @@ local function Build()
     -- Blizzard's search row stays uncovered: addons can't set search text,
     -- so the player types it there (and searching by key level needs it).
     pane:SetPoint("LEFT", panel, "LEFT")
-    if panel.SearchBox then
-        pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
-    else
-        pane:SetPoint("TOP", panel, "TOP", 0, -TITLE_BAND)
-    end
+    pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
     -- Down to just above Blizzard's Back button, so no sliver of the list shows.
-    if panel.BackButton then
-        pane:SetPoint("RIGHT", panel, "RIGHT")
-        pane:SetPoint("BOTTOM", panel.BackButton, "TOP", 0, 2)
-    else
-        pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
-    end
+    pane:SetPoint("RIGHT", panel, "RIGHT")
+    pane:SetPoint("BOTTOM", panel.BackButton, "TOP", 0, 2)
     -- Above Blizzard's list, below its search suggestions (AutoCompleteFrame
     -- sits at a fixed level over the list): the suggestions stay usable.
     -- Our rows nest about 3 levels deep, so the pane sits 5 under.
@@ -721,6 +730,7 @@ local function Build()
     pane.divider = pane:CreateTexture(nil, "OVERLAY", nil, 7)
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
     pane.divider:SetHeight(1)
+    pane.more = Kit.More(pane)
     pane:EnableMouseWheel(true)
     pane:SetScript("OnMouseWheel", function(_, delta)
         offset = math.max(0, offset - delta * 3)
@@ -766,7 +776,7 @@ function Pane.Update()
     end
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
-    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Hide() end
+    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Close(false) end
 end
 
 -- ---------------------------------------------------------------------------
@@ -838,9 +848,15 @@ end)
 -- Shift-drag moves it.
 -- ---------------------------------------------------------------------------
 local teleport, teleportCache = nil, {}
-local ported  -- the teleport already cast for this group (testers: the button stayed until inside)
+-- On cooldown (just cast, or used earlier): nothing to click. Longer than a
+-- global cooldown counts; an unreadable (secret) cooldown counts as ready.
+local function OnCooldown(spell)
+    local cd = C_Spell.GetSpellCooldown(spell)
+    if not cd or issecretvalue(cd.duration) or issecretvalue(cd.startTime) then return false end
+    return cd.startTime > 0 and cd.duration > 2
+end
 
-function Pane.TeleportSpell(dungeon)
+local function TeleportSpell(dungeon)
     if teleportCache[dungeon] ~= nil then return teleportCache[dungeon] or nil end
     local found = false
     for i = 1, GetNumFlyouts() do
@@ -853,26 +869,33 @@ function Pane.TeleportSpell(dungeon)
         end
     end
     -- Descriptions can load late: only remember a hit.
-    if found then teleportCache[dungeon] = found end
-    ns.Trace("teleport", "spell for", dungeon, tostring(found))
+    if found then teleportCache[dungeon] = found; ns.Trace("teleport", "spell for", dungeon, found) end
     return found or nil
 end
 
+-- The party's own listing comes down when the group fills: remember its
+-- dungeon until the group breaks up.
+local listed, lastDungeon
 local function PartyDungeon()
+    if not IsInGroup() then listed = nil end
     local entry = C_LFGList.GetActiveEntryInfo()
     local act = entry and entry.activityIDs and entry.activityIDs[1]
     local info = act and C_LFGList.GetActivityInfoTable(act)
-    if info and (info.maxNumPlayers or 5) <= 5 then return Groups.BaseName(info.fullName) end
-    return ns.Applications.LastJoined()
+    if info and (info.maxNumPlayers or 5) <= 5 then listed = Groups.BaseName(info.fullName) end
+    return listed or ns.Applications.LastJoined()
 end
 
 local function UpdateTeleport()
     if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
     local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
         and not IsInInstance() and PartyDungeon()
-    local spell = dungeon and Pane.TeleportSpell(dungeon)
-    if not dungeon then ported = nil end  -- group changed or inside: the next full group gets one again
-    if not spell or spell == ported then if teleport then teleport:Hide() end return end
+    if dungeon ~= lastDungeon then
+        lastDungeon = dungeon
+        ns.Trace("teleport", "party dungeon", dungeon or "none",
+            not dungeon and "" or listed and "(party listing)" or "(last sign-up joined)")
+    end
+    local spell = dungeon and TeleportSpell(dungeon)
+    if not spell or OnCooldown(spell) then if teleport then teleport:Hide() end return end
     if not teleport then
         Kit.ApplyFontFace()
         teleport = CreateFrame("Button", "PickupGroupTeleport", UIParent, "SecureActionButtonTemplate")
@@ -904,17 +927,7 @@ local function UpdateTeleport()
     teleport:Show()
 end
 
--- A successful cast of the button's teleport: its job is done.
-ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
-    if issecretvalue(spellID) then return end
-    if unit == "player" and teleport and teleport:IsShown() and spellID == teleport:GetAttribute("spell") then
-        ported = spellID
-        ns.Trace("teleport", "cast", spellID)
-        UpdateTeleport()
-    end
-end)
-
 for _, ev in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "LFG_LIST_ACTIVE_ENTRY_UPDATE",
-    "PLAYER_REGEN_ENABLED", "ZONE_CHANGED_NEW_AREA", "SPELLS_CHANGED" }) do
+    "PLAYER_REGEN_ENABLED", "ZONE_CHANGED_NEW_AREA", "SPELLS_CHANGED", "SPELL_UPDATE_COOLDOWN" }) do
     ns.On(ev, UpdateTeleport)
 end

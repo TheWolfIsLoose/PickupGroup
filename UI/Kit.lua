@@ -138,6 +138,34 @@ function Kit.Glyph(frame, bars)
 end
 
 Kit.CLOSE = { { 12, 2, 0, math.pi / 4 }, { 12, 2, 0, -math.pi / 4 } }
+Kit.SLIDERS = { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } }  -- filter setup
+
+-- "More below": a small down chevron at the bottom centre of a list, in place
+-- of a scroll bar (the wheel scrolls). When it appears it pulses three times
+-- (1.5 s each) and then stays lit: blinking that stops within 5 s needs no
+-- pause control (WCAG 2.2.2). more:Set(on).
+function Kit.More(parent)
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetSize(24, 10)
+    f:SetPoint("BOTTOM", 0, 1)
+    f:SetFrameLevel(parent:GetFrameLevel() + 10)
+    Kit.Fill(f, Palette.bgDark)
+    Kit.Glyph(f, { { 8, 2, 0, -math.pi / 4, -2.8 }, { 8, 2, 0, math.pi / 4, 2.8 } })
+    local pulse = f:CreateAnimationGroup()
+    local fade = pulse:CreateAnimation("Alpha")
+    fade:SetFromAlpha(1); fade:SetToAlpha(0.25); fade:SetDuration(0.75); fade:SetSmoothing("IN_OUT")
+    local back = pulse:CreateAnimation("Alpha")
+    back:SetFromAlpha(0.25); back:SetToAlpha(1); back:SetDuration(0.75); back:SetSmoothing("IN_OUT"); back:SetStartDelay(0.75)
+    pulse:SetLooping("REPEAT")
+    local loops = 0
+    pulse:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
+    f:Hide()
+    function f:Set(on)
+        if on and not self:IsShown() then loops = 0; self:Show(); pulse:Play()
+        elseif not on and self:IsShown() then pulse:Stop(); self:Hide() end
+    end
+    return f
+end
 
 -- Header icon: drawn glyph, mint on hover, one-line tooltip.
 function Kit.HeaderIcon(parent, bars, tip, onClick)
@@ -156,13 +184,38 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     return btn
 end
 
+-- Toggle button: on = its colour (mint by default) as text and ring plus a
+-- 2px bar along the bottom, the same mark as an active sidecar tab, so "on"
+-- never rests on colour alone (WCAG 1.4.1). Off: grey text, grey ring.
+function Kit.Toggle(parent, text, w, onClick)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetSize(w, 20)
+    Kit.Button(b)
+    b:SetNormalFontObject("PickupGroupFontSmall")
+    b:SetHighlightFontObject("PickupGroupFontSmall")
+    b:SetText(text)
+    local bar = Solid(b, "OVERLAY", 6, Palette.brand)
+    bar:SetHeight(2)
+    bar:SetPoint("BOTTOMLEFT", 1, 1)
+    bar:SetPoint("BOTTOMRIGHT", -1, 1)
+    function b:Paint(on, color)
+        local c = on and (color or Palette.brand) or { 0.6, 0.6, 0.6 }
+        self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
+        Ring(self, on and c or Palette.ringRest)
+        bar:SetColorTexture(c[1], c[2], c[3], 1)
+        bar:SetShown(on)
+    end
+    b:SetScript("OnClick", onClick)
+    return b
+end
+
 -- Checkbox: 12px light well (grey ring on hover), mint square when on; the label is part of the
--- click area. box:Set(on), box:Get(); onChange(on) after a click.
+-- click area, 24px tall (WCAG 2.5.8: rows of checkboxes sit 24px apart).
+-- box:Set(on), box:Get(); onChange(on) after a click.
 function Kit.Check(parent, label, onChange)
     local b = CreateFrame("Button", nil, parent)
     b:SetHeight(16)
-    -- ponytail: 20px tall to click (rows sit 20px apart); 24px (WCAG 2.5.8) needs 24px rows.
-    b:SetHitRectInsets(0, 0, -2, -2)
+    b:SetHitRectInsets(0, 0, -4, -4)
     local well = CreateFrame("Frame", nil, b)
     well:SetSize(12, 12)
     well:SetPoint("LEFT")

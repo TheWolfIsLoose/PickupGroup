@@ -8,7 +8,7 @@
       keys  dungeons (this season), room for my role, leader at least my
             score, has Bloodlust, has battle rez, no other of my class,
             leader score floor, leader's realm
-      raid  leader's realm, each boss alive / dead / either
+      raid  leader's realm, bosses that must be alive (My lockout ticks them)
     Notes tab: up to five sign-up notes, offered to copy under Blizzard's
     sign-up dialog.
 --]]
@@ -35,7 +35,10 @@ local undo = {}  -- raid name -> boss rules before My lockout (false: none); a s
 
 local function Changed()
     ns.Pane.Render()
+    ns.Leader.Render()
 end
+
+local function Leading(f) return f ~= nil and f.kind:find("^lead_") ~= nil end
 
 local function Label(parent, text)
     local fs = parent:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
@@ -44,30 +47,12 @@ local function Label(parent, text)
     return fs
 end
 
--- A flat toggle: mint fill when on.
-local function Toggle(parent, text, w, onClick)
-    local b = CreateFrame("Button", nil, parent)
-    b:SetSize(w, 20)
-    Kit.Button(b)
-    b:SetNormalFontObject("PickupGroupFontSmall")
-    b:SetHighlightFontObject("PickupGroupFontSmall")
-    b:SetText(text)
-    -- On: the choice's colour as text and a 1px ring on a neutral fill, so
-    -- every colour reads (no colour-on-green). Off: grey text, grey ring.
-    function b:Paint(on, color)
-        local c = on and (color or MINT) or { 0.6, 0.6, 0.6 }
-        self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
-        local ring = on and c or Kit.Palette.ringRest
-        for _, t in ipairs(self._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
-    end
-    b:SetScript("OnClick", onClick)
-    return b
-end
+local Toggle = Kit.Toggle
 
 -- Leader's realm region: four toggles, all on by default (regions = nil).
 local regionButtons = {}
-local function RegionRow(box, y)
-    local l = Label(box, "Leader's realm")
+local function RegionRow(box, y, label)
+    local l = Label(box, label or "Leader's realm")
     l:SetPoint("TOPLEFT", 0, y)
     local codes = ns.Groups.REGIONS
     local cellW = (W - 2 * PAD - 3 * (#codes - 1)) / #codes
@@ -132,7 +117,7 @@ local function PaintRaid(f)
         local l = bossLines[n]
         if not l then
             l = CreateFrame("Button", nil, bossBox)
-            l:SetHeight(18)
+            l:SetHeight(24)
             l:SetScript("OnClick", function(self)
                 if self.raid then open[self.raid] = not open[self.raid]; PaintRaid(editing) end
             end)
@@ -167,7 +152,7 @@ local function PaintRaid(f)
                 Sidecar.Paint(); Changed()
                 GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
             end)
-            l.want:SetHeight(16)
+            l.want:SetHeight(18)
             l.want:SetPoint("RIGHT")
             l.want:HookScript("OnEnter", function(self)
                 if not ns.Hints() then return end
@@ -188,7 +173,7 @@ local function PaintRaid(f)
         l:SetPoint("TOPLEFT", 0, y)
         l:SetPoint("RIGHT")
         l:Show()
-        y = y - 18
+        y = y - 24
         return l
     end
     local raids = ns.Groups.Raids()
@@ -238,11 +223,50 @@ local function PaintRaid(f)
     end
 end
 
+local leadBox
+local function PaintLead(f)
+    local keys = f.kind == "lead_keys"
+    leadBox.title:SetText(keys and "Leading a key" or "Leading a raid")
+    leadBox.floorLabel:SetText(keys and "Score at least" or "Item level at least")
+    local n = keys and f.minScore or f.minIlvl
+    leadBox.floor:SetText((n or 0) > 0 and tostring(n) or "")
+    PaintRegions(f)
+end
+
 function Sidecar.Paint()
     if not (frame and editing) then return end
     keysBox:SetShown(editing.kind == "keys")
     raidBox:SetShown(editing.kind == "raid")
-    if editing.kind == "keys" then PaintKeys(editing) else PaintRaid(editing) end
+    leadBox:SetShown(Leading(editing))
+    if editing.kind == "keys" then PaintKeys(editing)
+    elseif editing.kind == "raid" then PaintRaid(editing)
+    else PaintLead(editing) end
+end
+
+-- Leading: applicants who miss these are dimmed, with the reason on hover.
+local function BuildLead(parent)
+    local box = CreateFrame("Frame", nil, parent)
+    box.title = box:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    box.title:SetPoint("TOPLEFT")
+    local y = RegionRow(box, -24, "Applicant's realm")
+    box.floorLabel = Label(box, "")
+    box.floorLabel:SetTextColor(1, 1, 1)
+    box.floorLabel:SetPoint("TOPLEFT", 0, y - 12)
+    box.floor = Kit.Edit(box, 56, function(text)
+        local n = tonumber(text)
+        local key = editing.kind == "lead_keys" and "minScore" or "minIlvl"
+        editing[key] = (n and n > 0) and n or nil
+        Changed()
+    end, true)
+    Kit.Hint(box.floor, "Any")
+    box.floor:SetPoint("TOPRIGHT", 0, y - 8)
+    local note = Label(box, "Applicants who don't match are dimmed, with the reason on hover. Nobody is hidden.")
+    note:SetPoint("TOPLEFT", 0, y - 44)
+    note:SetPoint("RIGHT")
+    note:SetJustifyH("LEFT")
+    note:SetWordWrap(true)
+    box:SetHeight(-y + 80)
+    return box
 end
 
 local function BuildKeys(parent)
@@ -258,6 +282,7 @@ local function BuildKeys(parent)
         local t = Label(b, w[1])
         t:SetPoint("RIGHT")
         b:SetWidth(t:GetStringWidth())
+        b:SetHitRectInsets(-4, -4, -6, -6)  -- 24px tall to click (WCAG 2.5.8)
         if prevWord then b:SetPoint("RIGHT", prevWord, "LEFT", -8, 0) else b:SetPoint("TOPRIGHT", 0, y) end
         b:SetScript("OnClick", function() w[2](); Sidecar.Paint(); Changed() end)
         b:SetScript("OnEnter", function() t:SetTextColor(MINT[1], MINT[2], MINT[3]) end)
@@ -277,7 +302,7 @@ local function BuildKeys(parent)
             Sidecar.Paint(); Changed()
         end)
         b.dungeon, b.code = d.name, d.code
-        b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 23)
+        b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 24)
         b:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(self.dungeon)
             local best = self:GetText():match("%+(%d+)")  -- colour codes have no "+"
@@ -287,7 +312,7 @@ local function BuildKeys(parent)
         b:HookScript("OnLeave", function() GameTooltip:Hide() end)
         dungeonButtons[#dungeonButtons + 1] = b
     end
-    y = y - math.ceil(#dungeonButtons / 4) * 23 - 8
+    y = y - math.ceil(#dungeonButtons / 4) * 24 - 8
 
     for _, c in ipairs({
         { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
@@ -311,7 +336,7 @@ local function BuildKeys(parent)
             cb:HookScript("OnLeave", function() GameTooltip:Hide() end)
         end
         checks[key] = cb
-        y = y - 20
+        y = y - 24
     end
     y = y - 4
     local l = Label(box, "Leader score at least")
@@ -400,11 +425,11 @@ local function BuildOptions(parent)
     end)
     blizz:SetPoint("TOPLEFT", 0, y)
     box.blizz = blizz
-    y = y - 22
+    y = y - 24
     local hint = Label(box, "A PickupGroup button on Blizzard's panel brings this back.")
     hint:SetPoint("TOPLEFT", 0, y)
     hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
-    y = y - 32
+    y = y - 28
     local names = Kit.Check(box, "Colour names for friends / guild", function(on)
         ns.db.nameColors = on or nil
         ns.Log.Emit("setting", { key = "nameColors", on = on })
@@ -420,7 +445,7 @@ local function BuildOptions(parent)
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.names = names
-    y = y - 22
+    y = y - 24
     local swap = Kit.Check(box, "Swap when all sign-ups are out", function(on)
         ns.db.swap = on or nil
         ns.Log.Emit("setting", { key = "swap", on = on })
@@ -436,7 +461,7 @@ local function BuildOptions(parent)
     end)
     swap:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.swap = swap
-    y = y - 22
+    y = y - 24
     -- Opt-in (player): veterans can turn off the how-to tooltips.
     local hints = Kit.Check(box, "Hide hint tooltips", function(on)
         ns.db.noHints = on or nil
@@ -444,7 +469,7 @@ local function BuildOptions(parent)
     end)
     hints:SetPoint("TOPLEFT", 0, y)
     box.hints = hints
-    y = y - 22
+    y = y - 24
     -- Off for players whose other addons handle sign-up notes (they clash).
     local strip = Kit.Check(box, "My notes under Blizzard's sign-up window", function(on)
         ns.db.noteStrip = (not on) and false or nil
@@ -482,13 +507,13 @@ local function BuildOptions(parent)
             unit:SetPoint("LEFT", hours, "RIGHT", 4, 0)
             box.hours = hours
         end
-        y = y - 22
+        y = y - 24
     end
     local tip = Label(box, "Adverts: no leader score and the voice chat field filled in. "
         .. "Right-click a row to report, blacklist or hide its leader.")
     tip:SetPoint("TOPLEFT", 0, y - 2)
     tip:SetWidth(W - 2 * PAD); tip:SetJustifyH("LEFT"); tip:SetWordWrap(true)
-    y = y - 48
+    y = y - 44
 
     box.count = Label(box, "")
     box.count:SetPoint("TOPLEFT", 0, y - 4)
@@ -546,7 +571,7 @@ local function Build()
     Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(frame)
 
-    -- Header tabs: Filter (the filter being edited) and Options.
+    -- Header tabs: Filter (the filter being edited), Notes and Options.
     local prev
     for _, t in ipairs({ { "filter", "Filter" }, { "notes", "Notes" }, { "options", "Options" } }) do
         local b = CreateFrame("Button", nil, frame)
@@ -590,6 +615,9 @@ local function Build()
     raidBox = BuildRaid(body)
     raidBox:SetPoint("TOPLEFT")
     raidBox:SetPoint("RIGHT")
+    leadBox = BuildLead(body)
+    leadBox:SetPoint("TOPLEFT")
+    leadBox:SetPoint("RIGHT")
 
     -- Reset: the filter back to its starting rules; a second
     -- click confirms.
@@ -640,8 +668,7 @@ function Sidecar.MoveRaiderIO()
     moving = false
 end
 
--- Open on a filter (the active one by default); toggles when already open on it.
--- Switch the sidecar between its Filter and Options views.
+-- Switch the sidecar between its Filter, Notes and Options views.
 function Sidecar.Show(which)
     view = which
     filterView:SetShown(which == "filter")
@@ -676,8 +703,10 @@ function Sidecar.RefreshBosses()
     if frame and frame:IsShown() and editing and editing.kind == "raid" then PaintRaid(editing) end
 end
 
-function Sidecar.Hide()
-    if frame then frame:Hide() end
+-- Close the sidecar if it's on a filter of that side (leading or searching):
+-- the pane and the leader view each close only their own.
+function Sidecar.Close(leading)
+    if frame and frame:IsShown() and Leading(editing) == leading then frame:Hide() end
 end
 
 -- ---------------------------------------------------------------------------
@@ -744,8 +773,6 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     local dialog = LFGListApplicationDialog
     if not dialog then return end
     local strip
-    -- Other addons can have their own sign-up note tools (logged so reports show it).
-    ns.Trace("notes", "EllesmereUI loaded:", tostring(C_AddOns.IsAddOnLoaded("EllesmereUI")))
     local function Refresh()
         local notes = ns.Notes.List()
         Sidecar.CheckConflict()
@@ -790,10 +817,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
         strip:SetHeight(26 + #notes * 24)
         strip:Show()
         -- Next frame: the dialog may still be taking focus when it opens.
-        C_Timer.After(0, function()
-            if strip:IsVisible() then strip.boxes[1]:SetFocus() end
-            ns.Trace("notes", "strip shown, notes", #notes, "focused", strip.boxes[1]:HasFocus())
-        end)
+        C_Timer.After(0, function() if strip:IsVisible() then strip.boxes[1]:SetFocus() end end)
     end
     dialog:HookScript("OnShow", Refresh)
     -- Apply on another group while the dialog is open re-uses it (no OnShow).
