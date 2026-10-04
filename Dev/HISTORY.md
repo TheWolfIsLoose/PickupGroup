@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.0 (2026-10-04)
+
+First full release: the 0.9.0 alphas below (chime, decline counter, sidecar opening with the pane, the UI / copy / branding passes). Detailed recording (trace) now defaults off, and schema 6 turns it off on existing installs too (`/pug debug` switches it on). The name stays PickupGroup (player, 2026-10-04). Organic checks still open: the fill chime and Bailed (vote to abandon) in real groups; the teleport party check.
+
 ## 0.9.0 alphas (dev)
 
 - alpha11 (branding, 2026-10-04): suite icon (portal swirl, `5AB4FF`, style-guide tile): `icon.png` + TOC IconTexture, README logo, `.assets/logo.png` 400 px for CurseForge; `.assets` kept out of the package.

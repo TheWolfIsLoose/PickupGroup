@@ -3,7 +3,7 @@
 ## Notes: A faster premade-groups list that lives inside Blizzard's Group Finder: one filter per content type, comps at a glance, one-click sign-ups.
 ## Author: Jakerator
 ## IconTexture: Interface\AddOns\PickupGroup\icon.png
-## Version: 0.9.0-alpha11
+## Version: 1.0.0
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
 ## X-Curse-Project-ID: 1718475

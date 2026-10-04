@@ -10,7 +10,7 @@
       activity  what a player cares about
       detail    what support needs
       trace     step-by-step internals, recorded only while PickupGroupDB.trace
-                is on (/pug debug; on by default until v1.0.0)
+                is on (/pug debug; off by default)
 
     Add a kind: one KINDS entry, { level, format(payload) -> sentence }.
 --]]

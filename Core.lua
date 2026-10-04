@@ -14,10 +14,10 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 5
+local SCHEMA = 6
 local DEFAULTS = {
     schema = SCHEMA,
-    trace  = true,   -- record trace steps; on by default until v1.0.0
+    trace  = false,  -- detailed trace steps; /pug debug switches them on
     log    = {},
     chars  = {},
     cleanup   = { stale = true, staleHours = 3, advert = true, carry = true, blacklist = true },
@@ -45,6 +45,9 @@ local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
             f.text = nil  -- leftover from 0.3.4's saved search text
         end
     end,
+    -- 6: v1.0.0: detailed recording starts off for everyone (it was on by
+    -- default while testing); /pug debug turns it back on.
+    [6] = function(db) db.trace = false end,
     -- 5: sign-ups the game withdrew because the player got in elsewhere
     -- (within 5 s of a join) are "movedon"; lifetime counts re-seed.
     [5] = function(db)

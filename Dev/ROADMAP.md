@@ -17,18 +17,11 @@ cheap.
 
 ## Next session: start here
 
-**Road to v1.0.0 (player, 2026-10-04: aiming for today).** The decline
-counter (alpha6) is the last feature. Then, in order:
-1. **UI/UX sweep:** colour conventions consistent; the style guide made
-   robust and reusable for current and future addons.
-2. **Copy pass**, all three addons (SharedMedia: Tones, StockClerk,
-   PickupGroup): format, style and syntax consistent.
-3. **Branding pass:** one icon suite for the three, each identifiable
-   (think Adobe's product tiles), good-looking in the WoW addon list.
-4. **v1.0.0:** final name, debug logging off by default.
-5. **Reminder (player, 2026-10-04):** add screenshots to the CurseForge
-   gallery and the description (README + `Dev/CURSEFORGE.md`), like
-   StockClerk's.
+**v1.0.0 released 2026-10-04.** Still open after 1.0:
+- Screenshots for the CurseForge gallery and description (player's reminder; README + `Dev/CURSEFORGE.md`), and paste `Dev/CURSEFORGE.md` and upload `.assets/logo.png` on CurseForge.
+- Organic checks: fill chime, Bailed (vote to abandon), teleport party check.
+- StockClerk's WCAG + ponytail session; WoW: Forever compatibility check for all three addons.
+- Mascot (hermit crab, a shell per addon) for description banners: parked.
 
 **Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
 dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
@@ -221,11 +214,10 @@ season); an open sign-up at /reload is re-attached by leader + activity.
 
 ---
 
-## v1.0.0 — first release-worthy build
+## v1.0.0 — released 2026-10-04
 
-- **Open:** final name (display name can change on CurseForge, the slug
-  can't).
-- **Decided:** debug (trace) logging defaults to off.
+- Name: PickupGroup (decided 2026-10-04).
+- Debug (trace) logging defaults to off (schema 6).
 - StockClerk gets its own ponytail + WCAG session (same style language:
   grey rest rings, toggle bar).
 
