@@ -427,8 +427,8 @@ local function BuildOptions(parent)
     box.blizz = blizz
     y = y - 24
     local hint = Label(box, "Switch back from Blizzard's panel.")
-    hint:SetPoint("TOPLEFT", 0, y)
-    hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
+    hint:SetPoint("TOPLEFT", 18, y)  -- under the checkbox's text, like the clash line
+    hint:SetWidth(W - 2 * PAD - 18); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
     y = y - 18
     local names = Kit.Check(box, "Colour names for friends / guild", function(on)
         ns.db.nameColors = on or nil

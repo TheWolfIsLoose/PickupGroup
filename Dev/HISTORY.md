@@ -4,6 +4,7 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 ## 0.9.0 alphas (dev)
 
+- alpha4: the Blizzard-list hint indents 18 to line up with its checkbox's text, like the clash line (player: left-aligned looked jarring).
 - alpha3: login / reload prints "PickupGroup: vX loaded. Type /pug for commands." so the player can see which build is running (alpha2's install didn't land; player asked, like StockClerk's line).
 - alpha2: the Blizzard-list hint wrapped onto the next checkbox; now "Switch back from Blizzard's panel." (one line). Options otherwise fit (player screenshot).
 - alpha1 (player, 2026-10-04): fill chime. When the party a sign-up got the player into reaches 5 (roster goes from under 5 to 5, then Applications.LastJoined() a second later), plays Media/TheCyclist.ogg (The Cyclist, copied from the player's SharedMedia: Tones) on the Master channel. Options: "Chime when my group fills", on by default (opt-out, saved as noChime). Dungeons only (raids: see ROADMAP). Options rows: the Blizzard-list hint is one line and two gaps shrank so the new row fits; checkboxes stay 24 apart.
