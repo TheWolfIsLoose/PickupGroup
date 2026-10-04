@@ -186,6 +186,7 @@ local HELP = {
     "commands:",
     "  /pug log |cff888888- open the log to copy into a bug report|r",
     "  /pug log clear |cff888888- empty the log|r",
+    "  /pug stats |cff888888- your rejection record, ready to brag about|r",
     "  /pug debug |cff888888- switch detailed recording on or off|r",
 }
 
@@ -197,6 +198,8 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
+    elseif cmd == "stats" then
+        ns.Print(ns.History.StatsLine())
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

@@ -17,7 +17,17 @@ cheap.
 
 ## Next session: start here
 
-**Fill chime (player, 2026-10-04): 0.9.0-alpha5 on dev.** A sign-up's
+**Road to v1.0.0 (player, 2026-10-04: aiming for today).** The decline
+counter (alpha6) is the last feature. Then, in order:
+1. **UI/UX sweep:** colour conventions consistent; the style guide made
+   robust and reusable for current and future addons.
+2. **Copy pass**, all three addons (SharedMedia: Tones, StockClerk,
+   PickupGroup): format, style and syntax consistent.
+3. **Branding pass:** one icon suite for the three, each identifiable
+   (think Adobe's product tiles), good-looking in the WoW addon list.
+4. **v1.0.0:** final name, debug logging off by default.
+
+**Fill chime (player, 2026-10-04): 0.9.0-alpha6 on dev.** A sign-up's
 dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
 hook); Options toggle, on by default. **Later:** choosing the sound from
 SharedMedia (a novel feature, not now).

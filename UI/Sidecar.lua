@@ -846,6 +846,8 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     dialog:HookScript("OnHide", function() if strip then strip:Hide() end end)
 end)
 
-function Sidecar.Follow(f)
-    if frame and frame:IsShown() then editing = f; Sidecar.Paint() end
+-- Keep an open sidecar on the category's filter; with `open`, open it too.
+function Sidecar.Follow(f, open)
+    if frame and frame:IsShown() then editing = f; Sidecar.Paint()
+    elseif open then Sidecar.Open(f) end
 end

@@ -90,12 +90,34 @@ local History = {}
 ns.History = History
 
 local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.6, 0.6, 0.6 }
+-- History is the fun corner: self-deprecating, never mean (player, 2026-10-04).
 local LOOK = {
-    pending = { "Pending", GREY }, declined = { "Declined", AMBER }, filled = { "Filled", GREY },
-    delisted = { "Delisted", GREY }, withdrawn = { "Withdrawn", GREY }, timedout = { "Expired", GREY },
-    invitedeclined = { "Passed", GREY }, failed = { "Failed", AMBER }, joined = { "Joined", MINT },
-    unknown = { "Unknown", GREY }, timed = { "Timed", MINT }, depleted = { "Depleted", AMBER },
+    pending = { "Waiting...", GREY }, declined = { "Nope", AMBER }, filled = { "Too slow", GREY },
+    delisted = { "Vanished", GREY }, withdrawn = { "Cold feet", GREY }, timedout = { "Ghosted", GREY },
+    invitedeclined = { "You said no", GREY }, failed = { "Game said no", AMBER }, joined = { "Got in!", MINT },
+    unknown = { "Who knows", GREY }, timed = { "Timed", MINT }, depleted = { "Depleted", AMBER },
 }
+-- One line under the decline count, by how many there are.
+local QUIPS = {
+    { 0, "Not a single no. A legend, or you haven't signed up yet." },
+    { 1, "A few polite no-thank-yous. Character-building, apparently." },
+    { 10, "Rejection is just a cooldown. A long one." },
+    { 50, "Leaders are starting to recognise your name." },
+    { 150, "Declined by more groups than most people have joined." },
+    { 500, "At this point it's a relationship. A one-sided one." },
+    { 1000, "Four digits of no. Frame it." },
+}
+local function Quip(n)
+    local pick = QUIPS[1][2]
+    for _, q in ipairs(QUIPS) do if n >= q[1] then pick = q[2] end end
+    return pick
+end
+
+local function Ago(sec)
+    if sec < 60 then return sec .. " s" end
+    return ("%d m %d s"):format(math.floor(sec / 60), sec % 60)
+end
+
 local SHOW = 300  -- ponytail: newest 300 drawn; page or pool rows if anyone wants more
 local COLS = { { "When", 74 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 130 }, { "Ended", 70 } }
 local ROW = 18
@@ -113,26 +135,91 @@ local function Entries()
     return out
 end
 
+-- Lifetime declines for the scope (this character, or every character).
+local function LifetimeDeclines()
+    if not allChars then return ns.Applications.Lifetime().declined or 0 end
+    local n = 0
+    for _, c in pairs(ns.db.chars or {}) do n = n + (ns.Applications.Lifetime(c).declined or 0) end
+    return n
+end
+
+-- Today, the fastest no, and the longest run of sign-ups that never got in.
+local function Records(list)
+    local today, todayN, todayNo, todayIn = date("%x"), 0, 0, 0
+    local fastest, run, dry = nil, 0, 0
+    for i = #list, 1, -1 do  -- oldest first
+        local e = list[i].e
+        local r = e.result
+        local got = r == "joined" or r == "timed" or r == "depleted"
+        if e.ts and date("%x", e.ts) == today then
+            todayN = todayN + 1
+            if r == "declined" then todayNo = todayNo + 1 end
+            if got then todayIn = todayIn + 1 end
+        end
+        if r == "declined" and e.ts and e.ended and e.ended >= e.ts then
+            fastest = math.min(fastest or math.huge, e.ended - e.ts)
+        end
+        if got then run = 0 elseif r ~= "pending" then run = run + 1; dry = math.max(dry, run) end
+    end
+    return { n = todayN, no = todayNo, got = todayIn, fastest = fastest, dry = dry }
+end
+
+local function RecordsLine(rec)
+    local parts = { ("Today: %d sign-up%s, %d no%s, %d got in."):format(rec.n, rec.n == 1 and "" or "s",
+        rec.no, rec.no == 1 and "" or "s", rec.got) }
+    if rec.fastest then
+        parts[#parts + 1] = "Fastest no: " .. Ago(rec.fastest) .. (rec.fastest <= 10 and " (they didn't read the note)." or ".")
+    end
+    if rec.dry > 1 then parts[#parts + 1] = ("Longest dry spell: %d sign-ups."):format(rec.dry) end
+    return table.concat(parts, " ")
+end
+
+-- /pug stats: one line for chat, this character.
+function History.StatsLine()
+    local was = allChars
+    allChars = false
+    local n = LifetimeDeclines()
+    local line = RecordsLine(Records(Entries())) .. (" Lifetime: declined %s time%s. %s"):format(
+        BreakUpLargeNumbers(n), n == 1 and "" or "s", Quip(n))
+    allChars = was
+    return line
+end
+
+local TALLY = { declined = "nopes", filled = "too slow", delisted = "vanished", withdrawn = "cold feet",
+                timedout = "ghosted", failed = "game said no" }
 local function Tally(list)
     local n = {}
     for _, x in ipairs(list) do n[x.e.result or "pending"] = (n[x.e.result or "pending"] or 0) + 1 end
     local joined = (n.joined or 0) + (n.timed or 0) + (n.depleted or 0)
-    local parts = { #list .. " sign-ups", joined .. " joined" }
+    local parts = { #list .. " sign-ups", joined .. " got in" }
     if (n.timed or 0) + (n.depleted or 0) > 0 then
         parts[#parts] = parts[#parts] .. (" (%d timed, %d depleted)"):format(n.timed or 0, n.depleted or 0)
     end
     for _, k in ipairs({ "declined", "filled", "delisted", "withdrawn", "timedout", "failed" }) do
-        if (n[k] or 0) > 0 then parts[#parts + 1] = n[k] .. " " .. LOOK[k][1]:lower() end
+        if (n[k] or 0) > 0 then parts[#parts + 1] = n[k] .. " " .. TALLY[k] end
     end
     return table.concat(parts, ", ")
 end
 
 local function BuildHistory()
-    local f = Window("PickupGroupHistory", 500, 420, "Sign-up history")
+    local f = Window("PickupGroupHistory", 500, 480, "Sign-up history")
     local who = Kit.Check(f, "All characters", function(on) allChars = on; f.Fill() end)
     who:SetPoint("TOPRIGHT", -30, -10)
+    -- The headline: lifetime declines, big, with a quip.
+    f.big = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
+    f.big:SetPoint("TOPLEFT", 12, -34)
+    f.big:SetTextColor(AMBER[1], AMBER[2], AMBER[3])
+    f.bigLabel = f:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    f.bigLabel:SetPoint("BOTTOMLEFT", f.big, "BOTTOMRIGHT", 6, 1)
+    f.quip = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    f.quip:SetPoint("TOPLEFT", 12, -56)
+    f.quip:SetTextColor(MINT[1], MINT[2], MINT[3])
+    f.records = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    f.records:SetPoint("TOPLEFT", 12, -74)
+    f.records:SetPoint("RIGHT", -12, 0)
+    f.records:SetJustifyH("LEFT")
     f.tally = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    f.tally:SetPoint("TOPLEFT", 12, -30)
+    f.tally:SetPoint("TOPLEFT", 12, -90)
     f.tally:SetPoint("RIGHT", -12, 0)
     f.tally:SetJustifyH("LEFT")
     f.tally:SetTextColor(0.74, 0.74, 0.74)
@@ -141,7 +228,7 @@ local function BuildHistory()
     f.heads = {}
     for i, c in ipairs(COLS) do
         local h = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-        h:SetPoint("TOPLEFT", x, -50)
+        h:SetPoint("TOPLEFT", x, -110)
         h:SetText(c[1])
         h:SetTextColor(0.55, 0.55, 0.55)
         f.heads[i] = h
@@ -149,7 +236,7 @@ local function BuildHistory()
     end
 
     local scroll = CreateFrame("ScrollFrame", "PickupGroupHistoryScroll", f, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 8, -66)
+    scroll:SetPoint("TOPLEFT", 8, -126)
     scroll:SetPoint("BOTTOMRIGHT", -28, 10)
     local body = CreateFrame("Frame", nil, scroll)
     body:SetSize(460, 1)
@@ -158,7 +245,12 @@ local function BuildHistory()
 
     function f.Fill()
         local list = Entries()
-        f.tally:SetText(#list > 0 and Tally(list) or "No sign-ups recorded yet.")
+        local no = LifetimeDeclines()
+        f.big:SetText(BreakUpLargeNumbers(no))
+        f.bigLabel:SetText(no == 1 and "time declined, lifetime" or "times declined, lifetime")
+        f.quip:SetText(Quip(no))
+        f.records:SetText(RecordsLine(Records(list)))
+        f.tally:SetText(#list > 0 and Tally(list) or "Nothing here yet. Go get rejected; it builds character.")
         -- The Character column only when showing every character.
         local hideWho = not allChars
         f.heads[2]:SetShown(not hideWho)

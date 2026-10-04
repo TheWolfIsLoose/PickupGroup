@@ -4,6 +4,8 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 ## 0.9.0 alphas (dev)
 
+- alpha6 (player, 2026-10-04): **decline counter**, the history's fun corner (self-deprecating, never mean). Lifetime counts per character (`chars[..].tally`: applied, each ending, joined, timed, depleted), seeded once from the list at PLAYER_LOGIN, never trimmed. Sign-up history: big amber lifetime-declines number + quip by tier, a records line (today's sign-ups / nos / got in, fastest no, longest dry spell = most sign-ups in a row without getting in), witty ending words (Nope, Too slow, Vanished, Cold feet, Ghosted, Got in!). `/pug stats` prints the same for chat. `Dev/test_history.lua` checks seed + records.
+- alpha6: the sidecar opens by itself on its filter each time the search pane appears (Dungeons / current Raids, PickupGroup on); closing it holds until the next time. Eligibility uses the panel's visibility, so closing the Group Finder counts as leaving.
 - alpha5: the Blizzard-list hint moves into that checkbox's tooltip (hint tooltip, hidden by "Hide hint tooltips"), like every other explainer on Options (player); frees its row.
 - alpha4: the Blizzard-list hint indents 18 to line up with its checkbox's text, like the clash line (player: left-aligned looked jarring).
 - alpha3: login / reload prints "PickupGroup: vX loaded. Type /pug for commands." so the player can see which build is running (alpha2's install didn't land; player asked, like StockClerk's line).

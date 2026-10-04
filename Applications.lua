@@ -67,6 +67,32 @@ local function RoleText()
     return table.concat(out)
 end
 
+-- Lifetime counts per character (c.tally): never trimmed, unlike the
+-- 1000-entry list, so "declined 2,417 times" stays true. Seeded once from
+-- the list. Keys: applied, joined, timed, depleted and each ending word.
+local function Seed(c)
+    local t = { applied = #(c.apps or {}) }
+    for _, e in ipairs(c.apps or {}) do
+        local r = e.result
+        if r == "timed" or r == "depleted" then t.joined = (t.joined or 0) + 1 end
+        if r and r ~= "pending" then t[r] = (t[r] or 0) + 1 end
+    end
+    return t
+end
+
+function Applications.Lifetime(c)
+    c = c or ns.CharDB()
+    c.tally = c.tally or Seed(c)
+    return c.tally
+end
+
+local function Bump(key)
+    local t = Applications.Lifetime()
+    t[key] = (t[key] or 0) + 1
+end
+-- Seed before any sign-up event can count twice.
+ns.On("PLAYER_LOGIN", function() Applications.Lifetime() end)
+
 local function Start(id)
     local row = ns.Groups.Read(id)
     local info = C_LFGList.GetSearchResultInfo(id)
@@ -81,6 +107,7 @@ local function Start(id)
     -- ponytail: table.remove(t, 1) shifts the list; fine at 1000 entries.
     while #list > MAX do table.remove(list, 1) end
     open[id] = e
+    Bump("applied")
     return e
 end
 
@@ -91,6 +118,7 @@ ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     if not (e and result) then return end
     e.result, e.ended = result, time()
     open[id] = nil
+    Bump(result)
     if ended then ended[Key(e.leader, e.activityID)] = e end
     ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = result })
 end)
@@ -108,7 +136,7 @@ ns.On("CHALLENGE_MODE_COMPLETED", function()
             local okLevel, level = pcall(function() return tonumber(info.level) end)
             e.onTime = okTime and onTime or nil
             e.level = okLevel and level or nil
-            if okTime then e.result = onTime and "timed" or "depleted" end
+            if okTime then e.result = onTime and "timed" or "depleted"; Bump(e.result) end
             ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = e.result, level = e.level })
             return
         end

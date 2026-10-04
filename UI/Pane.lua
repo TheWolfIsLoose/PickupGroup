@@ -78,7 +78,7 @@ local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
 
 local function Eligible()
     local p = Panel()
-    if not (p and p:IsShown()) then return false end
+    if not (p and p:IsVisible()) then return false end  -- visible: closing the Group Finder counts as leaving
     -- While the player's group is listed, step aside as Blizzard does (its
     -- listing view: members can't act, the leader manages applicants).
     if C_LFGList.HasActiveEntryInfo() then return false end
@@ -781,6 +781,7 @@ local function Build()
     C_Timer.NewTicker(1, Tick)
 end
 
+local wasShown
 function Pane.Update()
     if not Panel() then return end
     if not pane then Build() end
@@ -795,7 +796,11 @@ function Pane.Update()
     end
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
-    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Close(false) end
+    -- It opens by itself each time the pane appears (player: filters ready
+    -- without a click); closing it holds until the next time.
+    local appeared = pane:IsShown() and not wasShown
+    wasShown = pane:IsShown()
+    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active(), appeared) else ns.Sidecar.Close(false) end
 end
 
 -- ---------------------------------------------------------------------------
