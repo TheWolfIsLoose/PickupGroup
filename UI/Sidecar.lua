@@ -426,7 +426,7 @@ local function BuildOptions(parent)
     blizz:SetPoint("TOPLEFT", 0, y)
     box.blizz = blizz
     y = y - 24
-    local hint = Label(box, "A button on Blizzard's panel brings this back.")
+    local hint = Label(box, "Switch back from Blizzard's panel.")
     hint:SetPoint("TOPLEFT", 0, y)
     hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
     y = y - 18

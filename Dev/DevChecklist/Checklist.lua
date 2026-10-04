@@ -1,6 +1,6 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "PickupGroup dev, round 22 (0.9.0-alpha1)"
+DevChecklist_Round = "PickupGroup dev, round 22b (0.9.0-alpha2)"
 local S, P, O = "PickupGroup: Searching", "PickupGroup: Party / later", "PickupGroup: Options"
 DevChecklist_Items = {
     { O, "Open Options: the new \"Chime when my group fills\" box is ticked, and the Sign-up history button sits fully inside the sidecar.", "screenshot if not" },

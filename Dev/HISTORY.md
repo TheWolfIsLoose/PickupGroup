@@ -4,6 +4,7 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 ## 0.9.0 alphas (dev)
 
+- alpha2: the Blizzard-list hint wrapped onto the next checkbox; now "Switch back from Blizzard's panel." (one line). Options otherwise fit (player screenshot).
 - alpha1 (player, 2026-10-04): fill chime. When the party a sign-up got the player into reaches 5 (roster goes from under 5 to 5, then Applications.LastJoined() a second later), plays Media/TheCyclist.ogg (The Cyclist, copied from the player's SharedMedia: Tones) on the Master channel. Options: "Chime when my group fills", on by default (opt-out, saved as noChime). Dungeons only (raids: see ROADMAP). Options rows: the Blizzard-list hint is one line and two gaps shrank so the new row fits; checkboxes stay 24 apart.
 
 ## v0.8.1 (2026-10-04)
