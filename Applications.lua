@@ -150,12 +150,16 @@ ns.On("PLAYER_ENTERING_WORLD", function()
 end)
 
 -- The dungeon of the group most recently joined through a sign-up (within
--- JOIN_WINDOW), as its activity name; nil if none.
+-- JOIN_WINDOW), as its activity name, while its leader is still in the
+-- player's group; nil otherwise (tester: a party joined another way got the
+-- earlier sign-up's teleport).
 function Applications.LastJoined()
     local list = List()
     for i = #list, 1, -1 do
         local e = list[i]
-        if e.result == "joined" and not e.isRaid and time() - (e.ended or 0) < JOIN_WINDOW then return e.activity end
+        if e.result == "joined" and not e.isRaid and time() - (e.ended or 0) < JOIN_WINDOW then
+            return e.leader and UnitInParty(Ambiguate(e.leader, "none")) and e.activity or nil
+        end
         if time() - (e.ts or 0) > JOIN_WINDOW then return nil end
     end
 end

@@ -1,6 +1,6 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "PickupGroup dev, round 19 (0.7.1-alpha3)"
+DevChecklist_Round = "PickupGroup dev, round 19 (0.7.1-alpha4)"
 local R, S, O, P = "PickupGroup: Raid leading", "PickupGroup: Searching", "PickupGroup: Sidecar", "PickupGroup: Party / later"
 DevChecklist_Items = {
     { R, "List a raid: our panel covers Blizzard's applicants. Under the top bar: Target  T [2] H [4] D [14] and buttons 10 20 25 30 (20 shows on: mint with a bar).", "SS" },
@@ -15,5 +15,6 @@ DevChecklist_Items = {
     { O, "Options tab: everything fits, the Sign-up history button isn't cut off at the bottom.", "SS" },
     { O, "Raids filter: boss rows sit further apart; My lockout shows a bar while it's applied.", "SS" },
     { P, "Full 5/5 party: no Teleport button while that dungeon's teleport is on cooldown; after a successful teleport it doesn't come back (also after zoning or the group changing).", "say done (log)" },
+    { P, "Join a party some other way than your own sign-up (whispered invite) after joining a different key through a sign-up: Teleport names the party's listed key, or doesn't show; never the earlier key. (Tester bug: AOF offered in a VSA party.)", "say done (log)" },
     { P, "Friend test (friend on v0.7.0+): you list a key; they search for it (our list, then Use Blizzard's). Send their PickupGroup.lua if they can't see it.", "their file" },
 }

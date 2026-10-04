@@ -871,18 +871,26 @@ local function TeleportSpell(dungeon)
     return found or nil
 end
 
+-- The party's own listing comes down when the group fills: remember its
+-- dungeon until the group breaks up.
+local listed, lastDungeon
 local function PartyDungeon()
+    if not IsInGroup() then listed = nil end
     local entry = C_LFGList.GetActiveEntryInfo()
     local act = entry and entry.activityIDs and entry.activityIDs[1]
     local info = act and C_LFGList.GetActivityInfoTable(act)
-    if info and (info.maxNumPlayers or 5) <= 5 then return Groups.BaseName(info.fullName) end
-    return ns.Applications.LastJoined()
+    if info and (info.maxNumPlayers or 5) <= 5 then listed = Groups.BaseName(info.fullName) end
+    return listed or ns.Applications.LastJoined()
 end
 
 local function UpdateTeleport()
     if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
     local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
         and not IsInInstance() and PartyDungeon()
+    if dungeon ~= lastDungeon then
+        lastDungeon = dungeon
+        ns.Trace("teleport", "party dungeon", tostring(dungeon), listed and "(party listing)" or "(last sign-up joined)")
+    end
     local spell = dungeon and TeleportSpell(dungeon)
     if not spell or OnCooldown(spell) then if teleport then teleport:Hide() end return end
     if not teleport then
