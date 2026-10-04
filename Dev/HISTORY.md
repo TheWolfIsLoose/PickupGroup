@@ -4,6 +4,7 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 ## 0.9.0 alphas (dev)
 
+- alpha11 (branding, 2026-10-04): suite icon (instance portal, `5AB4FF`, style-guide tile): `icon.png` + TOC IconTexture, README logo, `.assets/logo.png` 400 px for CurseForge; `.assets` kept out of the package.
 - alpha10 (copy pass, 2026-10-04): README rewritten in the suite format (tagline, Features, Commands, Install, Credits, License) and `Dev/CURSEFORGE.md` for the CurseForge description; TOC Notes match the CurseForge summary; American spelling (Color names, recognize); `/pug` help uses em dashes like Stock Clerk's. Name stays PickupGroup (player, 2026-10-04).
 - alpha9 (UI/UX sweep, 2026-10-04): suite style guide written (project doc "Suite style guide", replaces the accessibility addendum); `Kit.Palette` gains `soft`, `muted`, `warn`, `bad`; stray greys onto tokens (0.6 off states / role tint -> 0.55 muted, 0.84 -> 0.85, chat help 888888 -> 8C8C8C). `Dev/STYLE.md` points to the guide.
 - alpha8 (player): history Reset (two clicks; this character, or all with All characters) wipes sign-ups + counts and restarts the count; `chars[..].since` (oldest kept sign-up, or the reset time) shows as "times turned away since <date>" and in /pug stats. Header lines (records, tally) wrap freely; the table follows them down (alpha7's records line ran into the tally).

@@ -30,7 +30,7 @@ counter (alpha6) is the last feature. Then, in order:
    gallery and the description (README + `Dev/CURSEFORGE.md`), like
    StockClerk's.
 
-**Fill chime (player, 2026-10-04): 0.9.0-alpha10 on dev.** A sign-up's
+**Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
 dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
 hook); Options toggle, on by default. **Later:** choosing the sound from
 SharedMedia (a novel feature, not now).

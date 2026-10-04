@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".assets/logo-256.png" alt="PickupGroup" width="128" height="128">
+</p>
+
 <h1 align="center">PickupGroup</h1>
 
 <p align="center">
