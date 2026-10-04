@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.8.1 (2026-10-04)
+
+The 0.8.1 alphas below (leader mark settled by the player).
+
 ## 0.8.1 alphas (dev)
 
 - alpha5: leader ring dimmed to 0.7 grey (3.0:1+ on the window; player + tester look).

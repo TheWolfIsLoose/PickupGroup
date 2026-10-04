@@ -20,7 +20,7 @@ cheap.
 **Leader mark (player, 2026-10-04, settled):** searching, the leader's seat
 gets a 0.7 grey ring one pixel outside its black ring (crown and gold tried:
 gold blended into warm spec icons); the tooltip's leader line has Blizzard's
-crown and the class colour. 0.8.1-alpha5 on dev.
+crown and the class colour. Released in **v0.8.1** (2026-10-04).
 
 **v0.8.0 (stable) released 2026-10-04** with everything below.
 
