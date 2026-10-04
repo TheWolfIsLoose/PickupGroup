@@ -4,6 +4,7 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 ## 0.8.1 alphas (dev)
 
+- alpha5: leader ring dimmed to 0.7 grey (3.0:1+ on the window; player + tester look).
 - alpha4: leader ring moved outside the black ring and made light grey (0.9): gold blended into Holy Paladin and other warm icons (player).
 - alpha3: the leader seat gets a soft gold 1px ring (LEADER_RING) instead of the crown (player); the tooltip keeps the crown.
 - alpha2: crown 2px lower, overlapping its own seat (player: it crowded the row above).

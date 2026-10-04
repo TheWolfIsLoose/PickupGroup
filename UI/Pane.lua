@@ -35,7 +35,7 @@ local ROLES = { "TANK", "HEALER", "DAMAGER" }
 local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
 -- The leader's seat: a light ring one pixel outside its black ring, so the
 -- black keeps it apart from every spec icon (gold blended into Holy Paladin).
-local LEADER_RING = { 0.9, 0.9, 0.9, 1 }
+local LEADER_RING = { 0.7, 0.7, 0.7, 1 }  -- dimmed from 0.9 (player): a label, not a "selected" state
 local MINT = Kit.Palette.brand
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
