@@ -17,6 +17,8 @@ cheap.
 
 ## Next session: start here
 
+**v0.8.0 (stable) released 2026-10-04** with everything below.
+
 **2026-10-04 (round 20, player): all pass** (leading filters dim by score /
 ilvl / realm, short needs line, sidecar closes per side, role spacing, the
 "more below" chevron in both lists). Left: the teleport party check

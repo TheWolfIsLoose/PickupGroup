@@ -1,14 +1,12 @@
-## v0.7.0
+## v0.8.0
 
-- New: leading a key. While you lead a Mythic Keystone listing, PickupGroup's applicant list covers Blizzard's:
-  - The top line says what your group still needs: seats, Bloodlust, battle rez.
-  - Each applicant shows spec, item level, score and their best run in your dungeon (white timed, amber not), plus "Lust" / "Rez" when they'd bring what you lack.
-  - Once you're 3 in the group, applicants who fill an open seat get a mint edge; anyone without a seat for their role, from a realm region you've switched off, or on your blacklist is dimmed (the tooltip says why).
-  - Notes show under the applicant. Invite and decline from the row. Players who applied together are joined.
-- Apply: a click now signs up at once; shift-click opens Blizzard's sign-up window with your notes. Reapply: click twice, or shift-click for the window.
-- EllesmereUI: its Quick Signup works with PickupGroup (shift-click keeps the window open). If its Persistent Signup Note is on, PickupGroup's notes step aside and a window explains why and how to switch.
-- Options: "My notes under Blizzard's sign-up window" can be turned off.
-- Groups with a friend or guildmate always show and sort to the top.
-- "Use Blizzard's group list instead" now clears PickupGroup's settings from Blizzard's filter.
-- The Teleport button goes away once the teleport succeeds.
-- Fixes: empty seats no longer get a mint ring; a note box no longer keeps its highlight when you leave it; the Reapply tooltip matches the clicks.
+- New: leading a raid. While you lead a raid listing, PickupGroup's applicant list covers Blizzard's:
+  - Set a target comp (tanks / healers / damage): presets for 10, 20, 25 and 30 players, or type your own. It's kept per character.
+  - The top line says what you still need against it: seats, Bloodlust, up to two battle rezzers.
+  - Each applicant shows their best progress in your raid from Raider.IO (e.g. 6/8 H) when Raider.IO is installed, and the raid buffs, Bloodlust or battle rez they'd add.
+- New: a filter for leading, keys and raids each. Open it from the slider icon in the leader view: dim applicants by realm region and by a score (keys) or item level (raids) floor. Nobody is hidden; hover says why a row is dimmed.
+- Lists no longer have scroll bars: a small arrow at the bottom shows there's more below (it pulses a few times, then holds). Scroll with the wheel.
+- The group tooltip names the friends and guildmates in a group.
+- Easier to see and use: switched-on toggles show a bar as well as colour, the guild mark has its own shape, an untimed best key is marked with an x, and checkboxes have taller click areas with a little more space between them.
+- Teleport: the button stays hidden while the teleport is on cooldown, and no longer offers an earlier group's dungeon after you join a party another way.
+- Removed two developer commands (/pug applicants, /pug tp).

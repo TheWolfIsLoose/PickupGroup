@@ -2,7 +2,11 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## 0.7.1 alphas (dev, 2026-10-02 to 2026-10-03)
+## v0.8.0 (2026-10-04)
+
+All 0.7.1 alphas below (rounds 17-20 pass; the teleport party check after alpha4 is untested, organic).
+
+## 0.7.1 alphas (dev, 2026-10-02 to 2026-10-04)
 
 - alpha1: group tooltip names friends / guildmates (C_LFGList.GetSearchResultFriends), counts as fallback.
 - alpha2: teleport button hides while its spell is on cooldown (C_Spell.GetSpellCooldown > 2 s; replaces hide-on-cast, which reset on zone / group changes). Key run with the Group Finder open: secret-listing guard held (600+ skipped, no errors).
