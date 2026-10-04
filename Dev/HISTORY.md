@@ -2,6 +2,18 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v0.8.1 (2026-10-04)
+
+The 0.8.1 alphas below (leader mark settled by the player).
+
+## 0.8.1 alphas (dev)
+
+- alpha5: leader ring dimmed to 0.7 grey (3.0:1+ on the window; player + tester look).
+- alpha4: leader ring moved outside the black ring and made light grey (0.9): gold blended into Holy Paladin and other warm icons (player).
+- alpha3: the leader seat gets a soft gold 1px ring (LEADER_RING) instead of the crown (player); the tooltip keeps the crown.
+- alpha2: crown 2px lower, overlapping its own seat (player: it crowded the row above).
+- alpha1 (player, 2026-10-04): leader shown when searching: Blizzard's leader crown (atlas groupfinder-icon-leader) over the leader's comp tile (GetSearchResultPlayerInfo .isLeader; row.leaderClass); tooltip leader line gets the crown and the class colour (raids: scanned among the members on hover). Trace once if no member is flagged.
+
 ## v0.8.0 (2026-10-04)
 
 All 0.7.1 alphas below (rounds 17-20 pass; the teleport party check after alpha4 is untested, organic).
