@@ -2,7 +2,7 @@
     PickupGroup - UI/LogPopup.lua
     /pug log: the report (Log.Report) in a copyable text box, pre-selected so
     Ctrl+C works at once. A snapshot taken on open, so a selection survives
-    while copying.
+    while copying. Also the sign-up history window (Options > Sign-up history).
 --]]
 
 local _, ns = ...
@@ -13,10 +13,11 @@ ns.LogPopup = LogPopup
 local Kit = ns.Kit
 local frame
 
-local function Build()
+-- A movable window with a title and a close glyph; Escape closes it.
+local function Window(name, w, h, title)
     Kit.ApplyFontFace()
-    local f = CreateFrame("Frame", "PickupGroupLogPopup", UIParent)
-    f:SetSize(520, 420)
+    local f = CreateFrame("Frame", name, UIParent)
+    f:SetSize(w, h)
     f:SetPoint("CENTER")
     f:SetFrameStrata("DIALOG")
     f:SetToplevel(true)
@@ -26,17 +27,21 @@ local function Build()
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
     f:Hide()
-    tinsert(UISpecialFrames, "PickupGroupLogPopup")  -- Escape closes it
+    tinsert(UISpecialFrames, name)
     Kit.Fill(f, Kit.Palette.panelBg)
     Kit.Border(f)
+    local t = f:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    t:SetPoint("TOPLEFT", 12, -10)
+    t:SetText(title)
+    Kit.HeaderIcon(f, Kit.CLOSE, "Close", function() f:Hide() end):SetPoint("TOPRIGHT", -4, -4)
+    return f
+end
 
-    local title = f:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-    title:SetPoint("TOPLEFT", 12, -10)
-    title:SetText("|cff98ff98Pickup|rGroup log")
+local function Build()
+    local f = Window("PickupGroupLogPopup", 520, 420, "|cff98ff98Pickup|rGroup log")
     local hint = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     hint:SetPoint("TOPLEFT", 12, -28)
     hint:SetText("|cff888888Everything is selected: press Ctrl+C and paste it into your bug report.|r")
-    Kit.HeaderIcon(f, Kit.CLOSE, "Close", function() f:Hide() end):SetPoint("TOPRIGHT", -4, -4)
 
     local well = f:CreateTexture(nil, "BACKGROUND")
     well:SetColorTexture(unpack(Kit.Palette.bgDark))
@@ -123,26 +128,7 @@ local function Tally(list)
 end
 
 local function BuildHistory()
-    Kit.ApplyFontFace()
-    local f = CreateFrame("Frame", "PickupGroupHistory", UIParent)
-    f:SetSize(500, 420)
-    f:SetPoint("CENTER")
-    f:SetFrameStrata("DIALOG")
-    f:SetToplevel(true)
-    f:EnableMouse(true)
-    f:SetMovable(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
-    f:Hide()
-    tinsert(UISpecialFrames, "PickupGroupHistory")
-    Kit.Fill(f, Kit.Palette.panelBg)
-    Kit.Border(f)
-
-    local title = f:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-    title:SetPoint("TOPLEFT", 12, -10)
-    title:SetText("Sign-up history")
-    Kit.HeaderIcon(f, Kit.CLOSE, "Close", function() f:Hide() end):SetPoint("TOPRIGHT", -4, -4)
+    local f = Window("PickupGroupHistory", 500, 420, "Sign-up history")
     local who = Kit.Check(f, "All characters", function(on) allChars = on; f.Fill() end)
     who:SetPoint("TOPRIGHT", -30, -10)
     f.tally = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")

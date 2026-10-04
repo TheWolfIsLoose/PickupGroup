@@ -8,7 +8,7 @@
       keys  dungeons (this season), room for my role, leader at least my
             score, has Bloodlust, has battle rez, no other of my class,
             leader score floor, leader's realm
-      raid  leader's realm, each boss alive / dead / either
+      raid  leader's realm, bosses that must be alive (My lockout ticks them)
     Notes tab: up to five sign-up notes, offered to copy under Blizzard's
     sign-up dialog.
 --]]
@@ -546,7 +546,7 @@ local function Build()
     Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(frame)
 
-    -- Header tabs: Filter (the filter being edited) and Options.
+    -- Header tabs: Filter (the filter being edited), Notes and Options.
     local prev
     for _, t in ipairs({ { "filter", "Filter" }, { "notes", "Notes" }, { "options", "Options" } }) do
         local b = CreateFrame("Button", nil, frame)
@@ -640,8 +640,7 @@ function Sidecar.MoveRaiderIO()
     moving = false
 end
 
--- Open on a filter (the active one by default); toggles when already open on it.
--- Switch the sidecar between its Filter and Options views.
+-- Switch the sidecar between its Filter, Notes and Options views.
 function Sidecar.Show(which)
     view = which
     filterView:SetShown(which == "filter")
@@ -744,8 +743,6 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     local dialog = LFGListApplicationDialog
     if not dialog then return end
     local strip
-    -- Other addons can have their own sign-up note tools (logged so reports show it).
-    ns.Trace("notes", "EllesmereUI loaded:", tostring(C_AddOns.IsAddOnLoaded("EllesmereUI")))
     local function Refresh()
         local notes = ns.Notes.List()
         Sidecar.CheckConflict()
@@ -790,10 +787,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
         strip:SetHeight(26 + #notes * 24)
         strip:Show()
         -- Next frame: the dialog may still be taking focus when it opens.
-        C_Timer.After(0, function()
-            if strip:IsVisible() then strip.boxes[1]:SetFocus() end
-            ns.Trace("notes", "strip shown, notes", #notes, "focused", strip.boxes[1]:HasFocus())
-        end)
+        C_Timer.After(0, function() if strip:IsVisible() then strip.boxes[1]:SetFocus() end end)
     end
     dialog:HookScript("OnShow", Refresh)
     -- Apply on another group while the dialog is open re-uses it (no OnShow).

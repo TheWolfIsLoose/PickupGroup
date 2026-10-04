@@ -177,7 +177,6 @@ end
 function Filters.Sync()
     if Filters.Kind() ~= "keys" or not C_LFGList.SaveAdvancedFilter then return end
     local f = Filters.Active("keys")
-    if not f then return end
     local ids, acts, all, missing = GroupIDs(), {}, {}, nil
     for _, d in ipairs(Filters.Dungeons()) do
         local id = ids[d.name]
@@ -228,7 +227,6 @@ end
 -- Does a row pass the active filter of its kind?
 function Filters.Pass(row)
     local f = Filters.Active(row.isRaid and "raid" or "keys")
-    if not f then return true end
     if f.regions and row.region and not f.regions[row.region] then return false end
     -- Full raids delist themselves, so "room" only means something for keys.
     if f.room and not row.fits and not row.isRaid then return false end

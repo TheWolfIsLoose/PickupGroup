@@ -200,11 +200,6 @@ function Groups.CanHave(row, set)
     return buffSeats - math.max(0, need.flex - otherSeats) >= 1
 end
 
-local function Application(id)
-    local _, status, pending, remaining = C_LFGList.GetApplicationInfo(id)
-    return status, pending, remaining
-end
-
 function Groups.Read(id)
     local info = C_LFGList.GetSearchResultInfo(id)
     -- In a running key (and other restricted content) listings are secret:
@@ -261,7 +256,7 @@ function Groups.Read(id)
         friends = (info.numBNetFriends or 0) + (info.numCharFriends or 0), guild = info.numGuildMates or 0,
         fits = fits,
     }
-    row.status, row.pending, row.remaining = Application(id)
+    row.status, row.pending, row.remaining = select(2, C_LFGList.GetApplicationInfo(id))
     if row.status == "none" then
         -- WoW forgets an ended sign-up once a search re-issues the listing.
         row.status = ns.Applications and ns.Applications.LastEnding(info.leaderName, activityID) or nil

@@ -29,8 +29,6 @@ local W_DIFF = 16
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
 -- M legendary orange (epic purple skipped: too dark to read here).
 local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 }, LFR = { 0.7, 0.7, 0.7 } }
-local TITLE_BAND = 30  -- Blizzard's window title and close button stay uncovered
-local BOTTOM_ROW = 30  -- height left for Blizzard's Back / Sign Up buttons
 local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
@@ -116,14 +114,10 @@ local function Oldest()
     return o
 end
 
-local function OnAction(btn, mouse)
+local function OnAction(btn)
     local row = btn.row
     if not row then return end
-    -- Trace (tester: a plain click once signed up with no dialog; a friend's group showed no cue).
-    local info = C_LFGList.GetSearchResultInfo(row.id) or {}
-    ns.Trace("pane", "action", tostring(row.code), tostring(row.leader), "status", tostring(row.status),
-        "mouse", tostring(mouse), "shift", tostring(IsShiftKeyDown()), "dialogFn", tostring(LFGListApplicationDialog_Show ~= nil),
-        "bnet", tostring(info.numBNetFriends), "char", tostring(info.numCharFriends), "guild", tostring(info.numGuildMates))
+    ns.Trace("pane", "action", row.code, row.leader, "status", row.status, "shift", IsShiftKeyDown())
     if row.status == "applied" then
         C_LFGList.CancelApplication(row.id)
         ns.Log.Emit("cancel", { code = row.code, leader = row.leader })
@@ -149,7 +143,6 @@ local function OnAction(btn, mouse)
         Apply(row)
     end
 end
-
 
 -- ---------------------------------------------------------------------------
 -- Tooltips
@@ -662,7 +655,7 @@ local function BuildBars()
         roleButtons[#roleButtons + 1] = b
     end
 
-    local function Head(label, width, anchorTo, justify)
+    local function Head(label, width, justify)
         local fs = Text(head, nil, justify)
         fs:SetTextColor(0.55, 0.55, 0.55)
         fs:SetText(label)
@@ -670,7 +663,7 @@ local function BuildBars()
         return fs
     end
     local actRight = -(PAD + W_ACT + GAP)
-    pane.scoreHead = Head("Score", W_SCORE, nil, "RIGHT")
+    pane.scoreHead = Head("Score", W_SCORE, "RIGHT")
     pane.scoreHead:SetPoint("RIGHT", actRight, 0)
     local comp = Head("Comp", W_COMP)
     comp:SetPoint("RIGHT", pane.scoreHead, "LEFT", -GAP, 0)
@@ -702,18 +695,10 @@ local function Build()
     -- Blizzard's search row stays uncovered: addons can't set search text,
     -- so the player types it there (and searching by key level needs it).
     pane:SetPoint("LEFT", panel, "LEFT")
-    if panel.SearchBox then
-        pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
-    else
-        pane:SetPoint("TOP", panel, "TOP", 0, -TITLE_BAND)
-    end
+    pane:SetPoint("TOP", panel.SearchBox, "BOTTOM", 0, -4)
     -- Down to just above Blizzard's Back button, so no sliver of the list shows.
-    if panel.BackButton then
-        pane:SetPoint("RIGHT", panel, "RIGHT")
-        pane:SetPoint("BOTTOM", panel.BackButton, "TOP", 0, 2)
-    else
-        pane:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, BOTTOM_ROW)
-    end
+    pane:SetPoint("RIGHT", panel, "RIGHT")
+    pane:SetPoint("BOTTOM", panel.BackButton, "TOP", 0, 2)
     -- Above Blizzard's list, below its search suggestions (AutoCompleteFrame
     -- sits at a fixed level over the list): the suggestions stay usable.
     -- Our rows nest about 3 levels deep, so the pane sits 5 under.
@@ -867,7 +852,7 @@ local function OnCooldown(spell)
     return cd.startTime > 0 and cd.duration > 2
 end
 
-function Pane.TeleportSpell(dungeon)
+local function TeleportSpell(dungeon)
     if teleportCache[dungeon] ~= nil then return teleportCache[dungeon] or nil end
     local found = false
     for i = 1, GetNumFlyouts() do
@@ -896,7 +881,7 @@ local function UpdateTeleport()
     if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
     local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
         and not IsInInstance() and PartyDungeon()
-    local spell = dungeon and Pane.TeleportSpell(dungeon)
+    local spell = dungeon and TeleportSpell(dungeon)
     if not spell or OnCooldown(spell) then if teleport then teleport:Hide() end return end
     if not teleport then
         Kit.ApplyFontFace()
