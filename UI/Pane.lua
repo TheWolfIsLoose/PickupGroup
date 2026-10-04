@@ -269,7 +269,7 @@ local function Tile(parent)
     -- The leader's seat: Blizzard's own leader crown over the tile's top edge.
     f.crown = f:CreateTexture(nil, "OVERLAY", nil, 7)
     f.crown:SetSize(9, 7)
-    f.crown:SetPoint("CENTER", f, "TOP", 0, 1)
+    f.crown:SetPoint("CENTER", f, "TOP", 0, -1)  -- overlaps its own seat, clear of the row above
     f.crown:SetAtlas(LEADER_ATLAS)
     return f
 end
