@@ -158,6 +158,11 @@ coloured names, friends first in results, tooltip names
 (his saved file), the tester's missing friend cue. Report any of them when
 seen; read the log then.
 
+**Scrolling (Decided 2026-10-04):** no scroll bars in the pane or the leader
+view: the wheel scrolls, and a "more below" chevron (Kit.More) pulses three
+times then holds while rows are below the fold. Log and history windows keep
+Blizzard's scroll bars.
+
 **Constraints (Decided):** no dependencies on other addons (pass-through
 only); no internet data; listing names and notes are protected (shown,
 never read); search text and the sign-up note can't be set by an addon.

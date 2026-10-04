@@ -140,6 +140,33 @@ end
 Kit.CLOSE = { { 12, 2, 0, math.pi / 4 }, { 12, 2, 0, -math.pi / 4 } }
 Kit.SLIDERS = { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } }  -- filter setup
 
+-- "More below": a small down chevron at the bottom centre of a list, in place
+-- of a scroll bar (the wheel scrolls). When it appears it pulses three times
+-- (1.5 s each) and then stays lit: blinking that stops within 5 s needs no
+-- pause control (WCAG 2.2.2). more:Set(on).
+function Kit.More(parent)
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetSize(24, 10)
+    f:SetPoint("BOTTOM", 0, 1)
+    f:SetFrameLevel(parent:GetFrameLevel() + 10)
+    Kit.Fill(f, Palette.bgDark)
+    Kit.Glyph(f, { { 8, 2, 0, -math.pi / 4, -2.8 }, { 8, 2, 0, math.pi / 4, 2.8 } })
+    local pulse = f:CreateAnimationGroup()
+    local fade = pulse:CreateAnimation("Alpha")
+    fade:SetFromAlpha(1); fade:SetToAlpha(0.25); fade:SetDuration(0.75); fade:SetSmoothing("IN_OUT")
+    local back = pulse:CreateAnimation("Alpha")
+    back:SetFromAlpha(0.25); back:SetToAlpha(1); back:SetDuration(0.75); back:SetSmoothing("IN_OUT"); back:SetStartDelay(0.75)
+    pulse:SetLooping("REPEAT")
+    local loops = 0
+    pulse:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
+    f:Hide()
+    function f:Set(on)
+        if on and not self:IsShown() then loops = 0; self:Show(); pulse:Play()
+        elseif not on and self:IsShown() then pulse:Stop(); self:Hide() end
+    end
+    return f
+end
+
 -- Header icon: drawn glyph, mint on hover, one-line tooltip.
 function Kit.HeaderIcon(parent, bars, tip, onClick)
     local btn = CreateFrame("Button", nil, parent)

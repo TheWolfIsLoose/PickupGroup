@@ -26,7 +26,7 @@ ns.Leader = Leader
 local Kit, Groups = ns.Kit, ns.Groups
 local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }
 local ROW_H, NOTE_H, BAR_H, HEAD_H, PAD, GAP = 24, 16, 26, 20, 6, 6
-local INSET = 10  -- right-hand column kept for the scroll track
+local INSET = 1
 local W_ICON, W_ILVL, W_SCORE, W_KEY, W_ADDS, W_INV, W_X = 17, 26, 30, 30, 40, 44, 18
 local SEATS = { TANK = 1, HEALER = 1, DAMAGER = 3 }
 local PRESETS = { { 10, 2, 2, 6 }, { 20, 2, 4, 14 }, { 25, 2, 5, 18 }, { 30, 2, 6, 22 } }
@@ -47,7 +47,7 @@ local STATUS = { invited = "Invited", inviteaccepted = "Joined", invitedeclined 
                  declined_full = "Declined", declined_delisted = "Declined", cancelled = "Withdrew",
                  timedout = "Expired", failed = "Failed" }
 
-local viewer, pane, needText, countText, keyHead, scoreHead, head, track, thumb, targetBar
+local viewer, pane, needText, countText, keyHead, scoreHead, head, more, targetBar
 local targetEdits, presetButtons = {}, {}
 local progCache = {}
 local lines = {}
@@ -445,7 +445,6 @@ function Leader.Render()
     if raid then Leader.PaintTarget() end
     head:SetPoint("TOPLEFT", 0, -top)
     head:SetPoint("TOPRIGHT", -INSET, -top)
-    track:SetPoint("TOPRIGHT", -3, -(top + HEAD_H))
 
     -- Scroll stops once the last applicant is in view (no empty space below).
     local roomH, used, maxOffset = pane:GetHeight() - top - HEAD_H, 0, 0
@@ -455,11 +454,12 @@ function Leader.Render()
         if used > roomH then maxOffset = i; break end
     end
     offset = math.min(offset, maxOffset)
-    local y, n, room = -(top + HEAD_H), 0, roomH
+    local y, n, room, last = -(top + HEAD_H), 0, roomH, offset
     for i = offset + 1, #apps do
         local a = apps[i]
         local h = #a.members * ROW_H + ((a.comment or "") ~= "" and NOTE_H or 0)
         if -y - top - HEAD_H + h > room then break end
+        last = i
         for m, member in ipairs(a.members) do
             n = n + 1
             local l = Line(n)
@@ -478,14 +478,7 @@ function Leader.Render()
         end
     end
     for i = n + 1, #lines do lines[i]:Hide() end
-    -- Our own scroll cue over Blizzard's scroll bar: a thumb for the part in view.
-    local h = track:GetHeight()
-    local total, first = math.max(1, #apps), offset
-    local inView = 0
-    for _, l in ipairs(lines) do if l:IsShown() and l.member and l.member == (l.app and l.app.members[1]) then inView = inView + 1 end end
-    thumb:SetShown(inView < #apps)
-    thumb:SetHeight(math.max(12, h * inView / total))
-    thumb:SetPoint("TOP", 0, -(h - thumb:GetHeight()) * (total > inView and first / (total - inView) or 0))
+    more:Set(last < #apps)
 end
 
 -- The target bar shows the saved comp; the matching preset shows as on.
@@ -626,16 +619,7 @@ local function Build()
     end
     targetBar:Hide()
 
-    -- Our scroll track, in the column over Blizzard's scroll bar (which scrolls
-    -- Blizzard's list, not ours).
-    track = CreateFrame("Frame", nil, pane)
-    track:SetPoint("TOPRIGHT", -3, -(BAR_H + HEAD_H))
-    track:SetPoint("BOTTOMRIGHT", -3, 3)
-    track:SetWidth(4)
-    thumb = track:CreateTexture(nil, "ARTWORK")
-    thumb:SetWidth(4)
-    thumb:SetColorTexture(0.4, 0.4, 0.4, 1)
-    thumb:SetPoint("TOP")
+    more = Kit.More(pane)
     pane:SetScript("OnShow", function() offset = 0; Leader.Render() end)
     pane:Hide()
 end
