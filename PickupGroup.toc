@@ -1,8 +1,8 @@
 ## Interface: 120100
 ## Title: PickupGroup
-## Notes: Premade groups inside the Group Finder: a filter per content type, a compact results table, sign-up notes.
+## Notes: A faster premade-groups list that lives inside Blizzard's Group Finder: one filter per content type, comps at a glance, one-click sign-ups.
 ## Author: Jakerator
-## Version: 0.9.0-alpha9
+## Version: 0.9.0-alpha10
 ## SavedVariables: PickupGroupDB
 ## X-Category: Group Finder
 ## X-Curse-Project-ID: 1718475

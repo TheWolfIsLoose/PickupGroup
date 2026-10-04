@@ -107,7 +107,7 @@ local QUIPS = {
     { 0, "Not a single no. A legend, or you haven't signed up yet." },
     { 1, "A few polite no-thank-yous. Character-building, apparently." },
     { 10, "Rejection is just a cooldown. A long one." },
-    { 50, "Leaders are starting to recognise your name." },
+    { 50, "Leaders are starting to recognize your name." },
     { 150, "Declined by more groups than most people have joined." },
     { 500, "At this point it's a relationship. A one-sided one." },
     { 1000, "Four digits of no. Frame it." },

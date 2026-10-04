@@ -202,10 +202,10 @@ ns.On("ADDON_ACTION_FORBIDDEN", Blocked)
 -- ---------------------------------------------------------------------------
 local HELP = {
     "commands:",
-    "  /pug log |cff8c8c8c- open the log to copy into a bug report|r",
-    "  /pug log clear |cff8c8c8c- empty the log|r",
-    "  /pug stats |cff8c8c8c- your rejection record, ready to brag about|r",
-    "  /pug debug |cff8c8c8c- switch detailed recording on or off|r",
+    "  /pug log |cff8c8c8c— open the log to copy into a bug report|r",
+    "  /pug log clear |cff8c8c8c— empty the log|r",
+    "  /pug stats |cff8c8c8c— your rejection record, ready to brag about|r",
+    "  /pug debug |cff8c8c8c— switch detailed recording on or off|r",
 }
 
 function ns.OnSlash(msg)
