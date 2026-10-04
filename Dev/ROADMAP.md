@@ -26,6 +26,9 @@ counter (alpha6) is the last feature. Then, in order:
 3. **Branding pass:** one icon suite for the three, each identifiable
    (think Adobe's product tiles), good-looking in the WoW addon list.
 4. **v1.0.0:** final name, debug logging off by default.
+5. **Reminder (player, 2026-10-04):** add screenshots to the CurseForge
+   gallery and the description (README + `Dev/CURSEFORGE.md`), like
+   StockClerk's.
 
 **Fill chime (player, 2026-10-04): 0.9.0-alpha10 on dev.** A sign-up's
 dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
