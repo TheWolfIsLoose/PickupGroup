@@ -32,7 +32,8 @@ local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 
 local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
-local LEADER_ATLAS = "groupfinder-icon-leader"
+local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
+local LEADER_RING = { 1, 0.82, 0.4 }  -- soft gold: Blizzard's leader colour, apart from mint and score orange
 local MINT = Kit.Palette.brand
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
@@ -266,11 +267,6 @@ local function Tile(parent)
     f.role = f:CreateTexture(nil, "ARTWORK")
     f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
-    -- The leader's seat: Blizzard's own leader crown over the tile's top edge.
-    f.crown = f:CreateTexture(nil, "OVERLAY", nil, 7)
-    f.crown:SetSize(9, 7)
-    f.crown:SetPoint("CENTER", f, "TOP", 0, -1)  -- overlaps its own seat, clear of the row above
-    f.crown:SetAtlas(LEADER_ATLAS)
     return f
 end
 
@@ -422,13 +418,13 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             tile.icon:SetShown(s.filled and s.icon ~= nil)
             if s.icon then tile.icon:SetTexture(s.icon) end
             tile.role:SetShown(not s.filled)
-            tile.crown:SetShown(s.leader == true)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
             tile.role:SetDesaturated(true)
             tile.role:SetVertexColor(0.6, 0.6, 0.6)
-            -- Every tile keeps a black ring: an empty seat already reads as open
-            -- (player: the mint ring on your role's seat was clutter).
-            for _, t in ipairs(tile._border) do t:SetColorTexture(0, 0, 0, 1) end
+            -- Black rings, except the leader's seat in soft gold (player: a
+            -- border, not a crown). An empty seat already reads as open.
+            local ring = s.leader and LEADER_RING or { 0, 0, 0 }
+            for _, t in ipairs(tile._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
         end
     end
     for _, c in ipairs(r.counts) do
