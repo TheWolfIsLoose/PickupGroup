@@ -81,10 +81,22 @@ local function Seed(c)
     return t
 end
 
+-- c.since: when counting started (the oldest sign-up kept, or the last reset).
 function Applications.Lifetime(c)
     c = c or ns.CharDB()
     c.tally = c.tally or Seed(c)
+    if not c.since then
+        c.since = time()
+        for _, e in ipairs(c.apps or {}) do c.since = math.min(c.since, e.ts or c.since) end
+    end
     return c.tally
+end
+
+-- Start over: the character's sign-ups and counts, counted from now.
+function Applications.Reset(c)
+    c.apps, c.tally, c.since = {}, { applied = 0 }, time()
+    if c == ns.CharDB() then wipe(open); ended = nil end
+    ns.Log.Emit("setting", { key = "history_reset" })
 end
 
 local function Bump(key)

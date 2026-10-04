@@ -146,6 +146,18 @@ local function Nos(t)
     for k in pairs(NO) do n = n + (t[k] or 0) end
     return n
 end
+-- When the shown counts start: the earliest "since" in scope.
+local function Since()
+    local mine, first = UnitName("player") .. "-" .. GetRealmName(), nil
+    for key, c in pairs(ns.db.chars or {}) do
+        if allChars or key == mine then
+            ns.Applications.Lifetime(c)
+            first = math.min(first or c.since, c.since)
+        end
+    end
+    return first or time()
+end
+
 local function LifetimeDeclines()
     if not allChars then return Nos(ns.Applications.Lifetime()) end
     local n = 0
@@ -189,8 +201,8 @@ function History.StatsLine()
     local was = allChars
     allChars = false
     local n = LifetimeDeclines()
-    local line = RecordsLine(Records(Entries())) .. (" Lifetime: turned away %s time%s. %s"):format(
-        BreakUpLargeNumbers(n), n == 1 and "" or "s", Quip(n))
+    local line = RecordsLine(Records(Entries())) .. (" Since %s: turned away %s time%s. %s"):format(
+        date("%b %d, %Y", Since()), BreakUpLargeNumbers(n), n == 1 and "" or "s", Quip(n))
     allChars = was
     return line
 end
@@ -224,12 +236,41 @@ local function BuildHistory()
     f.quip = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     f.quip:SetPoint("TOPLEFT", 12, -56)
     f.quip:SetTextColor(MINT[1], MINT[2], MINT[3])
+    -- Start over (two clicks, like Clear): this character, or every one with All characters.
+    local reset = CreateFrame("Button", nil, f)
+    reset:SetSize(60, 20)
+    reset:SetPoint("TOPRIGHT", -12, -34)
+    Kit.Button(reset)
+    reset:SetNormalFontObject("PickupGroupFontSmall")
+    reset:SetText("Reset")
+    reset:SetScript("OnClick", function(self)
+        if not self.armed then
+            self.armed = true; self:SetText("Sure?")
+            C_Timer.After(3, function() self.armed = nil; self:SetText("Reset") end)
+            return
+        end
+        self.armed = nil; self:SetText("Reset")
+        local mine = UnitName("player") .. "-" .. GetRealmName()
+        for key, c in pairs(ns.db.chars or {}) do
+            if allChars or key == mine then ns.Applications.Reset(c) end
+        end
+        f.Fill()
+    end)
+    reset:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Reset")
+        GameTooltip:AddLine("Wipes this character's sign-ups and counts (every character's with All characters ticked) and starts counting again. Click twice. A clean slate; the groups won't remember either.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    reset:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Records and tally wrap as they like; the table follows them down.
     f.records = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     f.records:SetPoint("TOPLEFT", 12, -74)
     f.records:SetPoint("RIGHT", -12, 0)
     f.records:SetJustifyH("LEFT")
     f.tally = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    f.tally:SetPoint("TOPLEFT", 12, -90)
+    f.tally:SetPoint("TOPLEFT", f.records, "BOTTOMLEFT", 0, -4)
     f.tally:SetPoint("RIGHT", -12, 0)
     f.tally:SetJustifyH("LEFT")
     f.tally:SetTextColor(0.74, 0.74, 0.74)
@@ -238,7 +279,7 @@ local function BuildHistory()
     f.heads = {}
     for i, c in ipairs(COLS) do
         local h = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-        h:SetPoint("TOPLEFT", x, -122)
+        h:SetPoint("TOPLEFT", f.tally, "BOTTOMLEFT", x - 12, -10)
         h:SetText(c[1])
         h:SetTextColor(0.55, 0.55, 0.55)
         f.heads[i] = h
@@ -246,7 +287,7 @@ local function BuildHistory()
     end
 
     local scroll = CreateFrame("ScrollFrame", "PickupGroupHistoryScroll", f, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 8, -138)
+    scroll:SetPoint("TOPLEFT", f.tally, "BOTTOMLEFT", -4, -26)
     scroll:SetPoint("BOTTOMRIGHT", -28, 10)
     local body = CreateFrame("Frame", nil, scroll)
     body:SetSize(460, 1)
@@ -257,7 +298,7 @@ local function BuildHistory()
         local list = Entries()
         local no = LifetimeDeclines()
         f.big:SetText(BreakUpLargeNumbers(no))
-        f.bigLabel:SetText(no == 1 and "time turned away, lifetime" or "times turned away, lifetime")
+        f.bigLabel:SetText((no == 1 and "time" or "times") .. " turned away since " .. date("%b %d, %Y", Since()))
         f.quip:SetText(Quip(no))
         f.records:SetText(RecordsLine(Records(list)))
         f.tally:SetText(#list > 0 and Tally(list) or "Nothing here yet. Go get rejected; it builds character.")
