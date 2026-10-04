@@ -17,6 +17,16 @@ cheap.
 
 ## Next session: start here
 
+**Fill chime (player, 2026-10-04): 0.9.0-alpha1 on dev.** A sign-up's
+dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
+hook); Options toggle, on by default. **Later:** choosing the sound from
+SharedMedia (a novel feature, not now).
+
+**Raid chime (Open):** a joiner has no "full" to hear: raid listings carry
+no target size and leaders stay listed past it. The one real signal is
+the leader's own target comp (raid leader view): chime the leader (and
+assistants?) when the raid's size reaches the target total. Player's call.
+
 **Leader mark (player, 2026-10-04, settled):** searching, the leader's seat
 gets a 0.7 grey ring one pixel outside its black ring (crown and gold tried:
 gold blended into warm spec icons); the tooltip's leader line has Blizzard's

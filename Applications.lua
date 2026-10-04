@@ -163,3 +163,21 @@ function Applications.LastJoined()
         if time() - (e.ts or 0) > JOIN_WINDOW then return nil end
     end
 end
+
+-- Fill chime: the party a sign-up got the player into reaches five. On unless
+-- Options turns it off. Checked a beat later, as the join's status can land
+-- after the roster. Raids have no "full" to hear (see ROADMAP).
+local CHIME = "Interface\\AddOns\\PickupGroup\\Media\\TheCyclist.ogg"
+local lastCount  -- nil until the first roster after login, so a /reload in a full party stays quiet
+ns.On("GROUP_ROSTER_UPDATE", function()
+    local n = IsInRaid() and 0 or GetNumGroupMembers()
+    local filled = lastCount and lastCount < 5 and n == 5
+    lastCount = n
+    if not filled or ns.db.noChime then return end
+    C_Timer.After(1, function()
+        local dungeon = GetNumGroupMembers() == 5 and not IsInRaid() and Applications.LastJoined()
+        if not dungeon then return end
+        PlaySoundFile(CHIME, "Master")
+        ns.Trace("chime", "group filled", dungeon)
+    end)
+end)

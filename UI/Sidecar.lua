@@ -426,10 +426,10 @@ local function BuildOptions(parent)
     blizz:SetPoint("TOPLEFT", 0, y)
     box.blizz = blizz
     y = y - 24
-    local hint = Label(box, "A PickupGroup button on Blizzard's panel brings this back.")
+    local hint = Label(box, "A button on Blizzard's panel brings this back.")
     hint:SetPoint("TOPLEFT", 0, y)
     hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
-    y = y - 28
+    y = y - 18
     local names = Kit.Check(box, "Colour names for friends / guild", function(on)
         ns.db.nameColors = on or nil
         ns.Log.Emit("setting", { key = "nameColors", on = on })
@@ -469,6 +469,22 @@ local function BuildOptions(parent)
     end)
     hints:SetPoint("TOPLEFT", 0, y)
     box.hints = hints
+    y = y - 24
+    -- Opt-out: on for everyone until turned off.
+    local chime = Kit.Check(box, "Chime when my group fills", function(on)
+        ns.db.noChime = (not on) or nil
+        ns.Log.Emit("setting", { key = "noChime", on = on })
+    end)
+    chime:SetPoint("TOPLEFT", 0, y)
+    chime:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Chime when my group fills")
+        GameTooltip:AddLine("Plays a short tone when a dungeon group you joined through a sign-up reaches five.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    chime:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    box.chime = chime
     y = y - 24
     -- Off for players whose other addons handle sign-up notes (they clash).
     local strip = Kit.Check(box, "My notes under Blizzard's sign-up window", function(on)
@@ -513,7 +529,7 @@ local function BuildOptions(parent)
         .. "Right-click a row to report, blacklist or hide its leader.")
     tip:SetPoint("TOPLEFT", 0, y - 2)
     tip:SetWidth(W - 2 * PAD); tip:SetJustifyH("LEFT"); tip:SetWordWrap(true)
-    y = y - 44
+    y = y - 40
 
     box.count = Label(box, "")
     box.count:SetPoint("TOPLEFT", 0, y - 4)
@@ -532,7 +548,7 @@ local function BuildOptions(parent)
         self.armed = nil; self:SetText("Clear")
         ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render()
     end)
-    y = y - 34
+    y = y - 30
     local history = CreateFrame("Button", nil, box)
     history:SetSize(W - 2 * PAD, 22)
     history:SetPoint("TOPLEFT", 0, y)
@@ -549,6 +565,7 @@ local function PaintOptions()
     o.names:Set(ns.db.nameColors)
     o.swap:Set(ns.db.swap)
     o.hints:Set(ns.db.noHints)
+    o.chime:Set(not ns.db.noChime)
     o.strip:Set(ns.Notes.StripOn())
     local why = ns.Notes.Conflict()
     o.stripWhy:SetText(why and ("Off: " .. why .. ".") or "")
