@@ -5,7 +5,7 @@
 
     Row: { id, name (protected string: display only), leader, score,
            activity (full name), code (short), difficulty, isRaid,
-           tiles (dungeons: 5 x { icon? , role, mine }),
+           tiles (dungeons: 5 x { icon? , role, mine, leader? }), leaderClass,
            counts (raids: { TANK, HEALER, DAMAGER }), down, total,
            age, fits, status, pending, remaining }
 --]]
@@ -281,16 +281,22 @@ function Groups.Read(id)
             if p then
                 for _, t in ipairs(tiles) do
                     if t.role == p.assignedRole and not t.filled then
-                        t.filled, t.icon = true, SpecIcon(p.classFilename, p.specName)
+                        t.filled, t.icon, t.leader = true, SpecIcon(p.classFilename, p.specName), p.isLeader
                         break
                     end
                 end
+                if p.isLeader then row.leaderClass = p.classFilename end
                 row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename,
                     icon = SpecIcon(p.classFilename, p.specName) }
                 if p.classFilename then row.classes[p.classFilename] = true end
             end
         end
         row.tiles = tiles
+        -- Once: if the game stops naming the leader, the crown has nothing to show.
+        if not row.leaderClass and (info.numMembers or 0) > 0 and not Groups.noLeaderTraced then
+            Groups.noLeaderTraced = true
+            ns.Trace("groups", "no member flagged isLeader in", tostring(row.code))
+        end
         row.left = { TANK = counts.TANK_REMAINING or 0, HEALER = counts.HEALER_REMAINING or 0,
                      DAMAGER = counts.DAMAGER_REMAINING or 0 }
     end

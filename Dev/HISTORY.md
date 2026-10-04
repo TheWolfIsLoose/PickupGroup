@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## 0.8.1 alphas (dev)
+
+- alpha1 (player, 2026-10-04): leader shown when searching: Blizzard's leader crown (atlas groupfinder-icon-leader) over the leader's comp tile (GetSearchResultPlayerInfo .isLeader; row.leaderClass); tooltip leader line gets the crown and the class colour (raids: scanned among the members on hover). Trace once if no member is flagged.
+
 ## v0.8.0 (2026-10-04)
 
 All 0.7.1 alphas below (rounds 17-20 pass; the teleport party check after alpha4 is untested, organic).

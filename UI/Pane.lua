@@ -32,6 +32,7 @@ local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 
 local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
+local LEADER_ATLAS = "groupfinder-icon-leader"
 local MINT = Kit.Palette.brand
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
@@ -158,8 +159,18 @@ local function RowTooltip(frame)
     if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
     GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
         0.85, 0.85, 0.85, GREY_T, GREY_T, GREY_T)
+    -- The leader: crown + name in class colour (raids: found among the members).
+    local leaderClass = row.leaderClass
+    if row.isRaid and not leaderClass then
+        for m = 1, row.members or 0 do
+            local p = C_LFGList.GetSearchResultPlayerInfo(row.id, m)
+            if p and p.isLeader then leaderClass = p.classFilename; break end
+        end
+    end
+    local cc = RAID_CLASS_COLORS[leaderClass or ""] or { r = 1, g = 1, b = 1 }
+    local leaderText = "|A:" .. LEADER_ATLAS .. ":12:12|a " .. (row.leader or "?")
     if row.isRaid then
-        GameTooltip:AddLine(row.leader or "?", 1, 1, 1)
+        GameTooltip:AddLine(leaderText, cc.r, cc.g, cc.b)
         GameTooltip:AddLine(("|A:%s:14:14|a %d   |A:%s:14:14|a %d   |A:%s:14:14|a %d"):format(
             ROLE_ATLAS.TANK, row.counts.TANK, ROLE_ATLAS.HEALER, row.counts.HEALER, ROLE_ATLAS.DAMAGER, row.counts.DAMAGER), 1, 1, 1)
         GameTooltip:AddLine(row.total and (row.down .. "/" .. row.total .. " bosses down") or (row.down .. " bosses down"),
@@ -178,7 +189,7 @@ local function RowTooltip(frame)
     else
         local score = row.score or 0
         local c = score > 0 and C_ChallengeMode.GetDungeonScoreRarityColor(score)
-        GameTooltip:AddDoubleLine(row.leader or "?", score > 0 and score or "-", 1, 1, 1,
+        GameTooltip:AddDoubleLine(leaderText, score > 0 and score or "-", cc.r, cc.g, cc.b,
             c and c.r or GREY_T, c and c.g or GREY_T, c and c.b or GREY_T)
         -- Members as their spec icons: each spec's icon is its own.
         local icons = {}
@@ -255,6 +266,11 @@ local function Tile(parent)
     f.role = f:CreateTexture(nil, "ARTWORK")
     f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
+    -- The leader's seat: Blizzard's own leader crown over the tile's top edge.
+    f.crown = f:CreateTexture(nil, "OVERLAY", nil, 7)
+    f.crown:SetSize(9, 7)
+    f.crown:SetPoint("CENTER", f, "TOP", 0, 1)
+    f.crown:SetAtlas(LEADER_ATLAS)
     return f
 end
 
@@ -406,6 +422,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             tile.icon:SetShown(s.filled and s.icon ~= nil)
             if s.icon then tile.icon:SetTexture(s.icon) end
             tile.role:SetShown(not s.filled)
+            tile.crown:SetShown(s.leader == true)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
             tile.role:SetDesaturated(true)
             tile.role:SetVertexColor(0.6, 0.6, 0.6)
