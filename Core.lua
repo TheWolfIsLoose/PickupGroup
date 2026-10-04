@@ -169,6 +169,7 @@ ns.On("ADDON_LOADED", function(name)
 
     SLASH_PICKUPGROUP1, SLASH_PICKUPGROUP2 = "/pug", "/pickupgroup"
     SlashCmdList.PICKUPGROUP = function(msg) ns.OnSlash(msg) end
+    ns.Print("v" .. version .. " loaded. Type |cff98ff98/pug|r for commands.")
 end)
 
 -- A protected call our code made that the game refused (taint).
