@@ -21,7 +21,6 @@ cheap.
 - Screenshots for the CurseForge gallery and description (player's reminder; README + `Dev/CURSEFORGE.md`), and paste `Dev/CURSEFORGE.md` and upload `.assets/logo.png` on CurseForge.
 - Organic checks: fill chime, Bailed (vote to abandon), teleport party check.
 - StockClerk's WCAG + ponytail session; WoW: Forever compatibility check for all three addons.
-- Mascot (hermit crab, a shell per addon) for description banners: parked.
 
 **Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
 dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
