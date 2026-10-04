@@ -42,7 +42,7 @@ local OVER = { declined = true, declined_full = true, declined_delisted = true, 
 
 -- How a sign-up ended, as its button shows it for OUTCOME_TTL seconds.
 local OUTCOME_TTL = 5
-local AMBER, GREY, WHITE = { 1, 0.72, 0.3 }, { 0.6, 0.6, 0.6 }, { 1, 1, 1 }
+local AMBER, GREY, WHITE = { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }, { 1, 1, 1 }
 local OUTCOME = {
     declined = { "Declined", AMBER }, declined_full = { "Filled", GREY },
     declined_delisted = { "Delisted", GREY }, cancelled = { "Withdrawn", GREY },
@@ -78,7 +78,7 @@ local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
 
 local function Eligible()
     local p = Panel()
-    if not (p and p:IsShown()) then return false end
+    if not (p and p:IsVisible()) then return false end  -- visible: closing the Group Finder counts as leaving
     -- While the player's group is listed, step aside as Blizzard does (its
     -- listing view: members can't act, the leader manages applicants).
     if C_LFGList.HasActiveEntryInfo() then return false end
@@ -332,7 +332,7 @@ local function BuildRow(i)
     r.inst = Text(r)
     r.inst:SetWidth(W_INST)
     r.inst:SetPoint("RIGHT", r.comp, "LEFT", -GAP, 0)
-    r.inst:SetTextColor(0.84, 0.84, 0.84)
+    r.inst:SetTextColor(0.85, 0.85, 0.85)
     r.diff = Text(r, nil, "CENTER")
     r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
@@ -427,7 +427,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             tile.role:SetShown(not s.filled)
             tile.role:SetAtlas(ROLE_ATLAS[s.role])
             tile.role:SetDesaturated(true)
-            tile.role:SetVertexColor(0.6, 0.6, 0.6)
+            tile.role:SetVertexColor(0.55, 0.55, 0.55)
             -- Black rings (an empty seat already reads as open); the leader's
             -- seat also gets the light outer ring.
             tile.lead:SetShown(s.leader == true)
@@ -781,6 +781,7 @@ local function Build()
     C_Timer.NewTicker(1, Tick)
 end
 
+local wasShown
 function Pane.Update()
     if not Panel() then return end
     if not pane then Build() end
@@ -795,7 +796,11 @@ function Pane.Update()
     end
     -- The sidecar belongs to the pane: it closes when the pane goes and
     -- follows the category when it stays.
-    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active()) else ns.Sidecar.Close(false) end
+    -- It opens by itself each time the pane appears (player: filters ready
+    -- without a click); closing it holds until the next time.
+    local appeared = pane:IsShown() and not wasShown
+    wasShown = pane:IsShown()
+    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active(), appeared) else ns.Sidecar.Close(false) end
 end
 
 -- ---------------------------------------------------------------------------

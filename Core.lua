@@ -14,10 +14,10 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 4
+local SCHEMA = 6
 local DEFAULTS = {
     schema = SCHEMA,
-    trace  = true,   -- record trace steps; on by default until v1.0.0
+    trace  = false,  -- detailed trace steps; /pug debug switches them on
     log    = {},
     chars  = {},
     cleanup   = { stale = true, staleHours = 3, advert = true, carry = true, blacklist = true },
@@ -43,6 +43,27 @@ local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
             f.lust = f.lust == "has" or nil
             f.brez = f.brez == "has" or nil
             f.text = nil  -- leftover from 0.3.4's saved search text
+        end
+    end,
+    -- 6: v1.0.0: detailed recording starts off for everyone (it was on by
+    -- default while testing); /pug debug turns it back on.
+    [6] = function(db) db.trace = false end,
+    -- 5: sign-ups the game withdrew because the player got in elsewhere
+    -- (within 5 s of a join) are "movedon"; lifetime counts re-seed.
+    [5] = function(db)
+        for _, c in pairs(db.chars or {}) do
+            local joins = {}
+            for _, e in ipairs(c.apps or {}) do
+                if (e.result == "joined" or e.result == "timed" or e.result == "depleted") and e.ended then joins[#joins + 1] = e.ended end
+            end
+            for _, e in ipairs(c.apps or {}) do
+                if e.result == "withdrawn" and e.ended then
+                    for _, j in ipairs(joins) do
+                        if math.abs(e.ended - j) <= 5 then e.result = "movedon"; break end
+                    end
+                end
+            end
+            c.tally = nil
         end
     end,
     -- 4: boss rules are "must be alive" (true) or nothing.
@@ -169,6 +190,7 @@ ns.On("ADDON_LOADED", function(name)
 
     SLASH_PICKUPGROUP1, SLASH_PICKUPGROUP2 = "/pug", "/pickupgroup"
     SlashCmdList.PICKUPGROUP = function(msg) ns.OnSlash(msg) end
+    ns.Print("v" .. version .. " loaded. Type |cff98ff98/pug|r for commands.")
 end)
 
 -- A protected call our code made that the game refused (taint).
@@ -183,9 +205,10 @@ ns.On("ADDON_ACTION_FORBIDDEN", Blocked)
 -- ---------------------------------------------------------------------------
 local HELP = {
     "commands:",
-    "  /pug log |cff888888- open the log to copy into a bug report|r",
-    "  /pug log clear |cff888888- empty the log|r",
-    "  /pug debug |cff888888- switch detailed recording on or off|r",
+    "  /pug log |cff8c8c8c— open the log to copy into a bug report|r",
+    "  /pug log clear |cff8c8c8c— empty the log|r",
+    "  /pug stats |cff8c8c8c— your rejection record, ready to brag about|r",
+    "  /pug debug |cff8c8c8c— switch detailed recording on or off|r",
 }
 
 function ns.OnSlash(msg)
@@ -196,6 +219,8 @@ function ns.OnSlash(msg)
         ns.Print("Log cleared.")
     elseif cmd == "log" then
         ns.LogPopup.Toggle()
+    elseif cmd == "stats" then
+        ns.Print(ns.History.StatsLine())
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })

@@ -17,6 +17,22 @@ cheap.
 
 ## Next session: start here
 
+**v1.0.0 released 2026-10-04.** Still open after 1.0:
+- Screenshots for the CurseForge gallery and description (player's reminder; README + `Dev/CURSEFORGE.md`), and paste `Dev/CURSEFORGE.md` and upload `.assets/logo.png` on CurseForge.
+- Organic checks: fill chime, Bailed (vote to abandon), teleport party check.
+- StockClerk's WCAG + ponytail session; WoW: Forever compatibility check for all three addons.
+- Mascot (hermit crab, a shell per addon) for description banners: parked.
+
+**Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
+dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
+hook); Options toggle, on by default. **Later:** choosing the sound from
+SharedMedia (a novel feature, not now).
+
+**Raid chime (Open):** a joiner has no "full" to hear: raid listings carry
+no target size and leaders stay listed past it. The one real signal is
+the leader's own target comp (raid leader view): chime the leader (and
+assistants?) when the raid's size reaches the target total. Player's call.
+
 **Leader mark (player, 2026-10-04, settled):** searching, the leader's seat
 gets a 0.7 grey ring one pixel outside its black ring (crown and gold tried:
 gold blended into warm spec icons); the tooltip's leader line has Blizzard's
@@ -198,11 +214,10 @@ season); an open sign-up at /reload is re-attached by leader + activity.
 
 ---
 
-## v1.0.0 — first release-worthy build
+## v1.0.0 — released 2026-10-04
 
-- **Open:** final name (display name can change on CurseForge, the slug
-  can't).
-- **Decided:** debug (trace) logging defaults to off.
+- Name: PickupGroup (decided 2026-10-04).
+- Debug (trace) logging defaults to off (schema 6).
 - StockClerk gets its own ponytail + WCAG session (same style language:
   grey rest rings, toggle bar).
 

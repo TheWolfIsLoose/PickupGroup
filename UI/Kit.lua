@@ -53,6 +53,13 @@ Kit.Palette = {
     border    = { 0, 0, 0, 1 },                -- window edges, tiles (not controls)
     brand     = { 0.596, 1, 0.596, 1 },        -- mint
     glyphRest = { 0.85, 0.85, 0.85, 1 },
+    -- Text and status tokens (suite style guide): soft 0.74 for tooltip bodies
+    -- and secondary text, muted 0.55 (8C8C8C) for labels, headings and "off",
+    -- warn amber FFB84D, bad red FF8888. All 4.5:1+ on the panel.
+    soft      = { 0.74, 0.74, 0.74, 1 },
+    muted     = { 0.55, 0.55, 0.55, 1 },
+    warn      = { 1, 0.72, 0.3, 1 },
+    bad       = { 1, 0.533, 0.533, 1 },
 }
 local Palette = Kit.Palette
 
@@ -199,7 +206,7 @@ function Kit.Toggle(parent, text, w, onClick)
     bar:SetPoint("BOTTOMLEFT", 1, 1)
     bar:SetPoint("BOTTOMRIGHT", -1, 1)
     function b:Paint(on, color)
-        local c = on and (color or Palette.brand) or { 0.6, 0.6, 0.6 }
+        local c = on and (color or Palette.brand) or { 0.55, 0.55, 0.55 }
         self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
         Ring(self, on and c or Palette.ringRest)
         bar:SetColorTexture(c[1], c[2], c[3], 1)

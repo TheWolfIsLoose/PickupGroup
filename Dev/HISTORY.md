@@ -2,6 +2,25 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.0 (2026-10-04)
+
+First full release: the 0.9.0 alphas below (chime, decline counter, sidecar opening with the pane, the UI / copy / branding passes). Detailed recording (trace) now defaults off, and schema 6 turns it off on existing installs too (`/pug debug` switches it on). The name stays PickupGroup (player, 2026-10-04). Organic checks still open: the fill chime and Bailed (vote to abandon) in real groups; the teleport party check.
+
+## 0.9.0 alphas (dev)
+
+- alpha11 (branding, 2026-10-04): suite icon (portal swirl, `5AB4FF`, style-guide tile): `icon.png` + TOC IconTexture, README logo, `.assets/logo.png` 400 px for CurseForge; `.assets` kept out of the package.
+- alpha10 (copy pass, 2026-10-04): README rewritten in the suite format (tagline, Features, Commands, Install, Credits, License) and `Dev/CURSEFORGE.md` for the CurseForge description; TOC Notes match the CurseForge summary; American spelling (Color names, recognize); `/pug` help uses em dashes like Stock Clerk's. Name stays PickupGroup (player, 2026-10-04).
+- alpha9 (UI/UX sweep, 2026-10-04): suite style guide written (project doc "Suite style guide", replaces the accessibility addendum); `Kit.Palette` gains `soft`, `muted`, `warn`, `bad`; stray greys onto tokens (0.6 off states / role tint -> 0.55 muted, 0.84 -> 0.85, chat help 888888 -> 8C8C8C). `Dev/STYLE.md` points to the guide.
+- alpha8 (player): history Reset (two clicks; this character, or all with All characters) wipes sign-ups + counts and restarts the count; `chars[..].since` (oldest kept sign-up, or the reset time) shows as "times turned away since <date>" and in /pug stats. Header lines (records, tally) wrap freely; the table follows them down (alpha7's records line ran into the tally).
+- alpha7 (player's log, 2026-10-04): 60 sign-ups, zero "declined" ever: the game reports a leader's decline as Filled / Delisted, so the headline counts every "no" the applicant sees (declined, filled, delisted, timed out) as "times turned away". 31 "cold feet" were mostly the game withdrawing other sign-ups when the player got in (same second as the join): now "Moved on" (live, plus schema 5 re-labels old entries within 5 s of a join and re-seeds the lifetime counts). Vote to abandon (INSTANCE_ABANDON_VOTE_FINISHED, passed, inside a key) ends the joined sign-up as "abandoned" ("Bailed"), with the key level; whether the owner's key dropped (resilience) isn't visible to us. History header gives the tally two lines.
+- alpha6 (player, 2026-10-04): **decline counter**, the history's fun corner (self-deprecating, never mean). Lifetime counts per character (`chars[..].tally`: applied, each ending, joined, timed, depleted), seeded once from the list at PLAYER_LOGIN, never trimmed. Sign-up history: big amber lifetime-declines number + quip by tier, a records line (today's sign-ups / nos / got in, fastest no, longest dry spell = most sign-ups in a row without getting in), witty ending words (Nope, Too slow, Vanished, Cold feet, Ghosted, Got in!). `/pug stats` prints the same for chat. `Dev/test_history.lua` checks seed + records.
+- alpha6: the sidecar opens by itself on its filter each time the search pane appears (Dungeons / current Raids, PickupGroup on); closing it holds until the next time. Eligibility uses the panel's visibility, so closing the Group Finder counts as leaving.
+- alpha5: the Blizzard-list hint moves into that checkbox's tooltip (hint tooltip, hidden by "Hide hint tooltips"), like every other explainer on Options (player); frees its row.
+- alpha4: the Blizzard-list hint indents 18 to line up with its checkbox's text, like the clash line (player: left-aligned looked jarring).
+- alpha3: login / reload prints "PickupGroup: vX loaded. Type /pug for commands." so the player can see which build is running (alpha2's install didn't land; player asked, like StockClerk's line).
+- alpha2: the Blizzard-list hint wrapped onto the next checkbox; now "Switch back from Blizzard's panel." (one line). Options otherwise fit (player screenshot).
+- alpha1 (player, 2026-10-04): fill chime. When the party a sign-up got the player into reaches 5 (roster goes from under 5 to 5, then Applications.LastJoined() a second later), plays Media/TheCyclist.ogg (The Cyclist, copied from the player's SharedMedia: Tones) on the Master channel. Options: "Chime when my group fills", on by default (opt-out, saved as noChime). Dungeons only (raids: see ROADMAP). Options rows: the Blizzard-list hint is one line and two gaps shrank so the new row fits; checkboxes stay 24 apart.
+
 ## v0.8.1 (2026-10-04)
 
 The 0.8.1 alphas below (leader mark settled by the player).
