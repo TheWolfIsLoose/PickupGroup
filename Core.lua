@@ -14,7 +14,7 @@ local addonName, ns = ...
 -- one step to MIGRATIONS when the shape changes (never tied to the addon
 -- version). New fields just go in DEFAULTS.
 -- ---------------------------------------------------------------------------
-local SCHEMA = 4
+local SCHEMA = 5
 local DEFAULTS = {
     schema = SCHEMA,
     trace  = true,   -- record trace steps; on by default until v1.0.0
@@ -43,6 +43,24 @@ local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
             f.lust = f.lust == "has" or nil
             f.brez = f.brez == "has" or nil
             f.text = nil  -- leftover from 0.3.4's saved search text
+        end
+    end,
+    -- 5: sign-ups the game withdrew because the player got in elsewhere
+    -- (within 5 s of a join) are "movedon"; lifetime counts re-seed.
+    [5] = function(db)
+        for _, c in pairs(db.chars or {}) do
+            local joins = {}
+            for _, e in ipairs(c.apps or {}) do
+                if (e.result == "joined" or e.result == "timed" or e.result == "depleted") and e.ended then joins[#joins + 1] = e.ended end
+            end
+            for _, e in ipairs(c.apps or {}) do
+                if e.result == "withdrawn" and e.ended then
+                    for _, j in ipairs(joins) do
+                        if math.abs(e.ended - j) <= 5 then e.result = "movedon"; break end
+                    end
+                end
+            end
+            c.tally = nil
         end
     end,
     -- 4: boss rules are "must be alive" (true) or nothing.

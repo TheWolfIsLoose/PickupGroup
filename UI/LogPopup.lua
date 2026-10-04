@@ -96,7 +96,12 @@ local LOOK = {
     delisted = { "Vanished", GREY }, withdrawn = { "Cold feet", GREY }, timedout = { "Ghosted", GREY },
     invitedeclined = { "You said no", GREY }, failed = { "Game said no", AMBER }, joined = { "Got in!", MINT },
     unknown = { "Who knows", GREY }, timed = { "Timed", MINT }, depleted = { "Depleted", AMBER },
+    movedon = { "Moved on", GREY }, abandoned = { "Bailed", AMBER },
 }
+-- A "no", as far as the applicant can tell: the game softens a leader's
+-- decline into Filled or Delisted, so those count; ignored ones too.
+local NO = { declined = true, filled = true, delisted = true, timedout = true }
+local GOT = { joined = true, timed = true, depleted = true, abandoned = true }
 -- One line under the decline count, by how many there are.
 local QUIPS = {
     { 0, "Not a single no. A legend, or you haven't signed up yet." },
@@ -136,10 +141,15 @@ local function Entries()
 end
 
 -- Lifetime declines for the scope (this character, or every character).
-local function LifetimeDeclines()
-    if not allChars then return ns.Applications.Lifetime().declined or 0 end
+local function Nos(t)
     local n = 0
-    for _, c in pairs(ns.db.chars or {}) do n = n + (ns.Applications.Lifetime(c).declined or 0) end
+    for k in pairs(NO) do n = n + (t[k] or 0) end
+    return n
+end
+local function LifetimeDeclines()
+    if not allChars then return Nos(ns.Applications.Lifetime()) end
+    local n = 0
+    for _, c in pairs(ns.db.chars or {}) do n = n + Nos(ns.Applications.Lifetime(c)) end
     return n
 end
 
@@ -150,16 +160,16 @@ local function Records(list)
     for i = #list, 1, -1 do  -- oldest first
         local e = list[i].e
         local r = e.result
-        local got = r == "joined" or r == "timed" or r == "depleted"
+        local got = GOT[r]
         if e.ts and date("%x", e.ts) == today then
             todayN = todayN + 1
-            if r == "declined" then todayNo = todayNo + 1 end
+            if NO[r] then todayNo = todayNo + 1 end
             if got then todayIn = todayIn + 1 end
         end
-        if r == "declined" and e.ts and e.ended and e.ended >= e.ts then
+        if NO[r] and e.ts and e.ended and e.ended >= e.ts then
             fastest = math.min(fastest or math.huge, e.ended - e.ts)
         end
-        if got then run = 0 elseif r ~= "pending" then run = run + 1; dry = math.max(dry, run) end
+        if got then run = 0 elseif r ~= "pending" and r ~= "movedon" then run = run + 1; dry = math.max(dry, run) end
     end
     return { n = todayN, no = todayNo, got = todayIn, fastest = fastest, dry = dry }
 end
@@ -179,30 +189,30 @@ function History.StatsLine()
     local was = allChars
     allChars = false
     local n = LifetimeDeclines()
-    local line = RecordsLine(Records(Entries())) .. (" Lifetime: declined %s time%s. %s"):format(
+    local line = RecordsLine(Records(Entries())) .. (" Lifetime: turned away %s time%s. %s"):format(
         BreakUpLargeNumbers(n), n == 1 and "" or "s", Quip(n))
     allChars = was
     return line
 end
 
 local TALLY = { declined = "nopes", filled = "too slow", delisted = "vanished", withdrawn = "cold feet",
-                timedout = "ghosted", failed = "game said no" }
+                timedout = "ghosted", failed = "game said no", movedon = "moved on", abandoned = "bailed" }
 local function Tally(list)
     local n = {}
     for _, x in ipairs(list) do n[x.e.result or "pending"] = (n[x.e.result or "pending"] or 0) + 1 end
-    local joined = (n.joined or 0) + (n.timed or 0) + (n.depleted or 0)
+    local joined = (n.joined or 0) + (n.timed or 0) + (n.depleted or 0) + (n.abandoned or 0)
     local parts = { #list .. " sign-ups", joined .. " got in" }
-    if (n.timed or 0) + (n.depleted or 0) > 0 then
-        parts[#parts] = parts[#parts] .. (" (%d timed, %d depleted)"):format(n.timed or 0, n.depleted or 0)
+    if (n.timed or 0) + (n.depleted or 0) + (n.abandoned or 0) > 0 then
+        parts[#parts] = parts[#parts] .. (" (%d timed, %d depleted, %d bailed)"):format(n.timed or 0, n.depleted or 0, n.abandoned or 0)
     end
-    for _, k in ipairs({ "declined", "filled", "delisted", "withdrawn", "timedout", "failed" }) do
+    for _, k in ipairs({ "declined", "filled", "delisted", "timedout", "withdrawn", "movedon", "failed" }) do
         if (n[k] or 0) > 0 then parts[#parts + 1] = n[k] .. " " .. TALLY[k] end
     end
     return table.concat(parts, ", ")
 end
 
 local function BuildHistory()
-    local f = Window("PickupGroupHistory", 500, 480, "Sign-up history")
+    local f = Window("PickupGroupHistory", 500, 492, "Sign-up history")
     local who = Kit.Check(f, "All characters", function(on) allChars = on; f.Fill() end)
     who:SetPoint("TOPRIGHT", -30, -10)
     -- The headline: lifetime declines, big, with a quip.
@@ -228,7 +238,7 @@ local function BuildHistory()
     f.heads = {}
     for i, c in ipairs(COLS) do
         local h = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-        h:SetPoint("TOPLEFT", x, -110)
+        h:SetPoint("TOPLEFT", x, -122)
         h:SetText(c[1])
         h:SetTextColor(0.55, 0.55, 0.55)
         f.heads[i] = h
@@ -236,7 +246,7 @@ local function BuildHistory()
     end
 
     local scroll = CreateFrame("ScrollFrame", "PickupGroupHistoryScroll", f, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 8, -126)
+    scroll:SetPoint("TOPLEFT", 8, -138)
     scroll:SetPoint("BOTTOMRIGHT", -28, 10)
     local body = CreateFrame("Frame", nil, scroll)
     body:SetSize(460, 1)
@@ -247,7 +257,7 @@ local function BuildHistory()
         local list = Entries()
         local no = LifetimeDeclines()
         f.big:SetText(BreakUpLargeNumbers(no))
-        f.bigLabel:SetText(no == 1 and "time declined, lifetime" or "times declined, lifetime")
+        f.bigLabel:SetText(no == 1 and "time turned away, lifetime" or "times turned away, lifetime")
         f.quip:SetText(Quip(no))
         f.records:SetText(RecordsLine(Records(list)))
         f.tally:SetText(#list > 0 and Tally(list) or "Nothing here yet. Go get rejected; it builds character.")

@@ -9,8 +9,9 @@
              roles ("T", "H", "D" joined), result, ended, level, onTime }
     result: pending, declined, filled (group full), delisted, withdrawn,
             timedout, invitedeclined, failed, joined, unknown (the ending
-            happened while the game was closed); then for a finished key:
-            timed / depleted.
+            happened while the game was closed), movedon (withdrawn by the game
+            because the player got into another group); then for a key:
+            timed / depleted / abandoned (vote to abandon passed).
 --]]
 
 local _, ns = ...
@@ -74,7 +75,7 @@ local function Seed(c)
     local t = { applied = #(c.apps or {}) }
     for _, e in ipairs(c.apps or {}) do
         local r = e.result
-        if r == "timed" or r == "depleted" then t.joined = (t.joined or 0) + 1 end
+        if r == "timed" or r == "depleted" or r == "abandoned" then t.joined = (t.joined or 0) + 1 end
         if r and r ~= "pending" then t[r] = (t[r] or 0) + 1 end
     end
     return t
@@ -111,37 +112,77 @@ local function Start(id)
     return e
 end
 
+-- Getting into a group makes the game withdraw every other sign-up, in the
+-- same second or so, before or after the join: those "moved on", they
+-- weren't cold feet.
+local MOVED = 5
+local lastJoin = 0
+local function MovedOn(e)
+    local t = Applications.Lifetime()
+    t.withdrawn = math.max(0, (t.withdrawn or 1) - 1)
+    t.movedon = (t.movedon or 0) + 1
+    e.result = "movedon"
+end
+
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     -- A sign-up the game refuses at once goes straight to "failed".
     if not open[id] and (new == "applied" or ENDING[new]) then Start(id) end
     local e, result = open[id], ENDING[new]
     if not (e and result) then return end
-    e.result, e.ended = result, time()
+    local now = time()
+    if result == "withdrawn" and now - lastJoin <= MOVED then result = "movedon" end
+    e.result, e.ended = result, now
     open[id] = nil
     Bump(result)
+    if result == "joined" then
+        lastJoin = now
+        local list = List()
+        for i = #list, math.max(1, #list - 10), -1 do
+            local x = list[i]
+            if x.result == "withdrawn" and x.ended and now - x.ended <= MOVED then MovedOn(x) end
+        end
+    end
     if ended then ended[Key(e.leader, e.activityID)] = e end
     ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = result })
 end)
+
+-- The sign-up that got the player into the current group, if recent.
+local function JoinedEntry()
+    local list = List()
+    for i = #list, 1, -1 do
+        local e = list[i]
+        if e.result == "joined" and time() - (e.ended or 0) < JOIN_WINDOW then return e end
+        if time() - (e.ts or 0) > JOIN_WINDOW then return end
+    end
+end
+
+local function KeyEnded(e, result, level)
+    e.result, e.level = result, level or e.level
+    Bump(result)
+    ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = result, level = e.level })
+end
 
 -- A finished key closes the last joined sign-up (secret values in the
 -- completion info are skipped rather than stored).
 ns.On("CHALLENGE_MODE_COMPLETED", function()
     local ok, info = pcall(C_ChallengeMode.GetChallengeCompletionInfo)
     if not (ok and type(info) == "table") then return end
-    local list = List()
-    for i = #list, 1, -1 do
-        local e = list[i]
-        if e.result == "joined" and time() - (e.ended or 0) < JOIN_WINDOW then
-            local okTime, onTime = pcall(function() return info.onTime == true end)
-            local okLevel, level = pcall(function() return tonumber(info.level) end)
-            e.onTime = okTime and onTime or nil
-            e.level = okLevel and level or nil
-            if okTime then e.result = onTime and "timed" or "depleted"; Bump(e.result) end
-            ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = e.result, level = e.level })
-            return
-        end
-        if time() - (e.ts or 0) > JOIN_WINDOW then return end
-    end
+    local e = JoinedEntry()
+    if not e then return end
+    local okTime, onTime = pcall(function() return info.onTime == true end)
+    local okLevel, level = pcall(function() return tonumber(info.level) end)
+    e.onTime = okTime and onTime or nil
+    if okTime then KeyEnded(e, onTime and "timed" or "depleted", okLevel and level or nil) end
+end)
+
+-- A passed vote to abandon ends the key without a deplete (the owner's key
+-- only drops when it isn't resilient at that level, which we can't see).
+ns.On("INSTANCE_ABANDON_VOTE_FINISHED", function(passed)
+    if not passed then return end
+    local ok, level = pcall(function() return (C_ChallengeMode.GetActiveKeystoneInfo()) end)
+    level = ok and tonumber(level) or 0
+    local e = level > 0 and JoinedEntry()
+    if e then KeyEnded(e, "abandoned", level) end
 end)
 
 -- After a login or /reload: sign-ups still out pick their entries back up
