@@ -17,6 +17,11 @@ cheap.
 
 ## Next session: start here
 
+**2026-10-04 (round 20, player): all pass** (leading filters dim by score /
+ilvl / realm, short needs line, sidecar closes per side, role spacing, the
+"more below" chevron in both lists). Left: the teleport party check
+(organic). dev at 0.7.1-alpha6 is release-ready when the player calls it.
+
 **2026-10-04 (round 19, player): all non-friend items pass**: raid leader
 view works (Prog 4/8 H from Raider.IO, Skyfury / Lust / Rez / Brand adds),
 targets save, sidecar fits after the 24px spacing. Calls: role buttons back
