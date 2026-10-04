@@ -3,7 +3,5 @@
 DevChecklist_Round = "PickupGroup dev, round 21 (0.8.1-alpha5)"
 local S, P = "PickupGroup: Searching", "PickupGroup: Party / later"
 DevChecklist_Items = {
-    { S, "Dungeons: each row's comp has the leader's seat has a grey ring just outside its black edge (one per row), a little dimmer than before: still easy to spot? Hover the 14 MR kind of row if one looks crown/border-less: who does the tooltip name?", "SS" },
-    { S, "Hover a dungeon row and a raid row: the leader line has a crown and the leader's name in their class colour.", "SS + say done (log)" },
     { P, "Whenever it happens: join a party some other way than your own sign-up (whispered invite) after joining a different key through a sign-up: Teleport names the party's listed key, or doesn't show; never the earlier key.", "say done (log)" },
 }
