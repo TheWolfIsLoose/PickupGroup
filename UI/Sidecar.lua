@@ -44,25 +44,7 @@ local function Label(parent, text)
     return fs
 end
 
--- A flat toggle: mint fill when on.
-local function Toggle(parent, text, w, onClick)
-    local b = CreateFrame("Button", nil, parent)
-    b:SetSize(w, 20)
-    Kit.Button(b)
-    b:SetNormalFontObject("PickupGroupFontSmall")
-    b:SetHighlightFontObject("PickupGroupFontSmall")
-    b:SetText(text)
-    -- On: the choice's colour as text and a 1px ring on a neutral fill, so
-    -- every colour reads (no colour-on-green). Off: grey text, grey ring.
-    function b:Paint(on, color)
-        local c = on and (color or MINT) or { 0.6, 0.6, 0.6 }
-        self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
-        local ring = on and c or Kit.Palette.ringRest
-        for _, t in ipairs(self._border) do t:SetColorTexture(ring[1], ring[2], ring[3], 1) end
-    end
-    b:SetScript("OnClick", onClick)
-    return b
-end
+local Toggle = Kit.Toggle
 
 -- Leader's realm region: four toggles, all on by default (regions = nil).
 local regionButtons = {}
@@ -132,7 +114,7 @@ local function PaintRaid(f)
         local l = bossLines[n]
         if not l then
             l = CreateFrame("Button", nil, bossBox)
-            l:SetHeight(18)
+            l:SetHeight(24)
             l:SetScript("OnClick", function(self)
                 if self.raid then open[self.raid] = not open[self.raid]; PaintRaid(editing) end
             end)
@@ -167,7 +149,7 @@ local function PaintRaid(f)
                 Sidecar.Paint(); Changed()
                 GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
             end)
-            l.want:SetHeight(16)
+            l.want:SetHeight(18)
             l.want:SetPoint("RIGHT")
             l.want:HookScript("OnEnter", function(self)
                 if not ns.Hints() then return end
@@ -188,7 +170,7 @@ local function PaintRaid(f)
         l:SetPoint("TOPLEFT", 0, y)
         l:SetPoint("RIGHT")
         l:Show()
-        y = y - 18
+        y = y - 24
         return l
     end
     local raids = ns.Groups.Raids()
@@ -258,6 +240,7 @@ local function BuildKeys(parent)
         local t = Label(b, w[1])
         t:SetPoint("RIGHT")
         b:SetWidth(t:GetStringWidth())
+        b:SetHitRectInsets(-4, -4, -6, -6)  -- 24px tall to click (WCAG 2.5.8)
         if prevWord then b:SetPoint("RIGHT", prevWord, "LEFT", -8, 0) else b:SetPoint("TOPRIGHT", 0, y) end
         b:SetScript("OnClick", function() w[2](); Sidecar.Paint(); Changed() end)
         b:SetScript("OnEnter", function() t:SetTextColor(MINT[1], MINT[2], MINT[3]) end)
@@ -277,7 +260,7 @@ local function BuildKeys(parent)
             Sidecar.Paint(); Changed()
         end)
         b.dungeon, b.code = d.name, d.code
-        b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 23)
+        b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 24)
         b:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(self.dungeon)
             local best = self:GetText():match("%+(%d+)")  -- colour codes have no "+"
@@ -287,7 +270,7 @@ local function BuildKeys(parent)
         b:HookScript("OnLeave", function() GameTooltip:Hide() end)
         dungeonButtons[#dungeonButtons + 1] = b
     end
-    y = y - math.ceil(#dungeonButtons / 4) * 23 - 8
+    y = y - math.ceil(#dungeonButtons / 4) * 24 - 8
 
     for _, c in ipairs({
         { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
@@ -311,7 +294,7 @@ local function BuildKeys(parent)
             cb:HookScript("OnLeave", function() GameTooltip:Hide() end)
         end
         checks[key] = cb
-        y = y - 20
+        y = y - 24
     end
     y = y - 4
     local l = Label(box, "Leader score at least")
@@ -400,11 +383,11 @@ local function BuildOptions(parent)
     end)
     blizz:SetPoint("TOPLEFT", 0, y)
     box.blizz = blizz
-    y = y - 22
+    y = y - 24
     local hint = Label(box, "A PickupGroup button on Blizzard's panel brings this back.")
     hint:SetPoint("TOPLEFT", 0, y)
     hint:SetWidth(W - 2 * PAD); hint:SetJustifyH("LEFT"); hint:SetWordWrap(true)
-    y = y - 32
+    y = y - 28
     local names = Kit.Check(box, "Colour names for friends / guild", function(on)
         ns.db.nameColors = on or nil
         ns.Log.Emit("setting", { key = "nameColors", on = on })
@@ -420,7 +403,7 @@ local function BuildOptions(parent)
     end)
     names:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.names = names
-    y = y - 22
+    y = y - 24
     local swap = Kit.Check(box, "Swap when all sign-ups are out", function(on)
         ns.db.swap = on or nil
         ns.Log.Emit("setting", { key = "swap", on = on })
@@ -436,7 +419,7 @@ local function BuildOptions(parent)
     end)
     swap:HookScript("OnLeave", function() GameTooltip:Hide() end)
     box.swap = swap
-    y = y - 22
+    y = y - 24
     -- Opt-in (player): veterans can turn off the how-to tooltips.
     local hints = Kit.Check(box, "Hide hint tooltips", function(on)
         ns.db.noHints = on or nil
@@ -444,7 +427,7 @@ local function BuildOptions(parent)
     end)
     hints:SetPoint("TOPLEFT", 0, y)
     box.hints = hints
-    y = y - 22
+    y = y - 24
     -- Off for players whose other addons handle sign-up notes (they clash).
     local strip = Kit.Check(box, "My notes under Blizzard's sign-up window", function(on)
         ns.db.noteStrip = (not on) and false or nil
@@ -482,13 +465,13 @@ local function BuildOptions(parent)
             unit:SetPoint("LEFT", hours, "RIGHT", 4, 0)
             box.hours = hours
         end
-        y = y - 22
+        y = y - 24
     end
     local tip = Label(box, "Adverts: no leader score and the voice chat field filled in. "
         .. "Right-click a row to report, blacklist or hide its leader.")
     tip:SetPoint("TOPLEFT", 0, y - 2)
     tip:SetWidth(W - 2 * PAD); tip:SetJustifyH("LEFT"); tip:SetWordWrap(true)
-    y = y - 48
+    y = y - 44
 
     box.count = Label(box, "")
     box.count:SetPoint("TOPLEFT", 0, y - 4)

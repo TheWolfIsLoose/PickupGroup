@@ -370,8 +370,9 @@ local function PaintMember(l, a, m, first, index, raid)
         local kc = m.prog and { 1, 1, 1 } or GREY
         l.key:SetTextColor(kc[1], kc[2], kc[3])
     else
-        -- Best run here: white when timed, amber when not (the tooltip says which).
-        l.key:SetText(m.keyLevel > 0 and ("+" .. m.keyLevel) or "-")
+        -- Best run here: white when timed; amber with a trailing x when not,
+        -- so it isn't colour alone (WCAG 1.4.1; the tooltip says which).
+        l.key:SetText(m.keyLevel == 0 and "-" or ("+" .. m.keyLevel .. (m.timed and "" or "\195\151")))
         local kc = m.keyLevel == 0 and GREY or (m.timed and { 1, 1, 1 } or AMBER)
         l.key:SetTextColor(kc[1], kc[2], kc[3])
     end
@@ -474,14 +475,13 @@ function Leader.Render()
     thumb:SetPoint("TOP", 0, -(h - thumb:GetHeight()) * (total > inView and first / (total - inView) or 0))
 end
 
--- The target bar shows the saved comp; the matching preset reads mint.
+-- The target bar shows the saved comp; the matching preset shows as on.
 function Leader.PaintTarget()
     local t = Target()
     for i, e in ipairs(targetEdits) do if not e:HasFocus() then e:SetText(t[i]) end end
     for i, b in ipairs(presetButtons) do
         local p = PRESETS[i]
-        local on = t[1] == p[2] and t[2] == p[3] and t[3] == p[4]
-        b:GetFontString():SetTextColor(on and MINT[1] or 0.85, on and MINT[2] or 0.85, on and MINT[3] or 0.85)
+        b:Paint(t[1] == p[2] and t[2] == p[3] and t[3] == p[4])
     end
 end
 
@@ -587,12 +587,8 @@ local function Build()
     end
     for i = #PRESETS, 1, -1 do
         local p = PRESETS[i]
-        local b = CreateFrame("Button", nil, targetBar)
-        b:SetSize(24, 18)
-        Kit.Button(b)
-        b:SetNormalFontObject("PickupGroupFontSmall")
-        b:SetHighlightFontObject("PickupGroupFontSmall")
-        b:SetText(p[1])
+        local b = Kit.Toggle(targetBar, p[1], 24)
+        b:SetHeight(18)
         b:SetPoint("RIGHT", presetButtons[i + 1] or targetBar, presetButtons[i + 1] and "LEFT" or "RIGHT", presetButtons[i + 1] and -2 or -PAD, 0)
         b:SetScript("OnClick", function()
             local t = Target()

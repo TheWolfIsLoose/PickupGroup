@@ -156,13 +156,38 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     return btn
 end
 
+-- Toggle button: on = its colour (mint by default) as text and ring plus a
+-- 2px bar along the bottom, the same mark as an active sidecar tab, so "on"
+-- never rests on colour alone (WCAG 1.4.1). Off: grey text, grey ring.
+function Kit.Toggle(parent, text, w, onClick)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetSize(w, 20)
+    Kit.Button(b)
+    b:SetNormalFontObject("PickupGroupFontSmall")
+    b:SetHighlightFontObject("PickupGroupFontSmall")
+    b:SetText(text)
+    local bar = Solid(b, "OVERLAY", 6, Palette.brand)
+    bar:SetHeight(2)
+    bar:SetPoint("BOTTOMLEFT", 1, 1)
+    bar:SetPoint("BOTTOMRIGHT", -1, 1)
+    function b:Paint(on, color)
+        local c = on and (color or Palette.brand) or { 0.6, 0.6, 0.6 }
+        self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
+        Ring(self, on and c or Palette.ringRest)
+        bar:SetColorTexture(c[1], c[2], c[3], 1)
+        bar:SetShown(on)
+    end
+    b:SetScript("OnClick", onClick)
+    return b
+end
+
 -- Checkbox: 12px light well (grey ring on hover), mint square when on; the label is part of the
--- click area. box:Set(on), box:Get(); onChange(on) after a click.
+-- click area, 24px tall (WCAG 2.5.8: rows of checkboxes sit 24px apart).
+-- box:Set(on), box:Get(); onChange(on) after a click.
 function Kit.Check(parent, label, onChange)
     local b = CreateFrame("Button", nil, parent)
     b:SetHeight(16)
-    -- ponytail: 20px tall to click (rows sit 20px apart); 24px (WCAG 2.5.8) needs 24px rows.
-    b:SetHitRectInsets(0, 0, -2, -2)
+    b:SetHitRectInsets(0, 0, -4, -4)
     local well = CreateFrame("Frame", nil, b)
     well:SetSize(12, 12)
     well:SetPoint("LEFT")

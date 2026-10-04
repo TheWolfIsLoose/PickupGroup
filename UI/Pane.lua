@@ -58,11 +58,13 @@ local lastSearch, armed = 0, nil
 -- until the next search. Nothing is marked on a category's first search.
 local seen, fresh = nil, {}
 
--- Friends / guild mark: a drawn "people" glyph at the end of the name
--- column, in the colours WoW players know (Battle.net blue, guild chat
--- green). Options can colour the name instead, as Blizzard does.
+-- Friends / guild marks at the end of the name column, in the colours WoW
+-- players know (Battle.net blue, guild chat green) and in two shapes, so
+-- they never differ by colour alone (WCAG 1.4.1): a person for friends, a
+-- banner for the guild. Options can colour the name instead, as Blizzard does.
 local FRIEND = { 0.51, 0.77, 1 }
 local PEOPLE = { { 4, 4, 3 }, { 8, 3, -3 } }
+local BANNER = { { 2, 11, 0, nil, -3 }, { 6, 5, 2.5, nil, 1 } }
 local function GuildColor()
     local c = ChatTypeInfo and ChatTypeInfo.GUILD
     return c and { c.r, c.g, c.b } or { 0.25, 1, 0.25 }
@@ -323,10 +325,10 @@ local function BuildRow(i)
     round:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     round:SetAllPoints(r.new)
     r.new:AddMaskTexture(round)
-    for _, key in ipairs({ "friendMark", "guildMark" }) do
+    for key, shape in pairs({ friendMark = PEOPLE, guildMark = BANNER }) do
         local m = CreateFrame("Frame", nil, r)
         m:SetSize(10, 12)
-        m.tint = Kit.Glyph(m, PEOPLE)
+        m.tint = Kit.Glyph(m, shape)
         m:Hide()
         r[key] = m
     end
@@ -632,7 +634,7 @@ local function BuildBars()
     for i = #ROLES, 1, -1 do
         local b = CreateFrame("Button", nil, head)
         b:SetSize(14, 14)
-        b:SetPoint("RIGHT", x - (#ROLES - i) * 17, 0)
+        b:SetPoint("RIGHT", x - (#ROLES - i) * 24, 0)  -- 24px apart (WCAG 2.5.8 spacing)
         b.role = ROLES[i]
         b.icon = b:CreateTexture(nil, "ARTWORK")
         b.icon:SetAllPoints()
