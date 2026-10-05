@@ -1,8 +1,13 @@
-<!-- Paste below this line into the CurseForge description (Markdown). Dev-only. -->
+<!-- Paste below this line into the CurseForge description (Markdown). Dev-only.
+     Gallery (upload in this order, search first as the featured image):
+     .assets/screenshots/search.png, group-tooltip.png, raids.png,
+     leading-a-key.png, leading-a-raid.png, sign-up-history.png -->
 
 **A faster premade-groups list that lives inside Blizzard's Group Finder.**
 
 Open Premade Groups and PickupGroup is already there: one compact list that shows each group's comp at a glance, a saved filter for dungeons and one for raids, and one click to sign up. Blizzard's search bar, refresh and filter keep working underneath; PickupGroup just shows you more, faster.
+
+![PickupGroup inside the Group Finder](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/search.png)
 
 ### Features
 
@@ -14,6 +19,12 @@ Open Premade Groups and PickupGroup is already there: one compact list that show
 - **Leading a group.** Applicants show spec, item level, score and their best run in your key, with anyone below your bar dimmed (never hidden). Raid leaders set a target comp and see who rounds it out.
 - **Ready when you are.** A chime when your dungeon group fills, and a teleport button for the dungeon once the party is complete.
 - **A record of every rejection.** Sign-up history counts every time you've been turned away, your fastest "no" and your longest dry spell. `/pug stats` puts it in chat, for bragging rights.
+
+![Hovering a group](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/group-tooltip.png) ![Raids](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/raids.png)
+
+![Leading a key](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/leading-a-key.png) ![Leading a raid](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/leading-a-raid.png)
+
+![Sign-up history](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/sign-up-history.png)
 
 ### Commands
 

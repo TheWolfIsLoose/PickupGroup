@@ -18,10 +18,9 @@ cheap.
 ## Next session: start here
 
 **v1.0.0 released 2026-10-04.** Still open after 1.0:
-- Screenshots for the CurseForge gallery and description (player's reminder; README + `Dev/CURSEFORGE.md`), and paste `Dev/CURSEFORGE.md` and upload `.assets/logo.png` on CurseForge.
+- CurseForge: paste `Dev/CURSEFORGE.md`, upload `.assets/logo.png` and the six gallery shots (screenshots are in the repo, 2026-10-04).
 - Organic checks: fill chime, Bailed (vote to abandon), teleport party check.
 - StockClerk's WCAG + ponytail session; WoW: Forever compatibility check for all three addons.
-- Mascot (hermit crab, a shell per addon) for description banners: parked.
 
 **Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
 dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
