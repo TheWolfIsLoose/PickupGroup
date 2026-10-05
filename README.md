@@ -16,6 +16,10 @@ that shows each group's comp at a glance, a saved filter for dungeons and
 one for raids, and one click to sign up. Blizzard's search bar, refresh
 and filter keep working underneath; PickupGroup just shows you more, faster.
 
+<p align="center">
+  <img src=".assets/screenshots/search.png" alt="PickupGroup inside Blizzard's Group Finder: a compact list of keys with each group's comp, your sign-ups pinned at the top with their time left, and the filter panel" width="900">
+</p>
+
 ## Features
 
 - **Comps at a glance.** Every group's spec icons in a row, empty seats
@@ -43,6 +47,20 @@ and filter keep working underneath; PickupGroup just shows you more, faster.
 - **A record of every rejection.** Sign-up history counts every time
   you've been turned away, your fastest "no" and your longest dry spell.
   `/pug stats` puts it in chat, for bragging rights.
+
+<p align="center">
+  <img src=".assets/screenshots/group-tooltip.png" alt="Hovering a group: the key, the leader with a crown, their score and the comp" width="440">
+  <img src=".assets/screenshots/raids.png" alt="Raids: role counts and bosses down for each group, with the raid filter's boss list" width="440">
+</p>
+
+<p align="center">
+  <img src=".assets/screenshots/leading-a-key.png" alt="Leading a key: applicants with item level, score, best run in the key and what they add" width="440">
+  <img src=".assets/screenshots/leading-a-raid.png" alt="Leading a raid: a target comp, and applicants with their progress and the raid buffs they bring" width="440">
+</p>
+
+<p align="center">
+  <img src=".assets/screenshots/sign-up-history.png" alt="Sign-up history: how many times you've been turned away, today's tally and each sign-up's outcome" width="640">
+</p>
 
 ## Commands
 
