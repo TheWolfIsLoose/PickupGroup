@@ -27,7 +27,7 @@ and filter keep working underneath; PickupGroup just shows you more, faster.
   counts and bosses down.
 - **One filter per content type.** Room for my role, has Bloodlust, has
   battle rez, no other of my class, leader score floor, realm regions
-  (NA, Oceanic, Brazil, Latin America) and, for raids, which bosses must
+  (NA, Oceanic, Brazil, Latin America; Americas realms only) and, for raids, which bosses must
   still be alive. It sets Blizzard's own filter too, so the two always
   agree. The filter panel opens with the list, ready to tweak.
 - **One-click sign-ups.** Click **Apply** to sign up at once.

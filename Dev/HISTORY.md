@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.1 (2026-10-05)
+
+Realm regions are Americas-only. `Groups.SUBREGIONS = GetCurrentRegion() == 1`; elsewhere `Groups.Region` returns nil, the sidecar skips the region row (keys, raid, leading), the filter summary drops "realms", and the leader view neither dims by region nor shows the tooltip line. Avoids EU realms sharing names with listed ones (Nagrand, Ragnaros, Frostmourne) being tagged OCE / LAT, and NA-off hiding everything. Untested outside the Americas; simulate by setting the check to `== 3`.
+
 ## v1.0.0 (2026-10-04)
 
 First full release: the 0.9.0 alphas below (chime, decline counter, sidecar opening with the pane, the UI / copy / branding passes). Detailed recording (trace) now defaults off, and schema 6 turns it off on existing installs too (`/pug debug` switches it on). The name stays PickupGroup (player, 2026-10-04). Organic checks still open: the fill chime and Bailed (vote to abandon) in real groups; the teleport party check.
