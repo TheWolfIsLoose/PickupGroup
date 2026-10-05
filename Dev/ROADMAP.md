@@ -21,7 +21,8 @@ cheap.
 
 **v1.0.0 released 2026-10-04.** Still open after 1.0:
 - CurseForge: paste `Dev/CURSEFORGE.md`, upload `.assets/logo.png` and the six gallery shots (screenshots are in the repo, 2026-10-04).
-- Organic checks: fill chime, Bailed (vote to abandon), teleport party check.
+- Organic checks: Bailed (vote to abandon). Fill chime and teleport passed in a real key (player, 2026-10-05; +18 MR timed, logged as joined then timed, the other sign-up as Moved on).
+- Small fix for a later patch: a sign-up the game refuses at once ("failed") is logged without leader or dungeon (2026-10-05 00:17).
 - StockClerk's WCAG + ponytail session; WoW: Forever compatibility check for all three addons.
 
 **Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
