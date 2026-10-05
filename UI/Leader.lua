@@ -196,7 +196,7 @@ local function Cue(apps, kind)
             m.adds = table.concat(adds, " ")
             m.region = Groups.Region(m.name)
             m.why = (not m.fills and "no open " .. (_G[m.role] or "seat"):lower() .. " seat")
-                or (f.regions and not f.regions[m.region] and ("realm region " .. m.region .. " is off in your filter"))
+                or (f.regions and m.region and not f.regions[m.region] and ("realm region " .. m.region .. " is off in your filter"))
                 or (not raid and (f.minScore or 0) > m.score and ("score under " .. f.minScore))
                 or (raid and (f.minIlvl or 0) > m.ilvl and ("item level under " .. f.minIlvl))
                 or (ns.Cleanup.IsBlacklisted(m.name) and "on your blacklist") or nil
@@ -235,7 +235,9 @@ local function Tooltip(line)
     else
         GameTooltip:AddLine("No run in " .. where .. " this season", GREY[1], GREY[2], GREY[3])
     end
-    GameTooltip:AddLine("Realm region: " .. (Groups.REGION_NAME and Groups.REGION_NAME[m.region] or m.region), 0.85, 0.85, 0.85)
+    if m.region then
+        GameTooltip:AddLine("Realm region: " .. Groups.REGION_NAME[m.region], 0.85, 0.85, 0.85)
+    end
     if #m.addList > 0 then
         local names = {}
         for i, a in ipairs(m.addList) do names[i] = BUFF_NAME[a] end

@@ -27,6 +27,9 @@ local DIFFICULTY = { [14] = "N", [15] = "H", [16] = "M", [17] = "LFR" }
 -- Realm regions within the Americas game region: every realm is North
 -- America except these. Keys are realm names squeezed (no spaces, hyphens or
 -- apostrophes, lower case) so any spelling of the name matches.
+-- Only the Americas (GetCurrentRegion 1) mixes sub-regions in one Group
+-- Finder; elsewhere (EU, KR, TW, CN) regions are nil and the filter is hidden.
+Groups.SUBREGIONS = GetCurrentRegion() == 1
 Groups.REGIONS = { "NA", "OCE", "BR", "LAT" }
 Groups.REGION_NAME = { NA = "North America", OCE = "Oceanic", BR = "Brazil", LAT = "Latin America" }
 local REALM_REGION = {}
@@ -41,7 +44,7 @@ end
 
 -- A leader's realm region from "Name-Realm" (no realm: the player's own).
 function Groups.Region(leader)
-    if type(leader) ~= "string" then return nil end
+    if not Groups.SUBREGIONS or type(leader) ~= "string" then return nil end
     local realm = leader:match("^[^%-]+%-(.+)$") or GetRealmName() or ""
     return REALM_REGION[realm:gsub("[%s%-']", ""):lower()] or "NA"
 end

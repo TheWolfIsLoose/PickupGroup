@@ -52,6 +52,7 @@ local Toggle = Kit.Toggle
 -- Leader's realm region: four toggles, all on by default (regions = nil).
 local regionButtons = {}
 local function RegionRow(box, y, label)
+    if not ns.Groups.SUBREGIONS then return y end
     local l = Label(box, label or "Leader's realm")
     l:SetPoint("TOPLEFT", 0, y)
     local codes = ns.Groups.REGIONS

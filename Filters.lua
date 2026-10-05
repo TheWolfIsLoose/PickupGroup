@@ -79,7 +79,7 @@ function Filters.Summary(f)
         if f.atLeastMine then out[#out + 1] = "score at least mine"
         elseif (f.minScore or 0) > 0 then out[#out + 1] = "score " .. f.minScore .. "+" end
     end
-    if f.regions then
+    if f.regions and ns.Groups.SUBREGIONS then
         local r = {}
         for _, code in ipairs(ns.Groups.REGIONS) do if f.regions[code] then r[#r + 1] = code end end
         out[#out + 1] = "realms " .. (#r > 0 and table.concat(r, " ") or "none")
