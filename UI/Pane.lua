@@ -873,7 +873,7 @@ end)
 
 -- ---------------------------------------------------------------------------
 -- Teleport: a standalone button while the party is full (5/5) for a known
--- dungeon and not yet inside, casting that dungeon's teleport (the "Path
+-- dungeon it hasn't been inside yet, casting that dungeon's teleport (the "Path
 -- of ..." spells in the Hero's Path flyouts, matched by their description).
 -- The dungeon: the party's listing, else the group last joined through a
 -- sign-up. A secure button: shown, hidden and set up only out of combat.
@@ -917,10 +917,16 @@ local function PartyDungeon()
     return listed or ns.Applications.LastJoined()
 end
 
+-- The dungeon this group already went into: once it's run, the group back in
+-- town (key done, still grouped) needs no teleport. Cleared when the group
+-- breaks up; a new listing (another dungeon) brings the button back.
+local entered
 local function UpdateTeleport()
     if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
-    local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5
-        and not IsInInstance() and PartyDungeon()
+    if not IsInGroup() then entered = nil end
+    local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5 and PartyDungeon()
+    if dungeon and IsInInstance() then entered = dungeon end
+    if IsInInstance() or dungeon == entered then dungeon = nil end
     if dungeon ~= lastDungeon then
         lastDungeon = dungeon
         ns.Trace("teleport", "party dungeon", dungeon or "none",
