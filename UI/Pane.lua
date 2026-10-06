@@ -26,6 +26,9 @@ local ROW_H, BAR_H, HEAD_H = 24, 26, 20
 local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 97, 34, 56, 6, 6
 local TILE, TILE_GAP = 17, 3  -- five tiles: 5 x 17 + 4 x 3 = W_COMP
 local W_DIFF = 16
+-- Raid view: no Bosses column (the count rides in the raid cell, dimmed),
+-- and the comp is three role counts (up to 30), so names get the room.
+local W_RAID_INST, W_RAID_COMP, COUNT_STEP = 42, 68, 22  -- 2 x 22 + 24 = W_RAID_COMP
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
 -- M legendary orange (epic purple skipped: too dark to read here).
 local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 }, LFR = { 0.7, 0.7, 0.7 } }
@@ -322,7 +325,7 @@ local function BuildRow(i)
     for c, role in ipairs(ROLES) do
         local icon = r.comp:CreateTexture(nil, "ARTWORK")
         icon:SetSize(10, 10)
-        icon:SetPoint("LEFT", (c - 1) * 26, 0)
+        icon:SetPoint("LEFT", (c - 1) * COUNT_STEP, 0)
         icon:SetAtlas(ROLE_ATLAS[role])
         local n = Text(r.comp)
         n:SetPoint("LEFT", icon, "RIGHT", 2, 0)
@@ -411,7 +414,11 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         anchor, x = marks[i], -1
     end
     r.name:SetPoint("RIGHT", anchor, "LEFT", anchor == r.diff and -GAP or -3, 0)
-    r.inst:SetText(row.code)
+    r.inst:SetWidth(raidView and W_RAID_INST or W_INST)
+    r.inst:SetText(row.isRaid and (row.code .. " |cff8c8c8c" .. (row.total and (row.down .. "/" .. row.total) or row.down) .. "|r") or row.code)
+    r.score:SetShown(not raidView)
+    r.comp:SetWidth(raidView and W_RAID_COMP or W_COMP)
+    r.comp:SetPoint("RIGHT", raidView and r.act or r.score, "LEFT", -GAP, 0)
     r.diff:SetWidth(raidView and W_DIFF or 1)
     local dc = DIFF_COLOR[row.difficulty or ""]
     r.diff:SetText(raidView and (row.difficulty or "") or "")
@@ -439,10 +446,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         if row.isRaid then c.n:SetText(row.counts[c.role]) end
     end
 
-    if row.isRaid then
-        r.score:SetText(row.total and (row.down .. "/" .. row.total) or row.down)
-        r.score:SetTextColor(1, 1, 1)
-    else
+    if not row.isRaid then
         local score = row.score or 0
         r.score:SetText(score > 0 and score or "-")
         local color = score > 0 and C_ChallengeMode.GetDungeonScoreRarityColor(score)
@@ -554,7 +558,10 @@ function Pane.Render()
     pane.more:Set(offset + (math.min(slot, fit) - nPinned) < #results)
     ns.Sidecar.RefreshBosses()
     pane.instHead:SetText(raidView and "Raid" or "Dungeon")
-    pane.scoreHead:SetText(raidView and "Bosses" or "Score")
+    pane.scoreHead:SetShown(not raidView)
+    pane.compHead:SetWidth(raidView and W_RAID_COMP or W_COMP)
+    pane.compHead:SetPoint("RIGHT", pane.head, "RIGHT", raidView and pane.actRight or (pane.actRight - W_SCORE - GAP), 0)
+    pane.instHead:SetWidth(raidView and W_RAID_INST or W_INST)
     pane.diffHead:SetWidth(raidView and W_DIFF or 1)
 end
 
@@ -687,10 +694,11 @@ local function BuildBars()
     local actRight = -(PAD + W_ACT + GAP)
     pane.scoreHead = Head("Score", W_SCORE, "RIGHT")
     pane.scoreHead:SetPoint("RIGHT", actRight, 0)
-    local comp = Head("Comp", W_COMP)
-    comp:SetPoint("RIGHT", pane.scoreHead, "LEFT", -GAP, 0)
+    pane.head, pane.actRight = head, actRight
+    pane.compHead = Head("Comp", W_COMP)
+    pane.compHead:SetPoint("RIGHT", pane.scoreHead, "LEFT", -GAP, 0)
     pane.instHead = Head("Dungeon", W_INST)
-    pane.instHead:SetPoint("RIGHT", comp, "LEFT", -GAP, 0)
+    pane.instHead:SetPoint("RIGHT", pane.compHead, "LEFT", -GAP, 0)
     pane.diffHead = Head("", W_DIFF)
     pane.diffHead:SetPoint("RIGHT", pane.instHead, "LEFT", 0, 0)
     local name = Head("Name")

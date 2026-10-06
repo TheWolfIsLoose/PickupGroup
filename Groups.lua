@@ -97,25 +97,21 @@ local function TotalBosses(mapID)
             and C_EncounterJournal.GetInstanceForGameMap(mapID)
         if not (instance and instance > 0) and EJ_GetInstanceForMap then instance = EJ_GetInstanceForMap(mapID) end
         if instance and instance > 0 then
-            while true do
-                local name = EJ_GetEncounterInfoByIndex(n + 1, instance)
-                if not name then break end
-                n = n + 1; names[n] = name
-            end
-            -- Without the instance selected the journal answers nothing. Select
-            -- it, count, and put the journal back (never while it's open).
-            if n == 0 and not (EncounterJournal and EncounterJournal:IsShown()) then
-                local before = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
-                -- Some instances the journal refuses to select (it throws).
-                if pcall(EJ_SelectInstance, instance) then
-                    while true do
-                        local name = EJ_GetEncounterInfoByIndex(n + 1)
-                        if not name then break end
-                        n = n + 1; names[n] = name
-                    end
+            -- The journal lists only its selected instance's bosses, whatever
+            -- instance we ask for (with another raid open in it, every raid got
+            -- that raid's bosses). Select ours, read, put the journal back.
+            -- Never while it's open: try again on a later search.
+            if EncounterJournal and EncounterJournal:IsShown() then return nil end
+            local before = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+            -- Some instances the journal refuses to select (it throws).
+            if pcall(EJ_SelectInstance, instance) then
+                while true do
+                    local name = EJ_GetEncounterInfoByIndex(n + 1)
+                    if not name then break end
+                    n = n + 1; names[n] = name
                 end
-                if before and before > 0 then pcall(EJ_SelectInstance, before) end
             end
+            if before and before > 0 then pcall(EJ_SelectInstance, before) end
         end
         bossCount[mapID], bossNames[mapID] = n > 0 and n or false, names
         ns.Trace("raid", "map", mapID, "journal instance", tostring(instance), "bosses", n)

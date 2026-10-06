@@ -1,3 +1,4 @@
-## v1.0.1
+## v1.0.2
 
-- Realm-region filtering (NA, Oceanic, Brazil, Latin America) now only appears in the Americas. In Europe, Korea, Taiwan and China the realm toggles are hidden and no group or applicant is filtered or dimmed by realm.
+- Raid boss lists are right again: with the Adventure Guide left on another instance, every raid could show that instance's bosses.
+- Raid results give group names more room: the boss count now sits next to the raid (VA 0/8) and the role counts are tighter.
