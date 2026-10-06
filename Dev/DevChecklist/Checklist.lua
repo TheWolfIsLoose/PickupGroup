@@ -1,11 +1,9 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "StockClerk 1.3.1 candidate + PickupGroup 1.0 follow-ups"
-local W, S, P, C = "StockClerk: main window", "StockClerk: side panel", "PickupGroup: in groups (organic)", "PickupGroup: CurseForge"
+DevChecklist_Round = "PickupGroup 1.0.2 candidate: raid boss lists"
+local R = "PickupGroup: raid search"
 DevChecklist_Items = {
-    { W, "/clerk: the Item ID and Target boxes, the Need / Cap cells and the Restock button have a gray outline and light fill at rest; hover lightens the outline; typing in a box (or editing a cell) turns it mint.", "screenshot" },
-    { W, "Mine / Warband at the top: the list on screen has a bar under it; switch lists and the bar follows.", "say done" },
-    { S, "Open the side panel: checkboxes have gray outlines, rows evenly spaced, nothing overlapping Add common consumables or Recent activity.", "screenshot" },
-    { P, "Whenever it happens: a key you joined through a sign-up ends with a passed vote to abandon: its history row reads Bailed with the level.", "say done (log)" },
-    { C, "Paste Dev/CURSEFORGE.md into the description, upload .assets/logo.png as the logo, add screenshots to the gallery (tell Claude which shots).", "when ready" },
+    { R, "Open the Adventure Guide on any raid or dungeon, close it, then search Raids - Midnight. Filter tab: Venomous Abyss lists its 8 bosses, Tidebound Grotto its 1 (Nymrissa Wavecaller); the Bosses column reads x/8 and x/1.", "screenshot" },
+    { R, "Hover a raid row's Bosses cell: the tooltip names that raid's own bosses.", "say done" },
+    { R, "/reload when finished so Claude can read the log.", "say done" },
 }
