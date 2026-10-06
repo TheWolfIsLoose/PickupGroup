@@ -2,6 +2,11 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.2 (2026-10-05)
+
+- Boss lists: `EJ_GetEncounterInfoByIndex(i, instanceID)` answers for the journal's selected instance, not the one asked, so with the Adventure Guide left on another instance every raid got its bosses (player saw Taz'Rah / Atroxus / Charonus under both Midnight raids, rows x/3). `TotalBosses` now always selects the raid, reads, and restores the journal's instance; while the journal is shown it caches nothing and retries on the next search. Static per-season boss tables considered and rejected (localized names must match `GetSearchResultEncounterInfo`; per-season upkeep).
+- Raid row layout (player picked option C of three mockups): no Bosses column; the count rides dimmed in the raid cell (`VA 0/8`, `W_RAID_INST` 42), comp is the three role counts at 22px steps (`W_RAID_COMP` 68, room for 30), both re-anchored per view in `PaintRow` / `Render`. Names gain ~50px. Dungeon view unchanged.
+
 ## v1.0.1 (2026-10-05)
 
 Realm regions are Americas-only. `Groups.SUBREGIONS = GetCurrentRegion() == 1`; elsewhere `Groups.Region` returns nil, the sidecar skips the region row (keys, raid, leading), the filter summary drops "realms", and the leader view neither dims by region nor shows the tooltip line. Avoids EU realms sharing names with listed ones (Nagrand, Ragnaros, Frostmourne) being tagged OCE / LAT, and NA-off hiding everything. Untested outside the Americas; simulate by setting the check to `== 3`.
