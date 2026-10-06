@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.3 (2026-10-06)
+
+Teleport after the key (player: timed key, still grouped in Silvermoon, the button came back). `UpdateTeleport` remembers `entered`, the party dungeon seen while `IsInInstance()`; that dungeon no longer gets the button. Cleared when the group breaks up; a new listing (another dungeon) shows it again. Rules stay as the player set them: known + off cooldown, a dungeon PickupGroup knows (party listing or last sign-up joined), group full (5/5), outside an instance. Gap: `entered` is session-only, so a /reload in town after the key shows it again.
+
 ## v1.0.2 (2026-10-05)
 
 - Boss lists: `EJ_GetEncounterInfoByIndex(i, instanceID)` answers for the journal's selected instance, not the one asked, so with the Adventure Guide left on another instance every raid got its bosses (player saw Taz'Rah / Atroxus / Charonus under both Midnight raids, rows x/3). `TotalBosses` now always selects the raid, reads, and restores the journal's instance; while the journal is shown it caches nothing and retries on the next search. Static per-season boss tables considered and rejected (localized names must match `GetSearchResultEncounterInfo`; per-season upkeep).
