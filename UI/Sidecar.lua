@@ -661,6 +661,15 @@ local function Build()
         Filters.Reset(editing)
         Sidecar.Paint(); Changed()
     end)
+    -- Name and version, bottom right on every tab (level with Reset), as
+    -- StockClerk's header shows them; amber for alpha/beta.
+    local version = ns.Version()
+    local versionLabel = frame:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    versionLabel:SetPoint("RIGHT", frame, "BOTTOMRIGHT", -PAD, PAD + 11)
+    versionLabel:SetText(((version:match("%-alpha") or version:match("%-beta")) and "|cffffb84d" or "|cff8c8c8c") .. version .. "|r")
+    local nameLabel = frame:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    nameLabel:SetPoint("RIGHT", versionLabel, "LEFT", -6, 1)
+    nameLabel:SetText("|cff98FF98Pickup|rGroup")
     -- Raider.IO's profile panel (when loaded) moves over to the sidecar's
     -- right edge while it's open, and back when it closes.
     frame:HookScript("OnShow", Sidecar.MoveRaiderIO)
