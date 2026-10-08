@@ -124,7 +124,7 @@ local function Ago(sec)
 end
 
 local SHOW = 300  -- ponytail: newest 300 drawn; page or pool rows if anyone wants more
-local COLS = { { "When", 74 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 130 }, { "Ended", 70 } }
+local COLS = { { "When", 100 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 104 }, { "Ended", 70 } }
 local ROW = 18
 
 local hist, allChars
@@ -158,11 +158,29 @@ local function Since()
     return first or time()
 end
 
-local function LifetimeDeclines()
-    if not allChars then return Nos(ns.Applications.Lifetime()) end
-    local n = 0
-    for _, c in pairs(ns.db.chars or {}) do n = n + Nos(ns.Applications.Lifetime(c)) end
-    return n
+-- Lifetime counts for the scope, summed over characters with All characters.
+local function Counts()
+    if not allChars then return ns.Applications.Lifetime() end
+    local sum = {}
+    for _, c in pairs(ns.db.chars or {}) do
+        for k, v in pairs(ns.Applications.Lifetime(c)) do sum[k] = (sum[k] or 0) + v end
+    end
+    return sum
+end
+local function LifetimeDeclines() return Nos(Counts()) end
+
+-- Acceptance: leaders who said yes (an invite counts, even one you turned
+-- down) out of every sign-up a leader answered. Success: keys timed out of
+-- keys run (raids have no timer, so they sit this one out).
+local function Pct(a, b)
+    if b == 0 then return "nothing to judge yet" end
+    return ("%d%% (%d of %d)"):format(math.floor(a * 100 / b + 0.5), a, b)
+end
+local function RatesLine(t)
+    local yes = (t.joined or 0) + (t.invitedeclined or 0)
+    local keys = (t.timed or 0) + (t.depleted or 0) + (t.abandoned or 0)
+    return ("Acceptance rate: %s. Success rate: %s."):format(Pct(yes, yes + Nos(t)),
+        keys > 0 and Pct(t.timed or 0, keys):gsub("%)$", " keys timed)") or Pct(0, 0))
 end
 
 -- Today, the fastest no, and the longest run of sign-ups that never got in.
@@ -201,7 +219,7 @@ function History.StatsLine()
     local was = allChars
     allChars = false
     local n = LifetimeDeclines()
-    local line = RecordsLine(Records(Entries())) .. (" Since %s: turned away %s time%s. %s"):format(
+    local line = RecordsLine(Records(Entries())) .. " " .. RatesLine(Counts()) .. (" Since %s: turned away %s time%s. %s"):format(
         date("%b %d, %Y", Since()), BreakUpLargeNumbers(n), n == 1 and "" or "s", Quip(n))
     allChars = was
     return line
@@ -269,8 +287,13 @@ local function BuildHistory()
     f.records:SetPoint("TOPLEFT", 12, -74)
     f.records:SetPoint("RIGHT", -12, 0)
     f.records:SetJustifyH("LEFT")
+    f.rates = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    f.rates:SetPoint("TOPLEFT", f.records, "BOTTOMLEFT", 0, -4)
+    f.rates:SetPoint("RIGHT", -12, 0)
+    f.rates:SetJustifyH("LEFT")
+    f.rates:SetTextColor(MINT[1], MINT[2], MINT[3])
     f.tally = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    f.tally:SetPoint("TOPLEFT", f.records, "BOTTOMLEFT", 0, -4)
+    f.tally:SetPoint("TOPLEFT", f.rates, "BOTTOMLEFT", 0, -4)
     f.tally:SetPoint("RIGHT", -12, 0)
     f.tally:SetJustifyH("LEFT")
     f.tally:SetTextColor(0.74, 0.74, 0.74)
@@ -301,6 +324,7 @@ local function BuildHistory()
         f.bigLabel:SetText((no == 1 and "time" or "times") .. " turned away since " .. date("%b %d, %Y", Since()))
         f.quip:SetText(Quip(no))
         f.records:SetText(RecordsLine(Records(list)))
+        f.rates:SetText(RatesLine(Counts()))
         f.tally:SetText(#list > 0 and Tally(list) or "Nothing here yet. Go get rejected; it builds character.")
         -- The Character column only when showing every character.
         local hideWho = not allChars
@@ -332,7 +356,7 @@ local function BuildHistory()
             local look = LOOK[e.result or "pending"] or { e.result or "?", GREY }
             local where = (e.code or e.activity or "?") .. (e.difficulty and (" " .. e.difficulty) or "")
                 .. (e.level and (" +" .. e.level) or "")
-            r.cells[1]:SetText(date("%m/%d %H:%M", e.ts or 0))
+            r.cells[1]:SetText(date("%m/%d/%y %H:%M", e.ts or 0))
             r.cells[2]:SetText(list[i].who or "")
             r.cells[2]:SetShown(not hideWho)
             r.cells[3]:SetText(where)

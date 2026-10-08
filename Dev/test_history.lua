@@ -38,5 +38,8 @@ print(line)
 assert(line:find("Today: 6 sign%-ups, 3 nos, 1 got in%."), "today")
 assert(line:find("Fastest no: 3 s %(they didn't read the note%)"), "fastest")
 assert(line:find("Longest dry spell: 3 sign%-ups"), "dry spell")
+-- 1 got in (the timed key) of 4 answered (2 declined, 1 filled); 1 of 1 keys timed.
+assert(line:find("Acceptance rate: 25%% %(1 of 4%)%."), "acceptance")
+assert(line:find("Success rate: 100%% %(1 of 1 keys timed%)%."), "success")
 assert(line:find("turned away 3 times%. A few polite"), "lifetime + quip")
 print("history OK")
