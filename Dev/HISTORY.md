@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.5 (2026-10-08)
+
+- No-match note: when `C_LFGList.GetSearchResults()` returns groups but nothing survives `Groups.List` (filter or clean-up), the pane shows a centred "No groups fit your filter" (or "Clean-up hid every group that fits") with the listed count. With nothing listed, Blizzard's own Start a Group shows through instead, so no note then. Tested in game.
+- History: When column `mm/dd/yy HH:MM` (86 px, Leader 118). Rates line (mint, under the records) from lifetime counts, summed per scope: acceptance = (joined + invitedeclined) / (that + NO set); success = timed / (timed + depleted + abandoned). Also appended to `/pug stats`. Tested in game.
+- History Export: `History.Export()` builds CSV for the scope (All characters toggle): totals per character (lifetime counts, rates as whole %), blank line, then every kept sign-up newest first with saved result words and answer time in seconds. Shown in a shared `CopyWindow` (the /pug log popup now uses it too). Tested in game.
+- `Applications` MAX 1000 -> 2000 sign-ups per character (~0.5 MB saved worst case).
+
 ## v1.0.4 (2026-10-08)
 
 - Ended sign-ups no longer bypass the filter: `Groups.List` let any row with `row.status` (incl. `LastEnding`) skip `Filters.Pass` (player: withdrew from a TOS because it would have no lust; it still showed with Reapply). They now show only if they pass; applied/invited stay pinned.

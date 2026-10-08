@@ -19,7 +19,8 @@ local _, ns = ...
 local Applications = {}
 ns.Applications = Applications
 
-local MAX = 1000
+-- ponytail: 2000 sign-ups kept per character (~0.5 MB saved); lifetime counts never trim.
+local MAX = 2000
 local JOIN_WINDOW = 3 * 3600  -- a finished key belongs to the last group joined within this
 
 -- WoW's status words to ours; statuses not listed are not an ending.
@@ -69,7 +70,7 @@ local function RoleText()
 end
 
 -- Lifetime counts per character (c.tally): never trimmed, unlike the
--- 1000-entry list, so "declined 2,417 times" stays true. Seeded once from
+-- capped list, so "declined 2,417 times" stays true. Seeded once from
 -- the list. Keys: applied, joined, timed, depleted and each ending word.
 local function Seed(c)
     local t = { applied = #(c.apps or {}) }
@@ -117,7 +118,7 @@ local function Start(id)
     }
     local list = List()
     list[#list + 1] = e
-    -- ponytail: table.remove(t, 1) shifts the list; fine at 1000 entries.
+    -- ponytail: table.remove(t, 1) shifts the list; fine at MAX entries.
     while #list > MAX do table.remove(list, 1) end
     open[id] = e
     Bump("applied")

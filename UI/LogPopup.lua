@@ -37,11 +37,12 @@ local function Window(name, w, h, title)
     return f
 end
 
-local function Build()
-    local f = Window("PickupGroupLogPopup", 520, 420, "|cff98ff98Pickup|rGroup log")
-    local hint = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    hint:SetPoint("TOPLEFT", 12, -28)
-    hint:SetText("|cff8c8c8cEverything is selected: press Ctrl+C and paste it into your bug report.|r")
+-- A window with a pre-selected text box: f.Fill(text) puts text in and selects it.
+local function CopyWindow(name, title, hint)
+    local f = Window(name, 520, 420, title)
+    local h = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    h:SetPoint("TOPLEFT", 12, -28)
+    h:SetText("|cff8c8c8c" .. hint .. "|r")
 
     local well = f:CreateTexture(nil, "BACKGROUND")
     well:SetColorTexture(unpack(Kit.Palette.bgDark))
@@ -59,19 +60,25 @@ local function Build()
     scroll:SetScrollChild(edit)
     -- A hidden focused box swallows every key game-wide.
     f:SetScript("OnHide", function() edit:ClearFocus() end)
+    function f.Fill(text)
+        edit:SetText(text)
+        scroll:SetVerticalScroll(0)
+        edit:SetFocus()
+        edit:HighlightText()
+    end
+    return f
+end
 
+local function Build()
+    local f = CopyWindow("PickupGroupLogPopup", "|cff98ff98Pickup|rGroup log",
+        "Everything is selected: press Ctrl+C and paste it into your bug report.")
     local clear = CreateFrame("Button", nil, f)
     clear:SetSize(80, 22)
     clear:SetPoint("BOTTOMRIGHT", -8, 8)
     Kit.Button(clear)
     clear:SetText("Clear log")
 
-    local function Fill()
-        edit:SetText(ns.Log.Report())
-        scroll:SetVerticalScroll(0)
-        edit:SetFocus()
-        edit:HighlightText()
-    end
+    local function Fill() f.Fill(ns.Log.Report()) end
     clear:SetScript("OnClick", function() ns.Log.Clear(); Fill() end)
     f:SetScript("OnShow", Fill)
     return f
@@ -124,16 +131,16 @@ local function Ago(sec)
 end
 
 local SHOW = 300  -- ponytail: newest 300 drawn; page or pool rows if anyone wants more
-local COLS = { { "When", 74 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 130 }, { "Ended", 70 } }
+local COLS = { { "When", 86 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 118 }, { "Ended", 70 } }
 local ROW = 18
 
-local hist, allChars
+local hist, allChars, exportWin
 
 local function Entries()
     local out, mine = {}, UnitName("player") .. "-" .. GetRealmName()
     for key, c in pairs(ns.db.chars or {}) do
         if allChars or key == mine then
-            for _, e in ipairs(c.apps or {}) do out[#out + 1] = { e = e, who = key:match("^[^%-]+") } end
+            for _, e in ipairs(c.apps or {}) do out[#out + 1] = { e = e, key = key, who = key:match("^[^%-]+") } end
         end
     end
     table.sort(out, function(a, b) return (a.e.ts or 0) > (b.e.ts or 0) end)
@@ -158,11 +165,33 @@ local function Since()
     return first or time()
 end
 
-local function LifetimeDeclines()
-    if not allChars then return Nos(ns.Applications.Lifetime()) end
-    local n = 0
-    for _, c in pairs(ns.db.chars or {}) do n = n + Nos(ns.Applications.Lifetime(c)) end
-    return n
+-- Lifetime counts for the scope, summed over characters with All characters.
+local function Counts()
+    if not allChars then return ns.Applications.Lifetime() end
+    local sum = {}
+    for _, c in pairs(ns.db.chars or {}) do
+        for k, v in pairs(ns.Applications.Lifetime(c)) do sum[k] = (sum[k] or 0) + v end
+    end
+    return sum
+end
+local function LifetimeDeclines() return Nos(Counts()) end
+
+-- Acceptance: leaders who said yes (an invite counts, even one you turned
+-- down) out of every sign-up a leader answered. Success: keys timed out of
+-- keys run (raids have no timer, so they sit this one out).
+local function Pct(a, b)
+    if b == 0 then return "nothing to judge yet" end
+    return ("%d%% (%d of %d)"):format(math.floor(a * 100 / b + 0.5), a, b)
+end
+-- yes, answered, timed, keys run
+local function Rates(t)
+    local yes = (t.joined or 0) + (t.invitedeclined or 0)
+    return yes, yes + Nos(t), t.timed or 0, (t.timed or 0) + (t.depleted or 0) + (t.abandoned or 0)
+end
+local function RatesLine(t)
+    local yes, asked, _, keys = Rates(t)
+    return ("Acceptance rate: %s. Success rate: %s."):format(Pct(yes, asked),
+        keys > 0 and Pct(t.timed or 0, keys):gsub("%)$", " keys timed)") or Pct(0, 0))
 end
 
 -- Today, the fastest no, and the longest run of sign-ups that never got in.
@@ -201,10 +230,56 @@ function History.StatsLine()
     local was = allChars
     allChars = false
     local n = LifetimeDeclines()
-    local line = RecordsLine(Records(Entries())) .. (" Since %s: turned away %s time%s. %s"):format(
+    local line = RecordsLine(Records(Entries())) .. " " .. RatesLine(Counts()) .. (" Since %s: turned away %s time%s. %s"):format(
         date("%b %d, %Y", Since()), BreakUpLargeNumbers(n), n == 1 and "" or "s", Quip(n))
     allChars = was
     return line
+end
+
+-- Export: CSV for a spreadsheet, for the scope in view. Two tables, a blank
+-- line apart: lifetime totals per character (never trimmed), then every
+-- sign-up kept, newest first. Result words are the saved ones (see
+-- Applications.lua), so they stay stable for formulas.
+local function Csv(v)
+    v = v == nil and "" or tostring(v)
+    if v:find('[,"\n]') then v = '"' .. v:gsub('"', '""') .. '"' end
+    return v
+end
+local function CsvRow(t)
+    local out = {}
+    for i = 1, #t do out[i] = Csv(t[i] == false and "" or t[i]) end
+    return table.concat(out, ",")
+end
+local function Share(a, b) return b > 0 and math.floor(a * 100 / b + 0.5) or false end
+local TOTALS = { "joined", "timed", "depleted", "abandoned", "declined", "filled", "delisted", "timedout",
+                 "withdrawn", "movedon", "invitedeclined", "failed" }
+function History.Export()
+    local mine, keys = UnitName("player") .. "-" .. GetRealmName(), {}
+    for key in pairs(ns.db.chars or {}) do if allChars or key == mine then keys[#keys + 1] = key end end
+    table.sort(keys)
+    local lines = { CsvRow({ "character", "counting since", "sign-ups", "got in", "timed", "depleted", "abandoned",
+        "declined", "too slow", "vanished", "ghosted", "withdrawn", "moved on", "invite declined", "game said no",
+        "acceptance %", "success %" }) }
+    for _, key in ipairs(keys) do
+        local c = ns.db.chars[key]
+        local t = ns.Applications.Lifetime(c)
+        local row = { key, date("%Y-%m-%d", c.since), t.applied or 0 }
+        for _, k in ipairs(TOTALS) do row[#row + 1] = t[k] or 0 end
+        local yes, asked, timed, run = Rates(t)
+        row[#row + 1] = Share(yes, asked)
+        row[#row + 1] = Share(timed, run)
+        lines[#lines + 1] = CsvRow(row)
+    end
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = CsvRow({ "character", "signed up", "code", "activity", "difficulty", "key level", "leader",
+        "roles", "result", "answered in (s)" })
+    for _, x in ipairs(Entries()) do
+        local e = x.e
+        lines[#lines + 1] = CsvRow({ x.key, e.ts and date("%Y-%m-%d %H:%M", e.ts) or false, e.code or false,
+            e.activity or false, e.difficulty or false, e.level or false, e.leader or false, e.roles or false,
+            e.result or "pending", (e.ts and e.ended and e.ended >= e.ts) and (e.ended - e.ts) or false })
+    end
+    return table.concat(lines, "\n")
 end
 
 local TALLY = { declined = "nopes", filled = "too slow", delisted = "vanished", withdrawn = "cold feet",
@@ -264,13 +339,39 @@ local function BuildHistory()
         GameTooltip:Show()
     end)
     reset:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Export what's in view (this character, or every one with All characters).
+    local export = CreateFrame("Button", nil, f)
+    export:SetSize(60, 20)
+    export:SetPoint("RIGHT", reset, "LEFT", -6, 0)
+    Kit.Button(export)
+    export:SetNormalFontObject("PickupGroupFontSmall")
+    export:SetText("Export")
+    export:SetScript("OnClick", function()
+        exportWin = exportWin or CopyWindow("PickupGroupExport", "Sign-up history export",
+            "Everything is selected: press Ctrl+C and paste it into a spreadsheet.")
+        exportWin:Show()
+        exportWin.Fill(History.Export())
+    end)
+    export:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Export")
+        GameTooltip:AddLine("This character's sign-ups and lifetime counts as spreadsheet text (every character's with All characters ticked). Your rejections, now in spreadsheet form.", 0.74, 0.74, 0.74, true)
+        GameTooltip:Show()
+    end)
+    export:HookScript("OnLeave", function() GameTooltip:Hide() end)
     -- Records and tally wrap as they like; the table follows them down.
     f.records = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     f.records:SetPoint("TOPLEFT", 12, -74)
     f.records:SetPoint("RIGHT", -12, 0)
     f.records:SetJustifyH("LEFT")
+    f.rates = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    f.rates:SetPoint("TOPLEFT", f.records, "BOTTOMLEFT", 0, -4)
+    f.rates:SetPoint("RIGHT", -12, 0)
+    f.rates:SetJustifyH("LEFT")
+    f.rates:SetTextColor(MINT[1], MINT[2], MINT[3])
     f.tally = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    f.tally:SetPoint("TOPLEFT", f.records, "BOTTOMLEFT", 0, -4)
+    f.tally:SetPoint("TOPLEFT", f.rates, "BOTTOMLEFT", 0, -4)
     f.tally:SetPoint("RIGHT", -12, 0)
     f.tally:SetJustifyH("LEFT")
     f.tally:SetTextColor(0.74, 0.74, 0.74)
@@ -301,6 +402,7 @@ local function BuildHistory()
         f.bigLabel:SetText((no == 1 and "time" or "times") .. " turned away since " .. date("%b %d, %Y", Since()))
         f.quip:SetText(Quip(no))
         f.records:SetText(RecordsLine(Records(list)))
+        f.rates:SetText(RatesLine(Counts()))
         f.tally:SetText(#list > 0 and Tally(list) or "Nothing here yet. Go get rejected; it builds character.")
         -- The Character column only when showing every character.
         local hideWho = not allChars
@@ -332,7 +434,7 @@ local function BuildHistory()
             local look = LOOK[e.result or "pending"] or { e.result or "?", GREY }
             local where = (e.code or e.activity or "?") .. (e.difficulty and (" " .. e.difficulty) or "")
                 .. (e.level and (" +" .. e.level) or "")
-            r.cells[1]:SetText(date("%m/%d %H:%M", e.ts or 0))
+            r.cells[1]:SetText(date("%m/%d/%y %H:%M", e.ts or 0))
             r.cells[2]:SetText(list[i].who or "")
             r.cells[2]:SetShown(not hideWho)
             r.cells[3]:SetText(where)
