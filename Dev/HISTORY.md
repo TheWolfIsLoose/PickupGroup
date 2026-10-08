@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.4 (2026-10-08)
+
+- Ended sign-ups no longer bypass the filter: `Groups.List` let any row with `row.status` (incl. `LastEnding`) skip `Filters.Pass` (player: withdrew from a TOS because it would have no lust; it still showed with Reapply). They now show only if they pass; applied/invited stay pinned.
+- Filled shows the final comp: the outcome row came from `cache[id]` (read before the last seats filled) and `Read` dropped delisted listings. `Groups.Read(id, keepDelisted)` re-reads on the status event; `declined_full` stays pinned until the next search (Blizzard-like), other endings keep `OUTCOME_TTL`.
+- Sidecar footer: "PickupGroup" + version (grey, amber for alpha/beta) bottom right on every tab, level with Reset, mirroring StockClerk's header.
+- Friend leader fallback (untested in game): the game sent no friend count for a listing led by a Battle.net friend (cross-realm). `Groups.IsFriend` checks the leader against character friends and online BNet WoW characters (squeezed name-realm, set rebuilt per `List`); a hit sets `friends = 1`, `friendLeader` (tooltip names the leader) and traces once. Non-leader friends still rely on the game's counts.
+
 ## v1.0.3 (2026-10-06)
 
 Teleport after the key (player: timed key, still grouped in Silvermoon, the button came back). `UpdateTeleport` remembers `entered`, the party dungeon seen while `IsInInstance()`; that dungeon no longer gets the button. Cleared when the group breaks up; a new listing (another dungeon) shows it again. Rules stay as the player set them: known + off cooldown, a dungeon PickupGroup knows (party listing or last sign-up joined), group full (5/5), outside an instance. Gap: `entered` is session-only, so a /reload in town after the key shows it again.
