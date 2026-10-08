@@ -1,6 +1,6 @@
-## v1.0.4
+## v1.0.5
 
-- Groups you signed up to before no longer skip your filter: if a group stops fitting, it drops out of the list.
-- When a group you signed up to fills, its row shows the final group and stays until your next search.
-- PickupGroup's name and version now sit at the bottom of the side panel.
-- A group led by someone on your friends list now always gets the friend mark, even when the game doesn't flag it.
+- When groups are listed but none fit your filter, the list now says so instead of sitting blank.
+- Sign-up history: dates show the year, plus your acceptance rate (leaders who said yes) and success rate (keys timed). Both are in /pug stats too.
+- Sign-up history: Export turns this character's history (or every character's, with All characters ticked) into text you can paste into a spreadsheet.
+- Sign-up history now keeps 2,000 sign-ups per character (was 1,000).
