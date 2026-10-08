@@ -218,6 +218,7 @@ local function RowTooltip(frame)
         local friends = ok and Names(bnet) or {}
         for _, n in ipairs(ok and Names(chars) or {}) do friends[#friends + 1] = n end
         local mates = ok and Names(guild) or {}
+        if #friends == 0 and row.friendLeader then friends[1] = Ambiguate(row.leader, "short") end
         local g = GuildColor()
         if #friends > 0 then
             GameTooltip:AddLine((#friends == 1 and "Friend: " or "Friends: ") .. table.concat(friends, ", "), FRIEND[1], FRIEND[2], FRIEND[3], true)
@@ -835,6 +836,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
 end)
 
 ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
+    for id, o in pairs(recent) do if o.untilT == math.huge then recent[id] = nil end end
     local now = {}
     wipe(fresh)
     local _, ids = C_LFGList.GetSearchResults()
@@ -858,9 +860,15 @@ ns.On("LFG_LIST_ACTIVE_ENTRY_UPDATE", function() Pane.Update() end)
 ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
     ns.Trace("apply", "status", tostring(id), tostring(old), "->", tostring(new))
     local o = OUTCOME[new]
-    local row = cache[id] or (o and Groups.Read(id))
+    -- Read it again (closed listings too): the cached row predates the last
+    -- seats filling, so a filled group would show its old comp.
+    local ok, final = pcall(Groups.Read, id, true)
+    local row = (o and ok and final) or cache[id]
     if o and row then
-        recent[id] = { row = row, label = o[1], color = o[2], untilT = GetTime() + OUTCOME_TTL }
+        -- Filled stays until the next search, as in Blizzard's list, so the
+        -- final comp can be read; other endings show for OUTCOME_TTL.
+        local untilT = new == "declined_full" and math.huge or GetTime() + OUTCOME_TTL
+        recent[id] = { row = row, label = o[1], color = o[2], untilT = untilT }
         C_Timer.After(OUTCOME_TTL + 0.1, RenderSoon)
     end
     RenderSoon()

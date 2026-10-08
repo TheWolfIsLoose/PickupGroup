@@ -49,6 +49,39 @@ function Groups.Region(leader)
     return REALM_REGION[realm:gsub("[%s%-']", ""):lower()] or "NA"
 end
 
+-- Character friends and online Battle.net friends' WoW characters, as
+-- squeezed "name-realm" keys; rebuilt once per list (Groups.List clears it).
+local function Squeeze(s) return (s:gsub("[%s%-']", ""):lower()) end
+local friendSet
+local function FriendSet()
+    if friendSet then return friendSet end
+    friendSet = {}
+    local home = GetRealmName() or ""
+    local function Add(name, realm)
+        if type(name) ~= "string" or name == "" then return end
+        local n, r = name:match("^([^%-]+)%-(.+)$")
+        friendSet[Squeeze(n or name) .. "-" .. Squeeze(r or realm or home)] = true
+    end
+    for i = 1, C_FriendList.GetNumFriends() or 0 do
+        local f = C_FriendList.GetFriendInfoByIndex(i)
+        if f then Add(f.name) end
+    end
+    for i = 1, BNGetNumFriends() or 0 do
+        for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) or 0 do
+            local g = C_BattleNet.GetFriendGameAccountInfo(i, j)
+            if g and g.clientProgram == BNET_CLIENT_WOW then Add(g.characterName, g.realmName) end
+        end
+    end
+    return friendSet
+end
+
+-- Is the leader ("Name" or "Name-Realm") on the player's friends list?
+function Groups.IsFriend(leader)
+    if type(leader) ~= "string" or issecretvalue(leader) then return false end
+    local n, r = leader:match("^([^%-]+)%-(.+)$")
+    return FriendSet()[Squeeze(n or leader) .. "-" .. Squeeze(r or GetRealmName() or "")] == true
+end
+
 -- Spec icons by class file and (localized) spec name, built once.
 local specIcons
 local function SpecIcon(classFile, specName)
@@ -199,7 +232,9 @@ function Groups.CanHave(row, set)
     return buffSeats - math.max(0, need.flex - otherSeats) >= 1
 end
 
-function Groups.Read(id)
+-- keepDelisted: read a listing that has closed (a sign-up's group filling
+-- shows its final comp, as Blizzard's list does).
+function Groups.Read(id, keepDelisted)
     local info = C_LFGList.GetSearchResultInfo(id)
     -- In a running key (and other restricted content) listings are secret:
     -- untestable, so skip them rather than error once per listing.
@@ -212,7 +247,7 @@ function Groups.Read(id)
         end
         return nil
     end
-    if info.isDelisted then return nil end
+    if info.isDelisted and not keepDelisted then return nil end
     local activityID = info.activityIDs and info.activityIDs[1] or info.activityID
     local activity = activityID and C_LFGList.GetActivityInfoTable(activityID) or {}
     local isRaid = (activity.maxNumPlayers or 5) > 5
@@ -255,6 +290,15 @@ function Groups.Read(id)
         friends = (info.numBNetFriends or 0) + (info.numCharFriends or 0), guild = info.numGuildMates or 0,
         fits = fits,
     }
+    -- The game's counts can miss a friend who leads (player: a Battle.net
+    -- friend's own listing came with no mark): check the leader by name.
+    if row.friends == 0 and Groups.IsFriend(info.leaderName) then
+        row.friends, row.friendLeader = 1, true
+        if not Groups.friendTraced then
+            Groups.friendTraced = true
+            ns.Trace("groups", "leader is a friend, game counted none:", tostring(row.code))
+        end
+    end
     row.status, row.pending, row.remaining = select(2, C_LFGList.GetApplicationInfo(id))
     if row.status == "none" then
         -- WoW forgets an ended sign-up once a search re-issues the listing.
@@ -320,6 +364,7 @@ end
 -- Returns pinned, rows, and how many rows clean-up hid.
 function Groups.List(showHidden)
     local pinned, rows, hidden = {}, {}, 0
+    friendSet = nil  -- friends come online and go: re-read once per list
     local _, results = C_LFGList.GetSearchResults()
     local seen = {}
     for _, id in ipairs(C_LFGList.GetApplications() or {}) do
@@ -330,9 +375,10 @@ function Groups.List(showHidden)
         if not seen[id] then
             local row = SafeRead(id)
             -- People you know always show (player): Blizzard's search already
-            -- narrowed them; our own rules and clean-up don't.
+            -- narrowed them; our own rules and clean-up don't. Ended sign-ups
+            -- get no pass: they show (with Reapply) only if they still fit.
             local known = row and (row.friends > 0 or row.guild > 0)
-            if row and (row.status or known or ns.Filters.Pass(row)) then
+            if row and (known or ns.Filters.Pass(row)) then
                 row.hidden = not known and ns.Cleanup.Reason(row) or nil
                 if row.hidden then hidden = hidden + 1 end
                 if (row.hidden ~= nil) == (showHidden == true) then rows[#rows + 1] = row end
