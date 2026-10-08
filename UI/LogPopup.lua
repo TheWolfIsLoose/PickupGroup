@@ -124,7 +124,7 @@ local function Ago(sec)
 end
 
 local SHOW = 300  -- ponytail: newest 300 drawn; page or pool rows if anyone wants more
-local COLS = { { "When", 100 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 104 }, { "Ended", 70 } }
+local COLS = { { "When", 86 }, { "Character", 90 }, { "Where", 90 }, { "Leader", 118 }, { "Ended", 70 } }
 local ROW = 18
 
 local hist, allChars
