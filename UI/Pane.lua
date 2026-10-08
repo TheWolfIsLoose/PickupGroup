@@ -557,6 +557,16 @@ function Pane.Render()
     end
     for i = slot + 1, #rows do rows[i]:Hide(); rows[i].row = nil end
     pane.more:Set(offset + (math.min(slot, fit) - nPinned) < #results)
+    -- Blizzard listed groups but none got through: say so rather than show a
+    -- blank list. With none listed, Blizzard's own Start a Group shows instead.
+    local listed = C_LFGList.GetSearchResults() or 0
+    local none = slot == 0 and listed > 0
+    pane.empty:SetShown(none)
+    pane.emptyHint:SetShown(none)
+    if none then
+        pane.empty:SetText(hiddenCount > 0 and "Clean-up hid every group that fits" or "No groups fit your filter")
+        pane.emptyHint:SetText(listed .. (listed == 1 and " group" or " groups") .. " listed for this search")
+    end
     ns.Sidecar.RefreshBosses()
     pane.instHead:SetText(raidView and "Raid" or "Dungeon")
     pane.scoreHead:SetShown(not raidView)
@@ -759,6 +769,11 @@ local function Build()
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
     pane.divider:SetHeight(1)
     pane.more = Kit.More(pane)
+    pane.empty = Text(pane, "PickupGroupFont", "CENTER")
+    pane.empty:SetPoint("BOTTOM", pane, "CENTER", 0, 2)
+    pane.emptyHint = Text(pane, nil, "CENTER")
+    pane.emptyHint:SetPoint("TOP", pane, "CENTER", 0, -2)
+    pane.emptyHint:SetTextColor(0.55, 0.55, 0.55)
     pane:EnableMouseWheel(true)
     pane:SetScript("OnMouseWheel", function(_, delta)
         offset = math.max(0, offset - delta * 3)

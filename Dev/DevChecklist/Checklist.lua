@@ -1,8 +1,9 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "PickupGroup 1.0.3 candidate: teleport after the key"
-local T = "PickupGroup: teleport (organic)"
+DevChecklist_Round = "PickupGroup 1.0.5 candidate: no-match note"
+local D = "PickupGroup: dungeon view"
 DevChecklist_Items = {
-    { T, "Next key from a sign-up: the Teleport button shows once the group is 5/5, before you go in.", "say done" },
-    { T, "After the key, still grouped and back in town: no Teleport button.", "say done (screenshot if it shows)" },
+    { D, "Search with a filter that hides every listed group (e.g. 18-19, only KR + TOS): the list says 'No groups fit your filter' and how many are listed.", "screenshot" },
+    { D, "Loosen the filter until a group fits: the note goes away and rows show.", "say done" },
+    { D, "Search for something nobody has listed: Blizzard's Start a Group shows, with no PickupGroup note on top.", "screenshot" },
 }
