@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.6 (candidate, 2026-10-10)
+
+- My lockout reworked (player, 2026-10-10: a Rogue at 6/8 Heroic VA, loot-locked on 1-6, wants groups on 7/8). Was a one-shot tick of the bosses the character hadn't killed into "must be alive" (ANDed: kept 0/8 groups, dropped 7/8 groups on their last boss; picks keyed by raid only, so a Normal lockout filtered Heroic groups). Now `filter.lockout[raid] = true`, judged live per row by `Filters.Lockout(row)` against `GetSavedInstanceInfo` at the row's difficulty: hide when no boss the character hasn't killed is still alive in the group; otherwise `row.caught` (my kills the group has also done) sorts raids first. Not a hard "caught up" filter: a 1/8 Heroic group may be using the earned skip to the end bosses, so behind only sorts lower (player's call). Names the journal's boss list lacks (lockout or listing) are traced once each. Boss checkboxes stay as the manual "must be alive" rule. Removed `Filters.MatchLockout`, the sidecar's undo table and `Pane.RaidDifficulty` (unused after). Self-check: `Dev/test_lockout.lua`.
+
 ## v1.0.5 (2026-10-08)
 
 - No-match note: when `C_LFGList.GetSearchResults()` returns groups but nothing survives `Groups.List` (filter or clean-up), the pane shows a centred "No groups fit your filter" (or "Clean-up hid every group that fits") with the listed count. With nothing listed, Blizzard's own Start a Group shows through instead, so no note then. Tested in game.

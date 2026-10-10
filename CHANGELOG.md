@@ -1,6 +1,3 @@
-## v1.0.5
+## v1.0.6
 
-- When groups are listed but none fit your filter, the list now says so instead of sitting blank.
-- Sign-up history: dates show the year, plus your acceptance rate (leaders who said yes) and success rate (keys timed). Both are in /pug stats too.
-- Sign-up history: Export turns this character's history (or every character's, with All characters ticked) into text you can paste into a spreadsheet.
-- Sign-up history now keeps 2,000 sign-ups per character (was 1,000).
+- Raids: My lockout is now an on/off switch per raid. It hides groups with nothing left your character can loot this week (at each group's difficulty) and lists the groups that have killed the most of what you've killed first. Groups behind you, which may be skipping ahead, still show further down.

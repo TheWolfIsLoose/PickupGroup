@@ -58,7 +58,6 @@ local panel, pane, backButton, cooldown, countText, summary, hiddenButton
 local showHidden = false
 local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
-local raidDiff = {}  -- raid name -> { difficulty letter -> groups in view }
 local offset = 0
 local lastSearch, armed = 0, nil
 -- New mark: listings not in the previous search's results (leader + activity),
@@ -479,23 +478,6 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
--- The difficulty most groups listed for a raid are on, or nil.
--- The difficulty the player searched ("<raid> (Normal)", Blizzard's
--- suggestion) wins, so it holds with no groups listed; else the one most
--- listed groups for that raid are on.
-local SEARCH_DIFF = { N = PLAYER_DIFFICULTY1, H = PLAYER_DIFFICULTY2, M = PLAYER_DIFFICULTY6 }
-function Pane.RaidDifficulty(raid)
-    local ok, text = pcall(function() return panel.SearchBox:GetText() end)
-    if ok and type(text) == "string" and not issecretvalue(text) and raid and text:find(raid, 1, true) then
-        for d, word in pairs(SEARCH_DIFF) do
-            if text:find("(" .. word .. ")", 1, true) then return d end
-        end
-    end
-    local best, n = nil, 0
-    for d, c in pairs(raidDiff[raid] or {}) do if c > n then best, n = d, c end end
-    return best
-end
-
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     ns.Filters.Sync()  -- before Blizzard's search on a category change, too
@@ -503,17 +485,6 @@ function Pane.Render()
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
     if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
-    -- Difficulty per raid in view (My lockout follows it).
-    wipe(raidDiff)
-    for _, list in ipairs({ pinned, results }) do
-        for _, row in ipairs(list) do
-            if row.isRaid and row.difficulty then
-                local c = raidDiff[row.activity] or {}
-                c[row.difficulty] = (c[row.difficulty] or 0) + 1
-                raidDiff[row.activity] = c
-            end
-        end
-    end
     hiddenButton.text:SetText(showHidden and "|cffffb84dshowing hidden|r" or (hiddenCount > 0 and (hiddenCount .. " hidden") or ""))
     hiddenButton.text:SetTextColor(0.55, 0.55, 0.55)
     hiddenButton:SetWidth(math.max(1, hiddenButton.text:GetStringWidth()))
