@@ -9,7 +9,9 @@
           else set of dungeon names)
     raid: room (difficulty comes from Blizzard's search: the raid suggestion
           picked in its search box carries it),
-          bosses[raid name][boss name] = true (must be alive; absent = either)
+          bosses[raid name][boss name] = true (must be alive; absent = either),
+          lockout[raid name] = true (My lockout: hide groups with no loot left
+          for me, sort the rest by how far past my kills they are)
     lead_keys / lead_raid: regions, minScore / minIlvl (the leader view dims
           applicants who miss them)
 --]]
@@ -68,6 +70,7 @@ function Filters.Summary(f)
         local rules = 0
         for _, bosses in pairs(f.bosses or {}) do for _ in pairs(bosses) do rules = rules + 1 end end
         if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss alive" or " bosses alive") end
+        if next(f.lockout or {}) then out[#out + 1] = "loot left for me" end
     else
         local n = 0
         for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
@@ -102,54 +105,58 @@ function Filters.Dungeons()
     return out
 end
 
--- My lockout, for one raid at one difficulty (the difficulty of the groups
--- listed for it: Blizzard's search carries it). Normal and Heroic lockouts
--- are separate and per boss: bosses this character hasn't killed at that
--- difficulty this week get ticked "must be alive", the rest cleared. A
--- Mythic lockout is whole (only the group on the same lockout can take
--- you): it's matched the same way, with a note. Returns a line saying what
--- it did.
+-- My lockout (live, per raid): judged against each group at the group's
+-- own difficulty, re-read every list. Hides groups with nothing left this
+-- character can loot (every boss it hasn't killed is dead there); the rest
+-- sort by how many of its kills the group has done too (Groups.List). A
+-- group behind that may be skipping ahead, so behind only sorts lower.
 local DIFF_ID = { [14] = "N", [15] = "H", [16] = "M" }
-local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
 
-local function Saved(raidName, diff)
+-- Bosses this character killed in a raid at a difficulty this week (names).
+local function MyKills(raidName, diff)
+    local killed = {}
     for i = 1, GetNumSavedInstances() do
-        local name, _, _, diffID, locked, _, _, isRaid = GetSavedInstanceInfo(i)
-        if isRaid and locked and name == raidName and DIFF_ID[diffID] == diff then return i end
-    end
-end
-
-function Filters.MatchLockout(f, raidName, diff)
-    if not DIFF_WORD[diff] then
-        return "Search this raid with a difficulty first (pick Blizzard's raid + difficulty suggestion)."
-    end
-    local i = Saved(raidName, diff)
-    local killed, n = {}, 0
-    if i then
-        local _, _, _, _, _, _, _, _, _, _, count = GetSavedInstanceInfo(i)
-        for j = 1, count or 0 do
-            local boss, _, isKilled = GetSavedInstanceEncounterInfo(i, j)
-            if boss and isKilled then killed[boss] = true; n = n + 1 end
-        end
-    end
-    f.bosses = f.bosses or {}
-    f.bosses[raidName] = {}
-    local alive = 0
-    for _, raid in ipairs(ns.Groups.Raids()) do
-        if raid.name == raidName then
-            for _, boss in ipairs(raid.bosses) do
-                if not killed[boss] then f.bosses[raidName][boss] = true; alive = alive + 1 end
+        local name, _, _, diffID, locked, _, _, isRaid, _, _, count = GetSavedInstanceInfo(i)
+        if isRaid and locked and name == raidName and DIFF_ID[diffID] == diff then
+            for j = 1, count or 0 do
+                local boss, _, isKilled = GetSavedInstanceEncounterInfo(i, j)
+                if boss and isKilled then killed[boss] = true end
             end
         end
     end
-    local text = i
-        and ("Your %s lockout: %d killed, %d still alive (ticked)."):format(DIFF_WORD[diff], n, alive)
-        or ("No %s lockout this week: every boss ticked."):format(DIFF_WORD[diff])
-    if diff == "M" and i then
-        text = text .. " Mythic lockouts are whole: only a group on your own lockout can take you."
+    return killed
+end
+
+-- Names the journal's boss list lacks would quietly break the match: log each once.
+local unknown = {}
+local function Unmatched(known, names, from)
+    for boss in pairs(names) do
+        if not known[boss] and not unknown[boss] then
+            unknown[boss] = true
+            ns.Trace("raid", from, "boss not in the journal list:", boss)
+        end
     end
-    ns.Log.Emit("filter", { action = "match lockout", name = raidName .. " " .. diff .. ": " .. text })
-    return text
+end
+
+-- With My lockout on for the row's raid: how many of my kills the group has
+-- also done, and whether a boss I can loot is still alive there. nil when
+-- off (or the journal hasn't given the raid's bosses yet).
+function Filters.Lockout(row)
+    local f = Filters.Active("raid")
+    if not (f.lockout and f.lockout[row.activity]) or #(row.bosses or {}) == 0 then return nil end
+    local mine, known = MyKills(row.activity, row.difficulty), {}
+    local caught, left = 0, false
+    for _, boss in ipairs(row.bosses) do
+        known[boss] = true
+        if mine[boss] then
+            if row.killed[boss] then caught = caught + 1 end
+        elseif not row.killed[boss] then
+            left = true
+        end
+    end
+    Unmatched(known, mine, "lockout")
+    Unmatched(known, row.killed, "listing")
+    return caught, left
 end
 
 -- Blizzard's advanced filter narrows the search on the server (a search
@@ -240,7 +247,8 @@ function Filters.Pass(row)
         for boss, on in pairs(f.bosses and f.bosses[row.activity] or {}) do
             if on and row.killed and row.killed[boss] then return false end
         end
-        return true
+        local caught, left = Filters.Lockout(row)
+        return not caught or left
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
     if f.lust and not ns.Groups.CanHave(row, LUST) then return false end

@@ -8,7 +8,7 @@
       keys  dungeons (this season), room for my role, leader at least my
             score, has Bloodlust, has battle rez, no other of my class,
             leader score floor, leader's realm
-      raid  leader's realm, bosses that must be alive (My lockout ticks them)
+      raid  leader's realm, bosses that must be alive, My lockout (loot left for me)
     Notes tab: up to five sign-up notes, offered to copy under Blizzard's
     sign-up dialog.
 --]]
@@ -31,7 +31,6 @@ local bossLabel
 local filterView, optionsView, notesView, view = nil, nil, nil, "filter"
 local headTabs = {}
 local open = {}  -- raid name -> heading unfolded (this session)
-local undo = {}  -- raid name -> boss rules before My lockout (false: none); a second click restores them
 
 local function Changed()
     ns.Pane.Render()
@@ -105,8 +104,6 @@ local function PaintKeys(f)
     PaintRegions(f)
 end
 
-local DIFF_WORD = { N = "Normal", H = "Heroic", M = "Mythic" }
-
 local function PaintRaid(f)
     PaintRegions(f)
     bossLabel:SetText("Ticked bosses must be alive in the group")
@@ -132,38 +129,27 @@ local function PaintRaid(f)
                 editing.bosses = rules
                 rules[l.bossRaid] = rules[l.bossRaid] or {}
                 rules[l.bossRaid][l.boss] = on or nil
-                undo[l.bossRaid] = nil  -- edited by hand: My lockout starts over
                 Sidecar.Paint(); Changed()
             end)
             l.check:SetPoint("LEFT")
-            -- My lockout toggles: on ticks the lockout, off puts back what was ticked before.
-            l.want = Toggle(l, "", 80, function(self)
-                local raid, text = self.raid, nil
-                editing.bosses = editing.bosses or {}
-                if undo[raid] ~= nil then
-                    editing.bosses[raid] = undo[raid] or nil
-                    undo[raid] = nil
-                    text = "Your earlier boss picks are back."
-                else
-                    local d = ns.Pane.RaidDifficulty(raid)
-                    if DIFF_WORD[d] then undo[raid] = CopyTable(editing.bosses[raid] or {}) end
-                    text = Filters.MatchLockout(editing, raid, d)
-                end
-                open[raid] = true
+            -- My lockout: a live rule (Filters.Lockout), on or off per raid.
+            l.want = Toggle(l, "My lockout", 80, function(self)
+                editing.lockout = editing.lockout or {}
+                editing.lockout[self.raid] = not editing.lockout[self.raid] or nil
+                if not next(editing.lockout) then editing.lockout = nil end
+                ns.Log.Emit("filter", { action = "my lockout", name = self.raid .. (editing.lockout
+                    and editing.lockout[self.raid] and " on" or " off") })
                 Sidecar.Paint(); Changed()
-                GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(text, 1, 1, 1, 1, true); GameTooltip:Show()
             end)
             l.want:SetHeight(18)
             l.want:SetPoint("RIGHT")
             l.want:HookScript("OnEnter", function(self)
                 if not ns.Hints() then return end
-                local d = ns.Pane.RaidDifficulty(self.raid)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
                 GameTooltip:SetText("My lockout", 1, 1, 1)
-                GameTooltip:AddLine("Ticks the bosses this character hasn't killed this week"
-                    .. (DIFF_WORD[d] and (" on " .. DIFF_WORD[d] .. ", the difficulty you searched.")
-                        or ". Search the raid with a difficulty first (Blizzard's raid + difficulty suggestion).")
-                    .. " Click again to put your earlier picks back.",
+                GameTooltip:AddLine("Hides groups with nothing left this character can loot this week,"
+                    .. " at each group's difficulty. Groups that have killed more of what you've killed"
+                    .. " come first; groups behind you (maybe skipping ahead) still show, lower down.",
                     0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end)
@@ -195,10 +181,8 @@ local function PaintRaid(f)
         h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
             .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or ""))
         h.text:SetTextColor(0.7, 0.7, 0.7)
-        local d = ns.Pane.RaidDifficulty(raid.name)
         h.want.raid = raid.name
-        h.want:SetText("My lockout" .. (d and (" (" .. d .. ")") or ""))
-        h.want:Paint(undo[raid.name] ~= nil)
+        h.want:Paint(editing.lockout ~= nil and editing.lockout[raid.name] == true)
         h.want:Show()
         for _, boss in ipairs(open[raid.name] and raid.bosses or {}) do
             local l = Line()
@@ -724,7 +708,7 @@ function Sidecar.Open(f, which)
     f = f or Filters.Active()
     if frame:IsShown() and view == which and (which ~= "filter" or editing == f) then frame:Hide() return end
     editing = f
-    RequestRaidInfo()  -- lockouts for Match my lockout
+    RequestRaidInfo()  -- lockouts for My lockout
     frame:Show()
     Sidecar.Show(which)
 end

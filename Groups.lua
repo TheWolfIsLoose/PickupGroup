@@ -351,7 +351,7 @@ local OUT = { applied = true, invited = true }
 Groups.OUT = OUT
 
 -- pinned: the player's sign-ups; rows: everything else that passes, by
--- leader score (raids: bosses down, then age).
+-- leader score (raids: my kills done too, bosses down, then age).
 -- A listing that errors is left out and logged once, never the whole list.
 local failed = {}
 local function SafeRead(id)
@@ -380,6 +380,7 @@ function Groups.List(showHidden)
             local known = row and (row.friends > 0 or row.guild > 0)
             if row and (known or ns.Filters.Pass(row)) then
                 row.hidden = not known and ns.Cleanup.Reason(row) or nil
+                row.caught = row.isRaid and ns.Filters.Lockout(row) or nil
                 if row.hidden then hidden = hidden + 1 end
                 if (row.hidden ~= nil) == (showHidden == true) then rows[#rows + 1] = row end
             end
@@ -393,6 +394,8 @@ function Groups.List(showHidden)
         if (a.friends > 0) ~= (b.friends > 0) then return a.friends > 0 end
         if (a.guild > 0) ~= (b.guild > 0) then return a.guild > 0 end
         if a.isRaid then
+            -- My lockout: groups that have done more of my kills first.
+            if (a.caught or 0) ~= (b.caught or 0) then return (a.caught or 0) > (b.caught or 0) end
             if (a.down or 0) ~= (b.down or 0) then return (a.down or 0) < (b.down or 0) end
             return (a.age or 0) < (b.age or 0)
         end
