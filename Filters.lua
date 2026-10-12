@@ -36,11 +36,6 @@ local LUST = { SHAMAN = Roles(H, D), MAGE = Roles(D), HUNTER = Roles(D), EVOKER 
 local BREZ = { DRUID = Roles(T, H, D), DEATHKNIGHT = Roles(T, D), WARLOCK = Roles(D), PALADIN = Roles(T, H, D) }
 Filters.LUST, Filters.BREZ = LUST, BREZ  -- the leader view reads them too
 
-local function All()
-    ns.db.filters = ns.db.filters or {}
-    return ns.db.filters
-end
-
 function Filters.Kind()
     local p = LFGListFrame and LFGListFrame.SearchPanel
     return (p and p.categoryID == 3) and "raid" or "keys"
@@ -49,9 +44,9 @@ end
 -- The filter of a kind (the one in view by default), made on first use.
 function Filters.Active(kind)
     kind = kind or Filters.Kind()
-    for _, f in ipairs(All()) do if f.kind == kind then return f end end
+    for _, f in ipairs(ns.db.filters) do if f.kind == kind then return f end end
     local f = CopyTable(DEFAULT[kind])
-    table.insert(All(), f)
+    table.insert(ns.db.filters, f)
     return f
 end
 
@@ -187,7 +182,7 @@ local function SameSet(a, b)
 end
 
 function Filters.Sync()
-    if Filters.Kind() ~= "keys" or not C_LFGList.SaveAdvancedFilter then return end
+    if Filters.Kind() ~= "keys" then return end
     local f = Filters.Active("keys")
     local ids, acts, all, missing = GroupIDs(), {}, {}, nil
     for _, d in ipairs(Filters.Dungeons()) do
@@ -197,12 +192,7 @@ function Filters.Sync()
     end
     -- A dungeon we can't map would be dropped by the server: don't narrow.
     if missing then acts = all end
-    local need
-    if f.room then
-        local r, n = ns.Groups.MyRoles(), 0
-        for role, on in pairs(r) do if on then need, n = role, n + 1 end end
-        if n ~= 1 then need = nil end
-    end
+    local need = f.room and ns.Groups.SoleRole()
     local rating = math.max(f.minScore or 0, f.atLeastMine and C_ChallengeMode.GetOverallDungeonScore() or 0)
     local mine = f.noMyClass == true
     local adv = C_LFGList.GetAdvancedFilter()
@@ -225,7 +215,7 @@ end
 -- Blizzard's list isn't quietly narrowed by our filter. Its other settings
 -- (playstyle, difficulty) were never ours and stay.
 function Filters.RestoreBlizzard()
-    local adv = C_LFGList.SaveAdvancedFilter and C_LFGList.GetAdvancedFilter()
+    local adv = C_LFGList.GetAdvancedFilter()
     if not adv then return end
     local acts = {}
     for _, id in pairs(GroupIDs()) do acts[#acts + 1] = id end

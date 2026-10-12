@@ -5,7 +5,7 @@ local apps = {
     { ts = now - 250, ended = now - 200, result = "declined" },
     { ts = now - 200, ended = now - 100, result = "filled" },
     { ts = now - 100, ended = now - 50, result = "timed" },       -- got in: ends the dry spell of 3
-    { ts = now - 90, ended = now - 48, result = "withdrawn" },    -- withdrawn by the game at the join: migration 5 -> movedon
+    { ts = now - 90, ended = now - 48, result = "movedon" },      -- withdrawn by the game at the join
     { ts = now - 40, result = "pending" },
 }
 local db = { chars = { ["Me-Realm"] = { apps = apps } } }
@@ -20,12 +20,6 @@ BreakUpLargeNumbers = function(n) return tostring(n) end
 UISpecialFrames = {}
 date = os.date
 time = os.time
--- Migration 5 straight from Core.lua.
-local src = io.open("Core.lua"):read("*a")
-local a = src:find("%[5%] = function%(db%)"); local b = src:find("\n    end,\n", a)
-local m5 = assert(loadstring("return function(db) " .. src:sub(src:find("\n", a) + 1, b) .. " end"))()
-m5(db)
-assert(apps[5].result == "movedon", "migration 5")
 assert(loadfile("Applications.lua"))("PickupGroup", ns)
 assert(loadfile("UI/LogPopup.lua"))("PickupGroup", ns)
 

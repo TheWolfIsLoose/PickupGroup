@@ -20,61 +20,12 @@ local DEFAULTS = {
     trace  = false,  -- detailed trace steps; /pug debug switches them on
     log    = {},
     chars  = {},
+    filters = {},
+    notes  = {},
     cleanup   = { stale = true, staleHours = 3, advert = true, carry = true, blacklist = true },
     blacklist = {},  -- "Name-Realm" -> last seen in results (time())
 }
-local MIGRATIONS = {  -- [n] = function(db) upgrades schema n-1 to n
-    -- 2: one filter per kind; keep the one that was active.
-    [2] = function(db)
-        if not db.filters then return end
-        local keep, active = {}, db.activeFilter or {}
-        for _, kind in ipairs({ "keys", "raid" }) do
-            local pick
-            for _, f in ipairs(db.filters) do
-                if f.kind == kind and (f.id == active[kind] or not pick) then pick = f end
-            end
-            if pick then keep[#keep + 1] = pick end
-        end
-        db.filters, db.activeFilter = keep, nil
-    end,
-    -- 3: Bloodlust / battle rez are one "has it" switch each.
-    [3] = function(db)
-        for _, f in ipairs(db.filters or {}) do
-            f.lust = f.lust == "has" or nil
-            f.brez = f.brez == "has" or nil
-            f.text = nil  -- leftover from 0.3.4's saved search text
-        end
-    end,
-    -- 6: v1.0.0: detailed recording starts off for everyone (it was on by
-    -- default while testing); /pug debug turns it back on.
-    [6] = function(db) db.trace = false end,
-    -- 5: sign-ups the game withdrew because the player got in elsewhere
-    -- (within 5 s of a join) are "movedon"; lifetime counts re-seed.
-    [5] = function(db)
-        for _, c in pairs(db.chars or {}) do
-            local joins = {}
-            for _, e in ipairs(c.apps or {}) do
-                if (e.result == "joined" or e.result == "timed" or e.result == "depleted") and e.ended then joins[#joins + 1] = e.ended end
-            end
-            for _, e in ipairs(c.apps or {}) do
-                if e.result == "withdrawn" and e.ended then
-                    for _, j in ipairs(joins) do
-                        if math.abs(e.ended - j) <= 5 then e.result = "movedon"; break end
-                    end
-                end
-            end
-            c.tally = nil
-        end
-    end,
-    -- 4: boss rules are "must be alive" (true) or nothing.
-    [4] = function(db)
-        for _, f in ipairs(db.filters or {}) do
-            for _, bosses in pairs(f.bosses or {}) do
-                for boss, want in pairs(bosses) do bosses[boss] = (want == "alive") or nil end
-            end
-        end
-    end,
-}
+local MIGRATIONS = {}  -- [n] = function(db) upgrades schema n-1 to n (none since 1.0)
 
 local function ApplyDefaults(saved, defaults)
     for k, v in pairs(defaults) do
@@ -89,6 +40,9 @@ end
 local function InitDB()
     PickupGroupDB = PickupGroupDB or {}
     local db = PickupGroupDB
+    -- Saves from before 1.0 (schema < 6) hold retired filter shapes: those
+    -- start fresh, and detailed recording starts off.
+    if (db.schema or SCHEMA) < 6 then db.filters, db.trace, db.schema = nil, false, 6 end
     for n = (db.schema or SCHEMA) + 1, SCHEMA do MIGRATIONS[n](db) end
     ApplyDefaults(db, DEFAULTS)
     db.schema = SCHEMA
@@ -106,10 +60,7 @@ end
 local Notes = { MAX = 5 }
 ns.Notes = Notes
 
-function Notes.All()
-    ns.db.notes = ns.db.notes or {}
-    return ns.db.notes
-end
+function Notes.All() return ns.db.notes end
 
 function Notes.Set(i, text)
     text = strtrim(text or "")

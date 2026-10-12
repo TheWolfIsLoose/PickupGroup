@@ -2,6 +2,18 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.7 (on `dev`, release queued for 2026-10-13)
+
+Ponytail pass (review 2026-10-11) plus one fix:
+
+- Fix: the filter's Reset errored on its confirming click (`wipe(undo)` survived v1.0.6's removal of the sidecar's undo table), so Reset never reset. Gone; Reset uses `Kit.Confirm`.
+- Kit gained the shared pieces: `Kit.Tip` (hint tooltip, honours Options' hide-hints; replaces 14 hand-written blocks), `Kit.Confirm` (two-click "Sure?" on Reset, Clear and history Reset), `Kit.Text` and `Kit.Tile` (Pane and Leader had their own, with swapped arguments); `Fill` / `Band` share one `Layer`. Hint tooltip titles are white and bodies `soft` everywhere now (My lockout's body was 0.8).
+- Options: the six switches come from one table (key, label, tooltip, get, set); every change is still logged as `setting`.
+- `Groups.SoleRole()` is the one "exactly one role picked" check (Party, Need, Filters.Sync had copies). `Applications.LastJoined` reuses `JoinedEntry` (the most recent join decides; a raid join means no teleport).
+- Saved data: pre-1.0 migrations 2-5 removed; a save below schema 6 starts its filters fresh with recording off. `filters` and `notes` are in DEFAULTS (no lazy getters). `test_history.lua` uses an already-migrated fixture.
+- History window: the tally line is gone (the Ended column and the lifetime rates say it); "Nothing here yet" moved to the records line.
+- Dropped existence checks for Retail APIs (`MenuUtil`, `LFGListApplicationDialog_Show`, `Enum.LFGListFilter`, `Enum.LFGEntryGeneralPlaystyle`, `C_ReportSystem.SendReport`, `C_LFGList.SaveAdvancedFilter`, `EJ_GetCurrentInstance`, `ChatTypeInfo`, the search panel's `CategoryName`). Unused `Groups.OUT` export and `Code()` cache removed.
+
 ## v1.0.6 (2026-10-10)
 
 - My lockout reworked (player, 2026-10-10: a Rogue at 6/8 Heroic VA, loot-locked on 1-6, wants groups on 7/8). Was a one-shot tick of the bosses the character hadn't killed into "must be alive" (ANDed: kept 0/8 groups, dropped 7/8 groups on their last boss; picks keyed by raid only, so a Normal lockout filtered Heroic groups). Now `filter.lockout[raid] = true`, judged live per row by `Filters.Lockout(row)` against `GetSavedInstanceInfo` at the row's difficulty: hide when no boss the character hasn't killed is still alive in the group; otherwise `row.caught` (my kills the group has also done) sorts raids first. Not a hard "caught up" filter: a 1/8 Heroic group may be using the earned skip to the end bosses, so behind only sorts lower (player's call). Names the journal's boss list lacks (lockout or listing) are traced once each. Boss checkboxes stay as the manual "must be alive" rule. Removed `Filters.MatchLockout`, the sidecar's undo table and `Pane.RaidDifficulty` (unused after). Self-check: `Dev/test_lockout.lua`. Tested in game (Rogue, VA Heroic 6/8: 6/8 and 7/8 groups on top, then 5/8, 4/8).

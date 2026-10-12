@@ -107,13 +107,8 @@ local function BaseName(full)
     return (full or "?"):gsub("%s*%(.-%)%s*$", "")
 end
 Groups.BaseName = BaseName
-local codes = {}
 local function Code(name)
-    if not codes[name] then
-        local c = name:gsub("^[Tt]he%s+", ""):gsub("(%S)%S*%s*", "%1"):upper()
-        codes[name] = c
-    end
-    return codes[name]
+    return (name:gsub("^[Tt]he%s+", ""):gsub("(%S)%S*%s*", "%1"):upper())
 end
 Groups.Code = Code
 
@@ -135,7 +130,7 @@ local function TotalBosses(mapID)
             -- that raid's bosses). Select ours, read, put the journal back.
             -- Never while it's open: try again on a later search.
             if EncounterJournal and EncounterJournal:IsShown() then return nil end
-            local before = EJ_GetCurrentInstance and EJ_GetCurrentInstance()
+            local before = EJ_GetCurrentInstance()
             -- Some instances the journal refuses to select (it throws).
             if pcall(EJ_SelectInstance, instance) then
                 while true do
@@ -168,6 +163,13 @@ function Groups.MyRoles()
     return { TANK = tank, HEALER = healer, DAMAGER = dps }
 end
 
+-- The one role the player signs up as, or nil with none or several picked.
+function Groups.SoleRole()
+    local role, n = nil, 0
+    for k, on in pairs(Groups.MyRoles()) do if on then role, n = k, n + 1 end end
+    return n == 1 and role or nil
+end
+
 -- In a party (not a raid): seats needed per role, from each member's
 -- assigned role, else their spec's role, else unknown (any seat); the
 -- player falls back to a single role picked in Blizzard's role choice.
@@ -186,9 +188,7 @@ function Groups.Party()
                 local spec = GetInspectSpecialization(unit)
                 role = spec and spec > 0 and GetSpecializationRoleByID(spec) or "NONE"
             elseif role == "NONE" then
-                local r, n = Groups.MyRoles(), 0
-                for k, on in pairs(r) do if on then role, n = k, n + 1 end end
-                if n ~= 1 then role = "NONE" end
+                role = Groups.SoleRole() or "NONE"
             end
             if need[role] then need[role] = need[role] + 1 end
             seen[#seen + 1] = unit .. "=" .. role
@@ -205,9 +205,8 @@ function Groups.Need()
     local need = Groups.Party()
     if not need then
         need = { TANK = 0, HEALER = 0, DAMAGER = 0, size = 1, classes = { [select(2, UnitClass("player"))] = true } }
-        local r, n, role = Groups.MyRoles(), 0, nil
-        for k, on in pairs(r) do if on then role, n = k, n + 1 end end
-        if n == 1 then need[role] = 1 end
+        local role = Groups.SoleRole()
+        if role then need[role] = 1 end
     end
     need.flex = need.size - need.TANK - need.HEALER - need.DAMAGER
     return need
@@ -348,7 +347,6 @@ end
 
 -- Status words WoW uses for an application that is still out.
 local OUT = { applied = true, invited = true }
-Groups.OUT = OUT
 
 -- pinned: the player's sign-ups; rows: everything else that passes, by
 -- leader score (raids: my kills done too, bosses down, then age).

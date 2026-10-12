@@ -74,18 +74,59 @@ local function Solid(frame, layer, sublevel, color)
     return t
 end
 
--- Opaque background (BACKGROUND -8). Recolourable: call again.
-function Kit.Fill(frame, color)
-    frame._bg = frame._bg or Solid(frame, "BACKGROUND", -8, color)
-    frame._bg:SetAllPoints()
-    frame._bg:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
+-- Opaque fill (BACKGROUND -8, frame._bg) or a translucent band over it
+-- (-6, frame._band). Call again to recolour.
+local function Layer(frame, key, sublevel, color)
+    frame[key] = frame[key] or Solid(frame, "BACKGROUND", sublevel, color)
+    frame[key]:SetAllPoints()
+    frame[key]:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
+end
+function Kit.Fill(frame, color) Layer(frame, "_bg", -8, color) end
+function Kit.Band(frame, color) Layer(frame, "_band", -6, color) end
+
+-- One line of small text, no wrap.
+function Kit.Text(parent, justify, font)
+    local fs = parent:CreateFontString(nil, "OVERLAY", font or "PickupGroupFontSmall")
+    fs:SetJustifyH(justify or "LEFT")
+    fs:SetWordWrap(false)
+    return fs
 end
 
--- Translucent strip over the fill (BACKGROUND -6).
-function Kit.Band(frame, color)
-    frame._band = frame._band or Solid(frame, "BACKGROUND", -6, color)
-    frame._band:SetAllPoints()
-    frame._band:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
+-- Spec icon tile: dark square, black ring, trimmed icon (t.icon).
+function Kit.Tile(parent, size)
+    local t = CreateFrame("Frame", nil, parent)
+    t:SetSize(size, size)
+    Kit.Fill(t, { 0.11, 0.11, 0.11, 1 })
+    Kit.Border(t)
+    t.icon = t:CreateTexture(nil, "ARTWORK")
+    t.icon:SetPoint("TOPLEFT", 1, -1)
+    t.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+    t.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)  -- icon border trimmed, plus a ~10% zoom
+    return t
+end
+
+-- Hint tooltip on a control (Options can hide hints). title may be a
+-- function(control); body is optional.
+function Kit.Tip(ctrl, title, body, anchor)
+    ctrl:HookScript("OnEnter", function(self)
+        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, anchor or "ANCHOR_TOP")
+        GameTooltip:SetText(type(title) == "function" and title(self) or title, 1, 1, 1)
+        if body then GameTooltip:AddLine(body, Palette.soft[1], Palette.soft[2], Palette.soft[3], true) end
+        GameTooltip:Show()
+    end)
+    ctrl:HookScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+-- Destructive action: the first click turns the label to "Sure?" for 3 s,
+-- the second runs fn. No confirm dialogs.
+function Kit.Confirm(btn, label, fn)
+    btn:SetText(label)
+    btn:SetScript("OnClick", function(self)
+        if self.armed then self.armed = nil; self:SetText(label); return fn() end
+        self.armed = true; self:SetText("Sure?")
+        C_Timer.After(3, function() self.armed = nil; self:SetText(label) end)
+    end)
 end
 
 -- Ring colour for an input: mint while typing, light grey under the mouse, else grey.

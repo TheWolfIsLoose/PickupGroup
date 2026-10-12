@@ -43,7 +43,7 @@ function Cleanup.Reason(row)
         return "leader is on your blacklist"
     end
     if s.stale and (row.age or 0) > (s.staleHours or 3) * 3600 then return "listed a long time" end
-    if s.carry and row.playstyle == (Enum.LFGEntryGeneralPlaystyle and Enum.LFGEntryGeneralPlaystyle.Expert) then
+    if s.carry and row.playstyle == Enum.LFGEntryGeneralPlaystyle.Expert then
         return "offers a carry"
     end
     if s.advert and not row.isRaid and (row.score or 0) == 0 and (row.voice or "") ~= "" then
@@ -83,15 +83,13 @@ function Cleanup.Clear()
 end
 
 -- Reporting a listing through Blizzard's own report form blacklists its leader.
-if C_ReportSystem and C_ReportSystem.SendReport then
-    hooksecurefunc(C_ReportSystem, "SendReport", function(info)
-        local id = info and info.groupFinderSearchResultID
-        if not id then return end
-        local listing = C_LFGList.GetSearchResultInfo(id)
-        if listing and listing.leaderName then Cleanup.Blacklist(listing.leaderName, "reported") end
-        if ns.Pane then ns.Pane.Render() end
-    end)
-end
+hooksecurefunc(C_ReportSystem, "SendReport", function(info)
+    local id = info and info.groupFinderSearchResultID
+    if not id then return end
+    local listing = C_LFGList.GetSearchResultInfo(id)
+    if listing and listing.leaderName then Cleanup.Blacklist(listing.leaderName, "reported") end
+    ns.Pane.Render()
+end)
 
 -- Housekeeping: drop leaders not seen for a year.
 ns.On("PLAYER_LOGIN", function()

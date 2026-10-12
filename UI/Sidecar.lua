@@ -70,14 +70,8 @@ local function RegionRow(box, y, label)
         end)
         b.region = code
         b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), y - 16)
-        b:HookScript("OnEnter", function(self)
-            if not ns.Hints() then return end
-            GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:SetText(ns.Groups.REGION_NAME[self.region])
-            GameTooltip:AddLine("Groups whose leader plays on a realm in this region.", 0.74, 0.74, 0.74, true)
-            GameTooltip:Show()
-        end)
-        b:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        Kit.Tip(b, function(self) return ns.Groups.REGION_NAME[self.region] end,
+            "Groups whose leader plays on a realm in this region.")
         regionButtons[#regionButtons + 1] = b
     end
     return y - 16 - 23
@@ -143,17 +137,9 @@ local function PaintRaid(f)
             end)
             l.want:SetHeight(18)
             l.want:SetPoint("RIGHT")
-            l.want:HookScript("OnEnter", function(self)
-                if not ns.Hints() then return end
-                GameTooltip:SetOwner(self, "ANCHOR_TOP")
-                GameTooltip:SetText("My lockout", 1, 1, 1)
-                GameTooltip:AddLine("Hides groups with nothing left this character can loot this week,"
-                    .. " at each group's difficulty. Groups that have killed more of what you've killed"
-                    .. " come first; groups behind you (maybe skipping ahead) still show, lower down.",
-                    0.8, 0.8, 0.8, true)
-                GameTooltip:Show()
-            end)
-            l.want:HookScript("OnLeave", function() GameTooltip:Hide() end)
+            Kit.Tip(l.want, "My lockout", "Hides groups with nothing left this character can loot this week,"
+                .. " at each group's difficulty. Groups that have killed more of what you've killed"
+                .. " come first; groups behind you (maybe skipping ahead) still show, lower down.")
             bossLines[n] = l
         end
         l:ClearAllPoints()
@@ -310,16 +296,7 @@ local function BuildKeys(parent)
         local key = c[1]
         local cb = Kit.Check(box, c[2], function(on) editing[key] = on or nil; Changed() end)
         cb:SetPoint("TOPLEFT", 0, y)
-        if c[3] then
-            cb:HookScript("OnEnter", function(self)
-                if not ns.Hints() then return end
-                GameTooltip:SetOwner(self, "ANCHOR_TOP")
-                GameTooltip:SetText(c[2])
-                GameTooltip:AddLine(c[3], 0.74, 0.74, 0.74, true)
-                GameTooltip:Show()
-            end)
-            cb:HookScript("OnLeave", function() GameTooltip:Hide() end)
-        end
+        if c[3] then Kit.Tip(cb, c[2], c[3]) end
         checks[key] = cb
         y = y - 24
     end
@@ -401,88 +378,37 @@ local function BuildOptions(parent)
         ns.Log.Emit("setting", { key = "cleanup." .. key, on = on })
         ns.Pane.Render()
     end
+    -- { key, label, tooltip?, get(), set(on) }; every change is logged.
     local y = 0
-    local blizz = Kit.Check(box, "Use Blizzard's group list instead", function(on)
-        ns.db.useBlizzard = on
-        ns.Log.Emit("setting", { key = "useBlizzard", on = on })
-        if on then ns.Filters.RestoreBlizzard() end
-        ns.Pane.Update()
-    end)
-    blizz:SetPoint("TOPLEFT", 0, y)
-    box.blizz = blizz
-    y = y - 24
-    blizz:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Use Blizzard's group list instead")
-        GameTooltip:AddLine("A PickupGroup button on Blizzard's panel brings this back.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    blizz:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    local names = Kit.Check(box, "Color names for friends / guild", function(on)
-        ns.db.nameColors = on or nil
-        ns.Log.Emit("setting", { key = "nameColors", on = on })
-        ns.Pane.Render()
-    end)
-    names:SetPoint("TOPLEFT", 0, y)
-    names:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Color names for friends / guild")
-        GameTooltip:AddLine("Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    names:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    box.names = names
-    y = y - 24
-    local swap = Kit.Check(box, "Swap when all sign-ups are out", function(on)
-        ns.db.swap = on or nil
-        ns.Log.Emit("setting", { key = "swap", on = on })
-        ns.Pane.Render()
-    end)
-    swap:SetPoint("TOPLEFT", 0, y)
-    swap:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Swap when all sign-ups are out")
-        GameTooltip:AddLine("With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    swap:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    box.swap = swap
-    y = y - 24
-    -- Opt-in (player): veterans can turn off the how-to tooltips.
-    local hints = Kit.Check(box, "Hide hint tooltips", function(on)
-        ns.db.noHints = on or nil
-        ns.Log.Emit("setting", { key = "noHints", on = on })
-    end)
-    hints:SetPoint("TOPLEFT", 0, y)
-    box.hints = hints
-    y = y - 24
-    -- Opt-out: on for everyone until turned off.
-    local chime = Kit.Check(box, "Chime when my group fills", function(on)
-        ns.db.noChime = (not on) or nil
-        ns.Log.Emit("setting", { key = "noChime", on = on })
-    end)
-    chime:SetPoint("TOPLEFT", 0, y)
-    chime:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Chime when my group fills")
-        GameTooltip:AddLine("Plays a short tone when a dungeon group you joined through a sign-up reaches five.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    chime:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    box.chime = chime
-    y = y - 24
-    -- Off for players whose other addons handle sign-up notes (they clash).
-    local strip = Kit.Check(box, "My notes under Blizzard's sign-up window", function(on)
-        ns.db.noteStrip = (not on) and false or nil
-        ns.Log.Emit("setting", { key = "noteStrip", on = on })
-    end)
-    strip:SetPoint("TOPLEFT", 0, y)
-    box.strip = strip
-    y = y - 18
+    box.switches = {}
+    for _, o in ipairs({
+        { "useBlizzard", "Use Blizzard's group list instead", "A PickupGroup button on Blizzard's panel brings this back.",
+          function() return ns.db.useBlizzard end,
+          function(on) ns.db.useBlizzard = on; if on then ns.Filters.RestoreBlizzard() end; ns.Pane.Update() end },
+        { "nameColors", "Color names for friends / guild", "Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.",
+          function() return ns.db.nameColors end, function(on) ns.db.nameColors = on or nil; ns.Pane.Render() end },
+        { "swap", "Swap when all sign-ups are out", "With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.",
+          function() return ns.db.swap end, function(on) ns.db.swap = on or nil; ns.Pane.Render() end },
+        -- Opt-in (player): veterans can turn off the how-to tooltips.
+        { "noHints", "Hide hint tooltips", nil, function() return ns.db.noHints end, function(on) ns.db.noHints = on or nil end },
+        -- Opt-out: on for everyone until turned off.
+        { "noChime", "Chime when my group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
+          function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
+        -- Off for players whose other addons handle sign-up notes (they clash).
+        { "noteStrip", "My notes under Blizzard's sign-up window", nil,
+          ns.Notes.StripOn, function(on) ns.db.noteStrip = (not on) and false or nil end },
+    }) do
+        local cb = Kit.Check(box, o[2], function(on)
+            o[5](on)
+            ns.Log.Emit("setting", { key = o[1], on = on })
+        end)
+        cb:SetPoint("TOPLEFT", 0, y)
+        if o[3] then Kit.Tip(cb, o[2], o[3]) end
+        cb.get = o[4]
+        box.switches[#box.switches + 1] = cb
+        y = y - 24
+    end
+    y = y + 6
     box.stripWhy = Label(box, "")
     box.stripWhy:SetPoint("TOPLEFT", 18, y)
     box.stripWhy:SetTextColor(1, 0.72, 0.3)
@@ -527,16 +453,7 @@ local function BuildOptions(parent)
     clear:SetPoint("TOPRIGHT", 0, y)
     Kit.Button(clear)
     clear:SetNormalFontObject("PickupGroupFontSmall")
-    clear:SetText("Clear")
-    clear:SetScript("OnClick", function(self)
-        if not self.armed then
-            self.armed = true; self:SetText("Sure?")
-            C_Timer.After(3, function() self.armed = nil; self:SetText("Clear") end)
-            return
-        end
-        self.armed = nil; self:SetText("Clear")
-        ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render()
-    end)
+    Kit.Confirm(clear, "Clear", function() ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render() end)
     y = y - 30
     local history = CreateFrame("Button", nil, box)
     history:SetSize(W - 2 * PAD, 22)
@@ -550,12 +467,7 @@ end
 
 local function PaintOptions()
     local o, c = optionsView, ns.db.cleanup
-    o.blizz:Set(ns.db.useBlizzard)
-    o.names:Set(ns.db.nameColors)
-    o.swap:Set(ns.db.swap)
-    o.hints:Set(ns.db.noHints)
-    o.chime:Set(not ns.db.noChime)
-    o.strip:Set(ns.Notes.StripOn())
+    for _, cb in ipairs(o.switches) do cb:Set(cb.get()) end
     local why = ns.Notes.Conflict()
     o.stripWhy:SetText(why and ("Off: " .. why .. ".") or "")
     Sidecar.CheckConflict()
@@ -631,20 +543,7 @@ local function Build()
     resetBtn:SetSize(72, 22)
     resetBtn:SetPoint("BOTTOMLEFT")
     Kit.Button(resetBtn)
-    resetBtn:SetText("Reset")
-    resetBtn:SetScript("OnClick", function(self)
-        if not self.armed then
-            self.armed = true
-            self:SetText("Sure?")
-            C_Timer.After(3, function() self.armed = nil; self:SetText("Reset") end)
-            return
-        end
-        wipe(undo)
-        self.armed = nil
-        self:SetText("Reset")
-        Filters.Reset(editing)
-        Sidecar.Paint(); Changed()
-    end)
+    Kit.Confirm(resetBtn, "Reset", function() Filters.Reset(editing); Sidecar.Paint(); Changed() end)
     -- Name and version, bottom right on every tab (level with Reset), as
     -- StockClerk's header shows them; amber for alpha/beta.
     local version = ns.Version()
