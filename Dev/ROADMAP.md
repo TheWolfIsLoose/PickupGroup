@@ -17,6 +17,8 @@ cheap.
 
 ## Next session: start here
 
+**Release queued (2026-10-11): v1.0.7 is cut from `dev` on Tuesday 2026-10-13, 7 PM ET, by a scheduled task** (ponytail pass + fix, see `Dev/HISTORY.md`). Anything else for that version lands on `dev` before then; the task folds it into the CHANGELOG and bumps to a minor version if `dev` gained a feature.
+
 **Context (player, 2026-10-05): the member's view of a forming group.** When the player is in a listed group but isn't the leader, Blizzard shows the listing header (key, dungeon, filled role icons) over the applicant list, grayed out under "Your group is currently forming." Members see each applicant's name (class color), role, item level and rating, but can't act on them. PickupGroup steps aside here today (`Eligible()` is false while `C_LFGList.HasActiveEntryInfo()`), and the leader view only shows for the leader. Possible later: a read-only member view (what the group still needs, who's applying), no actions.
 
 **v1.0.0 released 2026-10-04.** Still open after 1.0:
