@@ -2,7 +2,9 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## v1.0.7 (on `dev`, release queued for 2026-10-13)
+## v1.0.7 (2026-10-13)
+
+Patch 12.1.5 day release: TOC `## Interface` 120100 -> 120105 (12.1.5, build 70340; Gethe `live` + Warcraft Wiki).
 
 Ponytail pass (review 2026-10-11) plus one fix:
 
