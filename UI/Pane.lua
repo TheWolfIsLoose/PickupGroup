@@ -72,8 +72,8 @@ local FRIEND = { 0.51, 0.77, 1 }
 local PEOPLE = { { 4, 4, 3 }, { 8, 3, -3 } }
 local BANNER = { { 2, 11, 0, nil, -3 }, { 6, 5, 2.5, nil, 1 } }
 local function GuildColor()
-    local c = ChatTypeInfo and ChatTypeInfo.GUILD
-    return c and { c.r, c.g, c.b } or { 0.25, 1, 0.25 }
+    local c = ChatTypeInfo.GUILD
+    return { c.r, c.g, c.b }
 end
 
 local function Panel() return LFGListFrame and LFGListFrame.SearchPanel end
@@ -85,16 +85,10 @@ local function Eligible()
     -- listing view: members can't act, the leader manages applicants).
     if C_LFGList.HasActiveEntryInfo() then return false end
     if p.categoryID == 2 then return true end  -- Dungeons
-    local recommended = Enum.LFGListFilter and Enum.LFGListFilter.Recommended or 1
-    return p.categoryID == 3 and bit.band(p.filters or 0, recommended) ~= 0  -- Raids - current
+    return p.categoryID == 3 and bit.band(p.filters or 0, Enum.LFGListFilter.Recommended) ~= 0  -- Raids - current
 end
 
-local function Text(parent, font, justify)
-    local fs = parent:CreateFontString(nil, "OVERLAY", font or "PickupGroupFontSmall")
-    fs:SetJustifyH(justify or "LEFT")
-    fs:SetWordWrap(false)
-    return fs
-end
+local Text = Kit.Text
 
 local function Clock(sec)
     sec = math.max(0, math.floor(sec or 0))
@@ -138,7 +132,7 @@ local function OnAction(btn)
             C_LFGList.CancelApplication(o.id)
             ns.Log.Emit("cancel", { code = o.code, leader = o.leader })
         end
-    elseif IsShiftKeyDown() and LFGListApplicationDialog_Show then
+    elseif IsShiftKeyDown() then
         -- Shift-click: Blizzard's sign-up dialog, for a note (our notes show under it).
         armed = nil
         LFGListApplicationDialog_Show(LFGListApplicationDialog, row.id)
@@ -261,14 +255,7 @@ end
 -- Rows
 -- ---------------------------------------------------------------------------
 local function Tile(parent)
-    local f = CreateFrame("Frame", nil, parent)
-    f:SetSize(TILE, TILE)
-    Kit.Fill(f, { 0.11, 0.11, 0.11, 1 })
-    Kit.Border(f)
-    f.icon = f:CreateTexture(nil, "ARTWORK")
-    f.icon:SetPoint("TOPLEFT", 1, -1)
-    f.icon:SetPoint("BOTTOMRIGHT", -1, 1)
-    f.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)  -- icon border trimmed, plus a ~10% zoom
+    local f = Kit.Tile(parent, TILE)
     f.role = f:CreateTexture(nil, "ARTWORK")
     f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
@@ -309,7 +296,7 @@ local function BuildRow(i)
     r.act:HookScript("OnEnter", function(self) ActionTooltip(self); r.hover:Show() end)
     r.act:HookScript("OnLeave", function() GameTooltip:Hide(); r.hover:Hide() end)
 
-    r.score = Text(r, nil, "RIGHT")
+    r.score = Text(r, "RIGHT")
     r.score:SetWidth(W_SCORE)
     r.score:SetPoint("RIGHT", r.act, "LEFT", -GAP, 0)
 
@@ -336,7 +323,7 @@ local function BuildRow(i)
     r.inst:SetWidth(W_INST)
     r.inst:SetPoint("RIGHT", r.comp, "LEFT", -GAP, 0)
     r.inst:SetTextColor(0.85, 0.85, 0.85)
-    r.diff = Text(r, nil, "CENTER")
+    r.diff = Text(r, "CENTER")
     r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
     r.new = r:CreateTexture(nil, "OVERLAY")
@@ -362,7 +349,7 @@ local function BuildRow(i)
     r:RegisterForClicks("RightButtonUp")
     r:SetScript("OnClick", function(self)
         local row = self.row
-        if not (row and row.leader and MenuUtil) then return end
+        if not (row and row.leader) then return end
         MenuUtil.CreateContextMenu(self, function(_, root)
             root:CreateTitle(row.leader)
             root:CreateButton("Whisper leader", function()
@@ -598,13 +585,9 @@ local function BuildBars()
     hiddenButton.text:SetPoint("RIGHT")
     hiddenButton:SetPoint("RIGHT", countText, "LEFT", -8, 0)
     hiddenButton:SetScript("OnClick", function() showHidden = not showHidden; offset = 0; Pane.Render() end)
-    hiddenButton:SetScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:SetText(showHidden and "Showing what clean-up hid: click to go back" or "Hidden by clean-up: click to review")
-        GameTooltip:Show()
-    end)
-    hiddenButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    Kit.Tip(hiddenButton, function()
+        return showHidden and "Showing what clean-up hid: click to go back" or "Hidden by clean-up: click to review"
+    end, nil, "ANCHOR_BOTTOM")
 
     -- What the filter does, in a line; click to set it up.
     local sb = CreateFrame("Button", nil, bar)
@@ -656,18 +639,12 @@ local function BuildBars()
             PaintRoles()
             Pane.Render()
         end)
-        b:SetScript("OnEnter", function(self)
-            if not ns.Hints() then return end
-            GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:SetText("Sign up as " .. _G[self.role]:lower() .. ": click to switch")
-            GameTooltip:Show()
-        end)
-        b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        Kit.Tip(b, function(self) return "Sign up as " .. _G[self.role]:lower() .. ": click to switch" end)
         roleButtons[#roleButtons + 1] = b
     end
 
     local function Head(label, width, justify)
-        local fs = Text(head, nil, justify)
+        local fs = Text(head, justify)
         fs:SetTextColor(0.55, 0.55, 0.55)
         fs:SetText(label)
         if width then fs:SetWidth(width) end
@@ -740,9 +717,9 @@ local function Build()
     pane.divider:SetColorTexture(0.25, 0.25, 0.25, 1)
     pane.divider:SetHeight(1)
     pane.more = Kit.More(pane)
-    pane.empty = Text(pane, "PickupGroupFont", "CENTER")
+    pane.empty = Text(pane, "CENTER", "PickupGroupFont")
     pane.empty:SetPoint("BOTTOM", pane, "CENTER", 0, 2)
-    pane.emptyHint = Text(pane, nil, "CENTER")
+    pane.emptyHint = Text(pane, "CENTER")
     pane.emptyHint:SetPoint("TOP", pane, "CENTER", 0, -2)
     pane.emptyHint:SetTextColor(0.55, 0.55, 0.55)
     pane:EnableMouseWheel(true)
@@ -757,11 +734,6 @@ local function Build()
     backButton = CreateFrame("Button", nil, panel)
     -- In the panel's header, just after its category name.
     backButton:SetSize(84, 18)
-    if panel.CategoryName then
-        backButton:SetPoint("LEFT", panel.CategoryName, "RIGHT", 10, 0)
-    else
-        backButton:SetPoint("TOP", panel, "TOP", 0, -34)
-    end
     backButton:SetFrameLevel(panel:GetFrameLevel() + 50)
     Kit.Button(backButton)
     backButton:SetNormalFontObject("PickupGroupFontSmall")
@@ -785,7 +757,7 @@ function Pane.Update()
     backButton:SetShown(eligible and ns.db.useBlizzard == true)
     -- The category name's frame is wider than its text: sit just after the text.
     local name = panel.CategoryName
-    if backButton:IsShown() and name then
+    if backButton:IsShown() then
         backButton:ClearAllPoints()
         backButton:SetPoint("LEFT", name, "LEFT", name:GetStringWidth() + 10, 0)
     end

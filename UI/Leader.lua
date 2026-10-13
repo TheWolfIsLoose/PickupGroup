@@ -53,12 +53,7 @@ local progCache = {}
 local lines = {}
 local offset = 0
 
-local function Text(parent, justify, font)
-    local fs = parent:CreateFontString(nil, "OVERLAY", font or "PickupGroupFontSmall")
-    fs:SetJustifyH(justify or "LEFT")
-    fs:SetWordWrap(false)
-    return fs
-end
+local Text = Kit.Text
 
 -- The listing being led, if it's a key or a raid: activity ID, its info, "keys" / "raid".
 local function Listing()
@@ -269,15 +264,9 @@ local function Line(i)
     l.edge:SetPoint("BOTTOMLEFT")
     l.edge:SetWidth(2)
     l.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-    l.tile = CreateFrame("Frame", nil, l)
-    l.tile:SetSize(W_ICON, W_ICON)
+    l.tile = Kit.Tile(l, W_ICON)
     l.tile:SetPoint("LEFT", PAD, 0)
-    Kit.Fill(l.tile, { 0.11, 0.11, 0.11, 1 })
-    Kit.Border(l.tile)
-    l.icon = l.tile:CreateTexture(nil, "ARTWORK")
-    l.icon:SetPoint("TOPLEFT", 1, -1)
-    l.icon:SetPoint("BOTTOMRIGHT", -1, 1)
-    l.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
+    l.icon = l.tile.icon
     -- A second member of the same application: indented, joined to the row above.
     l.linkV = l:CreateTexture(nil, "ARTWORK")
     l.linkV:SetColorTexture(0.4, 0.4, 0.4, 1)
@@ -309,11 +298,7 @@ local function Line(i)
         C_LFGList.DeclineApplicant(self.id)
         ns.Log.Emit("lead", { action = "decline", applicant = self.id, name = self.who })
     end)
-    l.x:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText("Decline"); GameTooltip:Show()
-    end)
-    l.x:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    Kit.Tip(l.x, "Decline", nil, "ANCHOR_RIGHT")
 
     l.adds = Text(l, "LEFT")
     l.adds:SetWidth(W_ADDS)
@@ -591,11 +576,7 @@ local function Build()
         e:SetHeight(18)
         e:SetMaxLetters(2)
         e:SetPoint("LEFT", l, "RIGHT", 3, 0)
-        e:HookScript("OnEnter", function(self)
-            if not ns.Hints() then return end
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText("Target " .. _G[r]:lower() .. " seats"); GameTooltip:Show()
-        end)
-        e:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        Kit.Tip(e, "Target " .. _G[r]:lower() .. " seats", nil, "ANCHOR_RIGHT")
         targetEdits[i] = e
         anchor = e
     end
@@ -610,13 +591,7 @@ local function Build()
             ns.Trace("leader", "target", table.concat(t, "/"))
             Leader.Render()
         end)
-        b:HookScript("OnEnter", function(self)
-            if not ns.Hints() then return end
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(p[1] .. " players: " .. p[2] .. " / " .. p[3] .. " / " .. p[4])
-            GameTooltip:Show()
-        end)
-        b:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        Kit.Tip(b, p[1] .. " players: " .. p[2] .. " / " .. p[3] .. " / " .. p[4], nil, "ANCHOR_RIGHT")
         presetButtons[i] = b
     end
     targetBar:Hide()

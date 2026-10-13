@@ -91,7 +91,7 @@ end
 
 -- ---------------------------------------------------------------------------
 -- Sign-up history: the application log as a table, this character or all
--- characters on the account, newest first, with a one-line tally.
+-- characters on the account, newest first, under records and rates.
 -- ---------------------------------------------------------------------------
 local History = {}
 ns.History = History
@@ -282,22 +282,6 @@ function History.Export()
     return table.concat(lines, "\n")
 end
 
-local TALLY = { declined = "nopes", filled = "too slow", delisted = "vanished", withdrawn = "cold feet",
-                timedout = "ghosted", failed = "game said no", movedon = "moved on", abandoned = "bailed" }
-local function Tally(list)
-    local n = {}
-    for _, x in ipairs(list) do n[x.e.result or "pending"] = (n[x.e.result or "pending"] or 0) + 1 end
-    local joined = (n.joined or 0) + (n.timed or 0) + (n.depleted or 0) + (n.abandoned or 0)
-    local parts = { #list .. " sign-ups", joined .. " got in" }
-    if (n.timed or 0) + (n.depleted or 0) + (n.abandoned or 0) > 0 then
-        parts[#parts] = parts[#parts] .. (" (%d timed, %d depleted, %d bailed)"):format(n.timed or 0, n.depleted or 0, n.abandoned or 0)
-    end
-    for _, k in ipairs({ "declined", "filled", "delisted", "timedout", "withdrawn", "movedon", "failed" }) do
-        if (n[k] or 0) > 0 then parts[#parts + 1] = n[k] .. " " .. TALLY[k] end
-    end
-    return table.concat(parts, ", ")
-end
-
 local function BuildHistory()
     local f = Window("PickupGroupHistory", 500, 492, "Sign-up history")
     local who = Kit.Check(f, "All characters", function(on) allChars = on; f.Fill() end)
@@ -317,28 +301,14 @@ local function BuildHistory()
     reset:SetPoint("TOPRIGHT", -12, -34)
     Kit.Button(reset)
     reset:SetNormalFontObject("PickupGroupFontSmall")
-    reset:SetText("Reset")
-    reset:SetScript("OnClick", function(self)
-        if not self.armed then
-            self.armed = true; self:SetText("Sure?")
-            C_Timer.After(3, function() self.armed = nil; self:SetText("Reset") end)
-            return
-        end
-        self.armed = nil; self:SetText("Reset")
+    Kit.Confirm(reset, "Reset", function()
         local mine = UnitName("player") .. "-" .. GetRealmName()
         for key, c in pairs(ns.db.chars or {}) do
             if allChars or key == mine then ns.Applications.Reset(c) end
         end
         f.Fill()
     end)
-    reset:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Reset")
-        GameTooltip:AddLine("Wipes this character's sign-ups and counts (every character's with All characters ticked) and starts counting again. Click twice. A clean slate; the groups won't remember either.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    reset:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    Kit.Tip(reset, "Reset", "Wipes this character's sign-ups and counts (every character's with All characters ticked) and starts counting again. Click twice. A clean slate; the groups won't remember either.")
     -- Export what's in view (this character, or every one with All characters).
     local export = CreateFrame("Button", nil, f)
     export:SetSize(60, 20)
@@ -352,15 +322,8 @@ local function BuildHistory()
         exportWin:Show()
         exportWin.Fill(History.Export())
     end)
-    export:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Export")
-        GameTooltip:AddLine("This character's sign-ups and lifetime counts as spreadsheet text (every character's with All characters ticked). Your rejections, now in spreadsheet form.", 0.74, 0.74, 0.74, true)
-        GameTooltip:Show()
-    end)
-    export:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Records and tally wrap as they like; the table follows them down.
+    Kit.Tip(export, "Export", "This character's sign-ups and lifetime counts as spreadsheet text (every character's with All characters ticked). Your rejections, now in spreadsheet form.")
+    -- Records and rates wrap as they like; the table follows them down.
     f.records = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     f.records:SetPoint("TOPLEFT", 12, -74)
     f.records:SetPoint("RIGHT", -12, 0)
@@ -370,17 +333,12 @@ local function BuildHistory()
     f.rates:SetPoint("RIGHT", -12, 0)
     f.rates:SetJustifyH("LEFT")
     f.rates:SetTextColor(MINT[1], MINT[2], MINT[3])
-    f.tally = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    f.tally:SetPoint("TOPLEFT", f.rates, "BOTTOMLEFT", 0, -4)
-    f.tally:SetPoint("RIGHT", -12, 0)
-    f.tally:SetJustifyH("LEFT")
-    f.tally:SetTextColor(0.74, 0.74, 0.74)
 
     local x = 12
     f.heads = {}
     for i, c in ipairs(COLS) do
         local h = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-        h:SetPoint("TOPLEFT", f.tally, "BOTTOMLEFT", x - 12, -10)
+        h:SetPoint("TOPLEFT", f.rates, "BOTTOMLEFT", x - 12, -10)
         h:SetText(c[1])
         h:SetTextColor(0.55, 0.55, 0.55)
         f.heads[i] = h
@@ -388,7 +346,7 @@ local function BuildHistory()
     end
 
     local scroll = CreateFrame("ScrollFrame", "PickupGroupHistoryScroll", f, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", f.tally, "BOTTOMLEFT", -4, -26)
+    scroll:SetPoint("TOPLEFT", f.rates, "BOTTOMLEFT", -4, -26)
     scroll:SetPoint("BOTTOMRIGHT", -28, 10)
     local body = CreateFrame("Frame", nil, scroll)
     body:SetSize(460, 1)
@@ -401,9 +359,8 @@ local function BuildHistory()
         f.big:SetText(BreakUpLargeNumbers(no))
         f.bigLabel:SetText((no == 1 and "time" or "times") .. " turned away since " .. date("%b %d, %Y", Since()))
         f.quip:SetText(Quip(no))
-        f.records:SetText(RecordsLine(Records(list)))
+        f.records:SetText(#list > 0 and RecordsLine(Records(list)) or "Nothing here yet. Go get rejected; it builds character.")
         f.rates:SetText(RatesLine(Counts()))
-        f.tally:SetText(#list > 0 and Tally(list) or "Nothing here yet. Go get rejected; it builds character.")
         -- The Character column only when showing every character.
         local hideWho = not allChars
         f.heads[2]:SetShown(not hideWho)
