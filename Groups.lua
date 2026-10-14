@@ -130,16 +130,22 @@ local function TotalBosses(mapID)
             -- that raid's bosses). Select ours, read, put the journal back.
             -- Never while it's open: try again on a later search.
             if EncounterJournal and EncounterJournal:IsShown() then return nil end
-            local before = EJ_GetCurrentInstance()
+            -- Patches move these between globals and C_EncounterJournal
+            -- (12.1.5 dropped EJ_GetCurrentInstance): take whichever exists.
+            local EJ = C_EncounterJournal or {}
+            local current = EJ_GetCurrentInstance or EJ.GetCurrentInstance
+            local pick = EJ_SelectInstance or EJ.SelectInstance
+            local encounter = EJ_GetEncounterInfoByIndex or EJ.GetEncounterInfoByIndex
+            local before = current and current()
             -- Some instances the journal refuses to select (it throws).
-            if pcall(EJ_SelectInstance, instance) then
+            if pick and encounter and pcall(pick, instance) then
                 while true do
-                    local name = EJ_GetEncounterInfoByIndex(n + 1)
+                    local name = encounter(n + 1)
                     if not name then break end
                     n = n + 1; names[n] = name
                 end
             end
-            if before and before > 0 then pcall(EJ_SelectInstance, before) end
+            if pick and before and before > 0 then pcall(pick, before) end
         end
         bossCount[mapID], bossNames[mapID] = n > 0 and n or false, names
         ns.Trace("raid", "map", mapID, "journal instance", tostring(instance), "bosses", n)

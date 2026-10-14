@@ -1,5 +1,3 @@
-## v1.0.7
+## v1.0.8
 
-- Up to date for patch 12.1.5.
-- Fixed: the filter's Reset button works again.
-- Under the hood: leaner code, same behavior.
+- Fixed: raid groups disappeared from the list with an error after patch 12.1.5.
