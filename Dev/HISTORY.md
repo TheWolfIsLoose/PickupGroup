@@ -2,6 +2,10 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.8 (2026-10-14)
+
+Hotfix: 12.1.5 removed `EJ_GetCurrentInstance`, so `TotalBosses` errored on every raid row (`Groups.lua:133: attempt to call a nil value`) and `SafeRead` dropped them; new raids never listed. The journal calls now resolve from the globals or `C_EncounterJournal`, and the boss read is skipped (no count) if they're missing. Tested in game.
+
 ## v1.0.7 (2026-10-13)
 
 Patch 12.1.5 day release: TOC `## Interface` 120100 -> 120105 (12.1.5, build 70340; Gethe `live` + Warcraft Wiki).
