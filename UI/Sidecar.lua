@@ -664,36 +664,54 @@ local function Alert(title, body)
     alert:Show()
 end
 
--- One clash: why (a sentence, or nil), the db key that remembers it, the log
--- line, and the alert. Alerts once per onset; quiet again once it's gone.
-local function Clash(why, key, logKey, title, body)
-    if why and alert and alert:IsShown() then return end  -- one at a time: the next check says it
-    if why and ns.db[key] ~= why then
-        ns.db[key] = why
-        ns.Log.Emit("setting", { key = logKey .. " (" .. why .. ")", on = false })
-        Alert(title, why .. body)
-    elseif not why and ns.db[key] then
-        ns.db[key] = nil
-        ns.Log.Emit("setting", { key = logKey .. " (clash gone)", on = true })
-    end
-end
-
-function Sidecar.CheckConflict()
-    Clash(ns.Notes.Conflict(), "noteConflict", "notes under Blizzard's window", "PickupGroup: sign-up notes are off",
-        ". It and PickupGroup both put a note helper on Blizzard's sign-up window, "
-        .. "so PickupGroup's notes are off while it's on.\n\n"
-        .. "|cffffffffTo use PickupGroup's notes:|r in EllesmereUI's options (Quality of Life or Group Finder), "
-        .. "turn off Persistent Signup Note. PickupGroup's notes come back by themselves.\n\n"
-        .. "|cffffffffTo keep EllesmereUI's:|r nothing to do. Shift-click Apply still opens the sign-up window.")
+-- The clashes: why (a sentence, or nil), the db key that remembers it, the
+-- log line, and the alert's title and text.
+local CLASHES = {
+    { function() return ns.Notes.Conflict() end, "noteConflict", "notes under Blizzard's window", "PickupGroup: sign-up notes are off",
+      ". It and PickupGroup both put a note helper on Blizzard's sign-up window, "
+      .. "so PickupGroup's notes are off while it's on.\n\n"
+      .. "|cffffffffTo use PickupGroup's notes:|r in EllesmereUI's options (Quality of Life or Group Finder), "
+      .. "turn off Persistent Signup Note. PickupGroup's notes come back by themselves.\n\n"
+      .. "|cffffffffTo keep EllesmereUI's:|r nothing to do. Shift-click Apply still opens the sign-up window." },
     -- Already on Blizzard's list: nothing overlaps, nothing to say.
-    Clash(not ns.db.useBlizzard and ns.FinderClash() or nil, "finderConflict", "group finder overlap", "PickupGroup: two group finders",
-        ". PickupGroup's list covers its filter row, and while the list shows, PickupGroup's filter sets "
-        .. "Blizzard's dungeons, role, score and class (EllesmereUI's picks there are replaced). "
-        .. "Its difficulty menu beside the search box still narrows every search.\n\n"
-        .. "|cffffffffTo use PickupGroup:|r turn off Group Finder in EllesmereUI's options.\n\n"
-        .. "|cffffffffTo use EllesmereUI's:|r PickupGroup Options > Use Blizzard's group list instead.")
+    { function() return not ns.db.useBlizzard and ns.FinderClash() or nil end, "finderConflict", "group finder overlap", "PickupGroup: two group finders",
+      ". PickupGroup's list covers its filter row, and while the list shows, PickupGroup's filter sets "
+      .. "Blizzard's dungeons, role, score and class (EllesmereUI's picks there are replaced). "
+      .. "Its difficulty menu beside the search box still narrows every search.\n\n"
+      .. "|cffffffffTo use PickupGroup:|r turn off Group Finder in EllesmereUI's options.\n\n"
+      .. "|cffffffffTo use EllesmereUI's:|r PickupGroup Options > Use Blizzard's group list instead." },
+}
+
+-- atLoad (login / reload): every clash still on is said again. Otherwise
+-- only one that just started (an option switched on mid-session). Several
+-- at once share one window.
+function Sidecar.CheckConflict(atLoad)
+    local parts = {}
+    for _, c in ipairs(CLASHES) do
+        local why, key, logKey = c[1](), c[2], c[3]
+        if why and (atLoad or ns.db[key] ~= why) then
+            if ns.db[key] ~= why then ns.Log.Emit("setting", { key = logKey .. " (" .. why .. ")", on = false }) end
+            ns.db[key] = why
+            parts[#parts + 1] = c
+            c.why = why
+        elseif not why and ns.db[key] then
+            ns.db[key] = nil
+            ns.Log.Emit("setting", { key = logKey .. " (clash gone)", on = true })
+        end
+    end
+    if #parts == 1 then return Alert(parts[1][4], parts[1].why .. parts[1][5]) end
+    if #parts == 0 then return end
+    -- Several: one window, each under its own heading.
+    local text = {}
+    for i, c in ipairs(parts) do
+        text[i] = "|cffffb84d" .. c[4]:gsub("^PickupGroup: ", "") .. "|r\n" .. c.why .. c[5]
+    end
+    Alert("PickupGroup: addon clashes", table.concat(text, "\n\n"))
 end
-ns.On("PLAYER_ENTERING_WORLD", function() C_Timer.After(4, Sidecar.CheckConflict) end)
+-- As soon as the UI is up on login or reload (not on every loading screen).
+ns.On("PLAYER_ENTERING_WORLD", function(login, reload)
+    if login or reload then C_Timer.After(0, function() Sidecar.CheckConflict(true) end) end
+end)
 
 -- The notes, ready to copy, under Blizzard's sign-up dialog while it's open:
 -- click one to select it, then Ctrl+C and Ctrl+V into Blizzard's note box.
