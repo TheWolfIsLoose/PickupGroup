@@ -48,37 +48,42 @@ end
 
 local Toggle = Kit.Toggle
 
--- Leader's realm region: four toggles, all on by default (regions = nil).
-local regionButtons = {}
-local function RegionRow(box, y, label)
-    if not ns.Groups.SUBREGIONS then return y end
-    local l = Label(box, label or "Leader's realm")
+-- A row of on/off toggles over a set in the filter (f[key]): all on by
+-- default (f[key] = nil), else the set of codes still on.
+local setButtons = {}
+local function SetRow(box, y, label, key, codes, names, tip)
+    local l = Label(box, label)
     l:SetPoint("TOPLEFT", 0, y)
-    local codes = ns.Groups.REGIONS
     local cellW = (W - 2 * PAD - 3 * (#codes - 1)) / #codes
     for i, code in ipairs(codes) do
-        local b = Toggle(box, code, cellW, function(self)
-            if not editing.regions then
-                editing.regions = {}
-                for _, c in ipairs(codes) do editing.regions[c] = true end
+        local b = Toggle(box, names and names[code] or code, cellW, function(self)
+            if not editing[key] then
+                editing[key] = {}
+                for _, c in ipairs(codes) do editing[key][c] = true end
             end
-            editing.regions[self.region] = not editing.regions[self.region] or nil
+            editing[key][self.code] = not editing[key][self.code] or nil
             local all = true
-            for _, c in ipairs(codes) do if not editing.regions[c] then all = false end end
-            if all then editing.regions = nil end
+            for _, c in ipairs(codes) do if not editing[key][c] then all = false end end
+            if all then editing[key] = nil end
             Sidecar.Paint(); Changed()
         end)
-        b.region = code
+        b.key, b.code = key, code
         b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), y - 16)
-        Kit.Tip(b, function(self) return ns.Groups.REGION_NAME[self.region] end,
-            "Groups whose leader plays on a realm in this region.")
-        regionButtons[#regionButtons + 1] = b
+        Kit.Tip(b, function(self) return names and names[self.code] or ns.Groups.REGION_NAME[self.code] end, tip)
+        setButtons[#setButtons + 1] = b
     end
     return y - 16 - 23
 end
 
+-- Leader's realm region: four toggles (Americas only).
+local function RegionRow(box, y, label)
+    if not ns.Groups.SUBREGIONS then return y end
+    return SetRow(box, y, label or "Leader's realm", "regions", ns.Groups.REGIONS, nil,
+        "Groups whose leader plays on a realm in this region.")
+end
+
 local function PaintRegions(f)
-    for _, b in ipairs(regionButtons) do b:Paint(not f.regions or f.regions[b.region] == true) end
+    for _, b in ipairs(setButtons) do b:Paint(not f[b.key] or f[b.key][b.code] == true) end
 end
 
 local function PaintKeys(f)
@@ -100,7 +105,7 @@ end
 
 local function PaintRaid(f)
     PaintRegions(f)
-    bossLabel:SetText("Ticked bosses must be alive in the group")
+    bossLabel:SetText("Untick a raid to hide it. Ticked bosses must be alive in the group.")
     -- Pooled lines: a raid heading (fold, My lockout), then one checkbox
     -- per boss.
     local y, n = 0, 0
@@ -119,6 +124,13 @@ local function PaintRaid(f)
             l.text:SetJustifyH("LEFT")
             l.text:SetWordWrap(false)
             l.check = Kit.Check(l, "", function(on)
+                if l.headRaid then  -- a raid's heading: show its groups or not
+                    editing.raidsOff = editing.raidsOff or {}
+                    editing.raidsOff[l.headRaid] = not on or nil
+                    if not next(editing.raidsOff) then editing.raidsOff = nil end
+                    Sidecar.Paint(); Changed()
+                    return
+                end
                 local rules = editing.bosses or {}
                 editing.bosses = rules
                 rules[l.bossRaid] = rules[l.bossRaid] or {}
@@ -161,18 +173,23 @@ local function PaintRaid(f)
         for _ in pairs(rules or {}) do set = set + 1 end
         if open[raid.name] == nil then open[raid.name] = set > 0 or raid == biggest end
         local h = Line()
-        h.raid = raid.name
-        h.check:Hide()
+        local shown = not (editing.raidsOff and editing.raidsOff[raid.name])
+        h.raid, h.headRaid = raid.name, raid.name
+        h.check:SetLabel("")
+        h.check:Set(shown)
+        h.check:Show()
+        h.text:SetPoint("LEFT", 18, 0)
         h.text:Show()
         h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
             .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or ""))
-        h.text:SetTextColor(0.7, 0.7, 0.7)
+        local grey = shown and 0.7 or 0.4
+        h.text:SetTextColor(grey, grey, grey)
         h.want.raid = raid.name
         h.want:Paint(editing.lockout ~= nil and editing.lockout[raid.name] == true)
         h.want:Show()
         for _, boss in ipairs(open[raid.name] and raid.bosses or {}) do
             local l = Line()
-            l.raid = nil
+            l.raid, l.headRaid = nil, nil
             l.text:Hide()
             l.want:Hide()
             l.bossRaid, l.boss = raid.name, boss
@@ -185,8 +202,9 @@ local function PaintRaid(f)
     for i = n + 1, #bossLines do bossLines[i]:Hide() end
     if n == 0 then
         local l = Line()
-        l.raid = nil
+        l.raid, l.headRaid = nil, nil
         l.check:Hide()
+        l.text:SetPoint("LEFT")
         l.text:Show()
         l.text:SetText("Bosses show here once raids are in the results.")
         l.text:SetTextColor(0.55, 0.55, 0.55)
@@ -319,7 +337,9 @@ end
 local function BuildRaid(parent)
     local box = CreateFrame("Frame", nil, parent)
     bossLabel = Label(box, "")
-    local y = RegionRow(box, 0)
+    local y = SetRow(box, 0, "Difficulty", "diffs", { "N", "H", "M" },
+        { N = "Normal", H = "Heroic", M = "Mythic" }, "Groups at this difficulty.")
+    y = RegionRow(box, y - 8)
     bossLabel:SetPoint("TOPLEFT", 0, y - 8)
     bossLabel:SetWidth(W - 2 * PAD)
     bossLabel:SetJustifyH("LEFT")

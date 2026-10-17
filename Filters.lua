@@ -7,8 +7,9 @@
     keys: room, lust / brez (true = the group has it), noMyClass, minScore,
           atLeastMine, dungeons (nil = all,
           else set of dungeon names)
-    raid: room (difficulty comes from Blizzard's search: the raid suggestion
-          picked in its search box carries it),
+    raid: diffs (nil = all, else set of "N" / "H" / "M"), raidsOff[raid name]
+          = true (hidden): both ours, so Blizzard's search box is free for
+          words in group titles (the one name match there is),
           bosses[raid name][boss name] = true (must be alive; absent = either),
           lockout[raid name] = true (My lockout: hide groups with no loot left
           for me, sort the rest by how far past my kills they are)
@@ -62,6 +63,14 @@ end
 function Filters.Summary(f)
     local out = {}
     if f.kind == "raid" then
+        if f.diffs then
+            local d = {}
+            for _, c in ipairs({ "N", "H", "M" }) do if f.diffs[c] then d[#d + 1] = c end end
+            out[#out + 1] = #d > 0 and table.concat(d, " ") or "no difficulty"
+        end
+        local off = 0
+        for _ in pairs(f.raidsOff or {}) do off = off + 1 end
+        if off > 0 then out[#out + 1] = off .. (off == 1 and " raid hidden" or " raids hidden") end
         local rules = 0
         for _, bosses in pairs(f.bosses or {}) do for _ in pairs(bosses) do rules = rules + 1 end end
         if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss alive" or " bosses alive") end
@@ -233,6 +242,8 @@ function Filters.Pass(row)
     -- Full raids delist themselves, so "room" only means something for keys.
     if f.room and not row.fits and not row.isRaid then return false end
     if row.isRaid then
+        if f.diffs and not f.diffs[row.difficulty] then return false end
+        if f.raidsOff and f.raidsOff[row.activity] then return false end
         -- Raids aren't cleared in order: each ticked boss must be alive.
         for boss, on in pairs(f.bosses and f.bosses[row.activity] or {}) do
             if on and row.killed and row.killed[boss] then return false end
