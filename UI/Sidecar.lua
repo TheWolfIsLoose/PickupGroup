@@ -139,6 +139,15 @@ local function PaintRaid(f)
                 Sidecar.Paint(); Changed()
             end)
             l.check:SetPoint("LEFT")
+            -- Tree lines from the raid's checkbox down to each boss's (bosses only).
+            l.trunk = l:CreateTexture(nil, "ARTWORK")
+            l.trunk:SetColorTexture(0.3, 0.3, 0.3, 1)
+            l.trunk:SetWidth(1)
+            l.trunk:SetPoint("TOP", l, "TOPLEFT", 6, 6)  -- up to the heading's box (centre of its 12px box)
+            l.branch = l:CreateTexture(nil, "ARTWORK")
+            l.branch:SetColorTexture(0.3, 0.3, 0.3, 1)
+            l.branch:SetSize(11, 1)
+            l.branch:SetPoint("LEFT", 6, 0)
             -- My lockout: a live rule (Filters.Lockout), on or off per raid.
             l.want = Toggle(l, "My lockout", 80, function(self)
                 editing.lockout = editing.lockout or {}
@@ -178,6 +187,7 @@ local function PaintRaid(f)
         h.raid, h.headRaid = raid.name, raid.name
         h.check:SetLabel("")
         h.check:SetPoint("LEFT")
+        h.trunk:Hide(); h.branch:Hide()
         h.check:Set(shown)
         h.check:Show()
         h.text:SetPoint("LEFT", 18, 0)
@@ -189,8 +199,11 @@ local function PaintRaid(f)
         h.want.raid = raid.name
         h.want:Paint(editing.lockout ~= nil and editing.lockout[raid.name] == true)
         h.want:Show()
-        for _, boss in ipairs(open[raid.name] and raid.bosses or {}) do
+        local list = open[raid.name] and raid.bosses or {}
+        for i, boss in ipairs(list) do
             local l = Line()
+            l.trunk:SetPoint("BOTTOM", l, i == #list and "LEFT" or "BOTTOMLEFT", 6, 0)
+            l.trunk:Show(); l.branch:Show()
             l.raid, l.headRaid = nil, nil
             l.text:Hide()
             l.want:Hide()
@@ -207,6 +220,7 @@ local function PaintRaid(f)
         local l = Line()
         l.raid, l.headRaid = nil, nil
         l.check:Hide()
+        l.trunk:Hide(); l.branch:Hide()
         l.text:SetPoint("LEFT")
         l.text:Show()
         l.text:SetText("Bosses show here once raids are in the results.")
@@ -414,24 +428,33 @@ local function BuildOptions(parent)
     local y = 0
     box.switches = {}
     for _, o in ipairs({
+        { "raidFurthest", "Sorting: Raids, furthest along first", "Raid groups with the most bosses down sort to the top (after friends, guild and My lockout). Off: fewest down first.",
+          function() return ns.db.raidFurthest end, function(on) ns.db.raidFurthest = on or nil; ns.Pane.Render() end },
+        -- Opt-out: on for everyone until turned off.
+        { "noChime", "Alert: Dungeon, chime when group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
+          function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
+        "-",  -- a rule between the sorting / alert pair and the rest
         { "useBlizzard", "Use Blizzard's group list instead", "A PickupGroup button on Blizzard's panel brings this back.",
           function() return ns.db.useBlizzard end,
           function(on) ns.db.useBlizzard = on; if on then ns.Filters.RestoreBlizzard() end; ns.Pane.Update() end },
         { "nameColors", "Color names for friends / guild", "Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.",
           function() return ns.db.nameColors end, function(on) ns.db.nameColors = on or nil; ns.Pane.Render() end },
-        { "raidFurthest", "Raids: furthest along first", "Raid groups with the most bosses down sort to the top (after friends, guild and My lockout). Off: fewest down first.",
-          function() return ns.db.raidFurthest end, function(on) ns.db.raidFurthest = on or nil; ns.Pane.Render() end },
         { "swap", "Swap when all sign-ups are out", "With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.",
           function() return ns.db.swap end, function(on) ns.db.swap = on or nil; ns.Pane.Render() end },
         -- Opt-in (player): veterans can turn off the how-to tooltips.
         { "noHints", "Hide hint tooltips", nil, function() return ns.db.noHints end, function(on) ns.db.noHints = on or nil end },
-        -- Opt-out: on for everyone until turned off.
-        { "noChime", "Chime when my group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
-          function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
         -- Off for players whose other addons handle sign-up notes (they clash).
         { "noteStrip", "My notes under Blizzard's sign-up window", nil,
           ns.Notes.StripOn, function(on) ns.db.noteStrip = (not on) and false or nil end },
     }) do
+      if o == "-" then
+        local rule = box:CreateTexture(nil, "ARTWORK")
+        rule:SetColorTexture(0.25, 0.25, 0.25, 1)
+        rule:SetHeight(1)
+        rule:SetPoint("TOPLEFT", 0, y - 4)
+        rule:SetPoint("RIGHT")
+        y = y - 12
+      else
         local cb = Kit.Check(box, o[2], function(on)
             o[5](on)
             ns.Log.Emit("setting", { key = o[1], on = on })
@@ -441,6 +464,7 @@ local function BuildOptions(parent)
         cb.get = o[4]
         box.switches[#box.switches + 1] = cb
         y = y - 24
+      end
     end
     y = y + 6
     box.stripWhy = Label(box, "")
