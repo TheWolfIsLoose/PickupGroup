@@ -127,6 +127,7 @@ local function PaintRaid(f)
                 if l.headRaid then  -- a raid's heading: show its groups or not
                     editing.raidsOff = editing.raidsOff or {}
                     editing.raidsOff[l.headRaid] = not on or nil
+                    open[l.headRaid] = on  -- hidden raids fold away
                     if not next(editing.raidsOff) then editing.raidsOff = nil end
                     Sidecar.Paint(); Changed()
                     return
@@ -210,6 +211,8 @@ local function PaintRaid(f)
         l.text:SetTextColor(0.55, 0.55, 0.55)
         l.want:Hide()
     end
+    bossBox:SetHeight(math.max(1, -y))
+    bossBox.scroll:Clamp(bossBox.scroll:GetVerticalScroll())
 end
 
 local leadBox
@@ -344,11 +347,23 @@ local function BuildRaid(parent)
     bossLabel:SetWidth(W - 2 * PAD)
     bossLabel:SetJustifyH("LEFT")
     bossLabel:SetWordWrap(true)
-    bossBox = CreateFrame("Frame", nil, box)
-    bossBox:SetPoint("TOPLEFT", bossLabel, "BOTTOMLEFT", 0, -6)
-    bossBox:SetPoint("RIGHT")
-    bossBox:SetHeight(1)
-    box:SetHeight(300)
+    -- The boss list scrolls (wheel) inside the space down to Reset; a
+    -- pulsing chevron says there's more below.
+    local scroll = CreateFrame("ScrollFrame", nil, box)
+    scroll:SetPoint("TOPLEFT", bossLabel, "BOTTOMLEFT", 0, -6)
+    scroll:SetPoint("BOTTOMRIGHT")
+    bossBox = CreateFrame("Frame", nil, scroll)
+    bossBox:SetSize(W - 2 * PAD, 1)
+    scroll:SetScrollChild(bossBox)
+    scroll.more = Kit.More(scroll)
+    function scroll:Clamp(to)
+        local most = math.max(0, bossBox:GetHeight() - self:GetHeight())
+        self:SetVerticalScroll(math.min(math.max(0, to), most))
+        self.more:Set(self:GetVerticalScroll() < most - 1)
+    end
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(self, delta) self:Clamp(self:GetVerticalScroll() - delta * 48) end)
+    bossBox.scroll = scroll
     return box
 end
 
@@ -552,7 +567,7 @@ local function Build()
     keysBox:SetPoint("RIGHT")
     raidBox = BuildRaid(body)
     raidBox:SetPoint("TOPLEFT")
-    raidBox:SetPoint("RIGHT")
+    raidBox:SetPoint("BOTTOMRIGHT", 0, 30)  -- down to just above Reset
     leadBox = BuildLead(body)
     leadBox:SetPoint("TOPLEFT")
     leadBox:SetPoint("RIGHT")
