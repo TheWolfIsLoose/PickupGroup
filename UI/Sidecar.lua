@@ -428,7 +428,7 @@ local function BuildOptions(parent)
     local y = 0
     box.switches = {}
     for _, o in ipairs({
-        { "raidFurthest", "Sorting: Raids, furthest along first", "Raid groups with the most bosses down sort to the top (after friends, guild and My lockout). Off: fewest down first.",
+        { "raidFurthest", "Sorting: Raid, furthest along first", "Raid groups with the most bosses down sort to the top (after friends, guild and My lockout). Off: fewest down first.",
           function() return ns.db.raidFurthest end, function(on) ns.db.raidFurthest = on or nil; ns.Pane.Render() end },
         -- Opt-out: on for everyone until turned off.
         { "noChime", "Alert: Dungeon, chime when group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
