@@ -1,3 +1,3 @@
-## v1.0.8
+## v1.0.9
 
-- Fixed: raid groups disappeared from the list with an error after patch 12.1.5.
+- New: if another addon's group finder or sign-up note tool is also on, PickupGroup says so right when the game loads, explains what overlaps and how to pick one.
