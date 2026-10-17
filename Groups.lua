@@ -400,7 +400,11 @@ function Groups.List(showHidden)
         if a.isRaid then
             -- My lockout: groups that have done more of my kills first.
             if (a.caught or 0) ~= (b.caught or 0) then return (a.caught or 0) > (b.caught or 0) end
-            if (a.down or 0) ~= (b.down or 0) then return (a.down or 0) < (b.down or 0) end
+            -- Fewest bosses down first, or furthest along first (Options).
+            if (a.down or 0) ~= (b.down or 0) then
+                if ns.db.raidFurthest then return (a.down or 0) > (b.down or 0) end
+                return (a.down or 0) < (b.down or 0)
+            end
             return (a.age or 0) < (b.age or 0)
         end
         return (a.score or 0) > (b.score or 0)

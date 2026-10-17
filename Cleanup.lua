@@ -1,6 +1,6 @@
 --[[
     PickupGroup - Cleanup.lua
-    Clean-up: rules that hide listings, each an Options switch (on by
+    Clean-up: rules that hide listings, all under one Options switch (on by
     default). Listing names can't be read, so every rule uses readable
     listing data. Our table filters its own copy; Blizzard's list is never
     rewritten.

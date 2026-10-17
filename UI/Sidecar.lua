@@ -410,11 +410,6 @@ end
 local function BuildOptions(parent)
     local box = CreateFrame("Frame", nil, parent)
     local c = ns.db.cleanup
-    local function Set(key, on)
-        c[key] = on
-        ns.Log.Emit("setting", { key = "cleanup." .. key, on = on })
-        ns.Pane.Render()
-    end
     -- { key, label, tooltip?, get(), set(on) }; every change is logged.
     local y = 0
     box.switches = {}
@@ -424,6 +419,8 @@ local function BuildOptions(parent)
           function(on) ns.db.useBlizzard = on; if on then ns.Filters.RestoreBlizzard() end; ns.Pane.Update() end },
         { "nameColors", "Color names for friends / guild", "Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.",
           function() return ns.db.nameColors end, function(on) ns.db.nameColors = on or nil; ns.Pane.Render() end },
+        { "raidFurthest", "Raids: furthest along first", "Raid groups with the most bosses down sort to the top (after friends, guild and My lockout). Off: fewest down first.",
+          function() return ns.db.raidFurthest end, function(on) ns.db.raidFurthest = on or nil; ns.Pane.Render() end },
         { "swap", "Swap when all sign-ups are out", "With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.",
           function() return ns.db.swap end, function(on) ns.db.swap = on or nil; ns.Pane.Render() end },
         -- Opt-in (player): veterans can turn off the how-to tooltips.
@@ -451,37 +448,18 @@ local function BuildOptions(parent)
     box.stripWhy:SetTextColor(1, 0.72, 0.3)
     y = y - 22
 
-    local head = Label(box, "Clean-up: hide listings that...")
-    head:SetPoint("TOPLEFT", 0, y)
-    y = y - 18
-    box.checks = {}
-    for _, row in ipairs({
-        { "stale", "Are listed longer than" },
-        { "advert", "Look like adverts" },
-        { "carry", "Offer a carry" },
-        { "blacklist", "Are led by a blacklisted player" },
-    }) do
-        local key = row[1]
-        local cb = Kit.Check(box, row[2], function(on) Set(key, on) end)
-        cb:SetPoint("TOPLEFT", 0, y)
-        box.checks[key] = cb
-        if key == "stale" then
-            local hours = Kit.Edit(box, 36, function(text)
-                local n = tonumber(text)
-                if n and n > 0 then c.staleHours = n; ns.Pane.Render() end
-            end, true)
-            hours:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-            local unit = Label(box, "hours")
-            unit:SetPoint("LEFT", hours, "RIGHT", 4, 0)
-            box.hours = hours
-        end
-        y = y - 24
-    end
-    local tip = Label(box, "Adverts: no leader score and the voice chat field filled in. "
-        .. "Right-click a row to report, blacklist or hide its leader.")
-    tip:SetPoint("TOPLEFT", 0, y - 2)
-    tip:SetWidth(W - 2 * PAD); tip:SetJustifyH("LEFT"); tip:SetWordWrap(true)
-    y = y - 40
+    -- Clean-up: one switch for all its rules; what it hides is in the tooltip.
+    box.cleanup = Kit.Check(box, "Clean up the list", function(on)
+        for _, key in ipairs({ "stale", "advert", "carry", "blacklist" }) do c[key] = on end
+        ns.Log.Emit("setting", { key = "cleanup", on = on })
+        ns.Pane.Render()
+    end)
+    box.cleanup:SetPoint("TOPLEFT", 0, y)
+    Kit.Tip(box.cleanup, "Clean up the list", "Hides listings that are listed longer than "
+        .. (c.staleHours or 3) .. " hours, look like adverts (no leader score and the voice chat field"
+        .. " filled in), offer a carry, or are led by a blacklisted player."
+        .. " Right-click a row to report, blacklist or hide its leader.")
+    y = y - 30
 
     box.count = Label(box, "")
     box.count:SetPoint("TOPLEFT", 0, y - 4)
@@ -508,8 +486,7 @@ local function PaintOptions()
     local why = ns.Notes.Conflict()
     o.stripWhy:SetText(why and ("Off: " .. why .. ".") or "")
     Sidecar.CheckConflict()
-    for key, cb in pairs(o.checks) do cb:Set(c[key]) end
-    o.hours:SetText(tostring(c.staleHours or 3))
+    o.cleanup:Set(c.stale or c.advert or c.carry or c.blacklist)
     local n = ns.Cleanup.Count()
     o.count:SetText(("Blacklist: %d leader%s"):format(n, n == 1 and "" or "s"))
 end
