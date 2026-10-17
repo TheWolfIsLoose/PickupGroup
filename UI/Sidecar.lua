@@ -177,6 +177,7 @@ local function PaintRaid(f)
         local shown = not (editing.raidsOff and editing.raidsOff[raid.name])
         h.raid, h.headRaid = raid.name, raid.name
         h.check:SetLabel("")
+        h.check:SetPoint("LEFT")
         h.check:Set(shown)
         h.check:Show()
         h.text:SetPoint("LEFT", 18, 0)
@@ -195,6 +196,7 @@ local function PaintRaid(f)
             l.want:Hide()
             l.bossRaid, l.boss = raid.name, boss
             l.check:SetLabel(boss)
+            l.check:SetPoint("LEFT", 18, 0)  -- under its raid's name, not its checkbox
             l.check:Set(rules and rules[boss])
             l.check:Show()
         end
