@@ -2,6 +2,19 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.1.0 (on `dev`, release queued for 2026-10-20)
+
+Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the list filled with full clears). Listing titles are protected (unreadable), so the only title match is Blizzard's server-side search text; PickupGroup now owns raid and difficulty so the player can type words like "ula" or "skip" there without picking a suggestion. Tested in game.
+
+- Raid filter: `diffs` (Normal / Heroic / Mythic on/off row, nil = all) and `raidsOff[raid]` (a checkbox on each raid heading; unticking folds it). Replaces the 2026-10-01 rule that difficulty came from Blizzard's raid suggestion. Summary line shows e.g. "H, 2 raids hidden". World-boss rows have no difficulty, so they drop out once any difficulty is off.
+- Sidecar: generic `SetRow` (regions and difficulty share it); boss list scrolls (mouse wheel) above Reset with the pulsing chevron; boss checkboxes indent 18px under the raid name with 1px tree lines from the raid's checkbox.
+- Options: "Sorting: Raid, furthest along first" (`db.raidFurthest`, opt-in: most bosses down first, after friends / guild / My lockout) and "Alert: Dungeon, chime when group fills" grouped at the top above a rule. Clean-up's four rows, hours box and note folded into one "Clean up the list" switch (sets all four rules; tooltip lists them; stale stays at `staleHours`, 3 by default).
+
+Player-facing notes for the CHANGELOG:
+- New: the raid filter picks difficulty and which raids to show, so the search box is free for words in group names (try "skip" or a boss name).
+- New: an option to sort raid groups furthest along first.
+- Clean-up is now one switch; hover it to see what it hides.
+
 ## v1.0.9 (2026-10-17)
 
 Addon clash detection (EllesmereUI 9.6 shipped its own Group Finder module, opt-in):
