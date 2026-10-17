@@ -83,7 +83,7 @@ end
 -- misbehaves (compatibility only).
 local WATCHED = {
     "RaiderIO", "PremadeGroupsFilter", "PremadeGroupBoard", "LFGSpamFilter",
-    "ElvUI", "EllesmereUI", "atrocityUI", "atrocityEssentials",
+    "ElvUI", "EllesmereUI", "EllesmereUIGroupFinder", "atrocityUI", "atrocityEssentials",
 }
 
 -- Environment header, then every entry newest first, plain text.

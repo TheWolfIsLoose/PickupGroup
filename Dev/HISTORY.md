@@ -2,6 +2,14 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.0.9 (2026-10-17)
+
+Addon clash detection (EllesmereUI 9.6 shipped its own Group Finder module, opt-in):
+
+- `ns.FinderClash()`: EllesmereUIGroupFinder loaded and `EllesmereUIDB.groupFinder.enabled`. With both on, its square row and boss grid sit under our pane (its row is SP+5, our pane sits near the AutoComplete level), our `Filters.Sync` replaces its dungeon / role / rating / class picks in Blizzard's advanced filter, and its difficulty menu (row 1, beside the search box) still narrows the server search. Its client-side filters, Quick Signup and Cancel Oldest only touch Blizzard's rows. Not flagged while `useBlizzard` is on.
+- `Notes.Conflict()` also counts EllesmereUIGroupFinder: the sign-up helpers (EllesmereUI core) run while its QoL or Group Finder module is loaded. Copy points to "Quality of Life or Group Finder".
+- Clash alerts are table-driven (`CLASHES` in Sidecar.lua) and show at PLAYER_ENTERING_WORLD on login / reload (next frame) for every active clash, not only at onset; mid-session onsets still alert on the next check. Several clashes share one window under per-clash headings. `EllesmereUIGroupFinder` added to the log's watched addons. Tested in game.
+
 ## v1.0.8 (2026-10-14)
 
 Hotfix: 12.1.5 removed `EJ_GetCurrentInstance`, so `TotalBosses` errored on every raid row (`Groups.lua:133: attempt to call a nil value`) and `SafeRead` dropped them; new raids never listed. The journal calls now resolve from the globals or `C_EncounterJournal`, and the boss read is skipped (no count) if they're missing. Tested in game.
