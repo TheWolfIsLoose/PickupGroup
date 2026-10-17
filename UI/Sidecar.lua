@@ -364,7 +364,7 @@ end
 local function PaintNotes()
     local why = ns.Notes.Conflict()
     if notesView then
-        notesView.why:SetText(why and ("Not shown under Blizzard's window: " .. why .. ". Turn it off in EllesmereUI (Quality of Life > Group Finder) to use these.") or "")
+        notesView.why:SetText(why and ("Not shown under Blizzard's window: " .. why .. ". Turn it off in EllesmereUI's options (Quality of Life or Group Finder) to use these.") or "")
     end
     local list = ns.Notes.All()
     for i, e in ipairs(noteBoxes) do e:SetText(list[i] or "") end
@@ -624,12 +624,12 @@ function Sidecar.Close(leading)
 end
 
 -- ---------------------------------------------------------------------------
--- Clash alert: another addon's note tool on Blizzard's sign-up window turns
--- our notes off. Said once, in a window you can't miss, each time the clash
--- starts (login, or the other addon's option switched on mid-session).
+-- Clash alerts: another addon doing the same job on the same Blizzard frame.
+-- Said once, in a window you can't miss, each time a clash starts (login, or
+-- the other addon's option switched on mid-session).
 -- ---------------------------------------------------------------------------
 local alert
-local function Alert(why)
+local function Alert(title, body)
     if not alert then
         Kit.ApplyFontFace()
         alert = CreateFrame("Frame", "PickupGroupConflictAlert", UIParent)
@@ -645,7 +645,6 @@ local function Alert(why)
         alert.title = alert:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
         alert.title:SetPoint("TOPLEFT", 14, -12)
         alert.title:SetTextColor(1, 0.72, 0.3)
-        alert.title:SetText("PickupGroup: sign-up notes are off")
         alert.body = alert:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
         alert.body:SetPoint("TOPLEFT", alert.title, "BOTTOMLEFT", 0, -10)
         alert.body:SetWidth(332)
@@ -658,26 +657,41 @@ local function Alert(why)
         ok:SetText("Got it")
         ok:SetScript("OnClick", function() alert:Hide() end)
     end
-    alert.body:SetText(why .. ". It and PickupGroup both put a note helper on Blizzard's sign-up window, "
-        .. "so PickupGroup's notes are off while it's on.\n\n"
-        .. "|cffffffffTo use PickupGroup's notes:|r in EllesmereUI's options, Quality of Life > Group Finder, "
-        .. "turn off Persistent Signup Note. PickupGroup's notes come back by themselves.\n\n"
-        .. "|cffffffffTo keep EllesmereUI's:|r nothing to do. Shift-click Apply still opens the sign-up window.")
+    alert.title:SetText(title)
+    alert.body:SetText(body)
     alert.body:SetTextColor(0.85, 0.85, 0.85)
     alert:SetHeight(12 + alert.title:GetStringHeight() + 10 + alert.body:GetStringHeight() + 16 + 24 + 12)
     alert:Show()
 end
 
-function Sidecar.CheckConflict()
-    local why = ns.Notes.Conflict()
-    if why and ns.db.noteConflict ~= why then
-        ns.db.noteConflict = why
-        ns.Log.Emit("setting", { key = "notes under Blizzard's window (" .. why .. ")", on = false })
-        Alert(why)
-    elseif not why and ns.db.noteConflict then
-        ns.db.noteConflict = nil
-        ns.Log.Emit("setting", { key = "notes under Blizzard's window (clash gone)", on = true })
+-- One clash: why (a sentence, or nil), the db key that remembers it, the log
+-- line, and the alert. Alerts once per onset; quiet again once it's gone.
+local function Clash(why, key, logKey, title, body)
+    if why and alert and alert:IsShown() then return end  -- one at a time: the next check says it
+    if why and ns.db[key] ~= why then
+        ns.db[key] = why
+        ns.Log.Emit("setting", { key = logKey .. " (" .. why .. ")", on = false })
+        Alert(title, why .. body)
+    elseif not why and ns.db[key] then
+        ns.db[key] = nil
+        ns.Log.Emit("setting", { key = logKey .. " (clash gone)", on = true })
     end
+end
+
+function Sidecar.CheckConflict()
+    Clash(ns.Notes.Conflict(), "noteConflict", "notes under Blizzard's window", "PickupGroup: sign-up notes are off",
+        ". It and PickupGroup both put a note helper on Blizzard's sign-up window, "
+        .. "so PickupGroup's notes are off while it's on.\n\n"
+        .. "|cffffffffTo use PickupGroup's notes:|r in EllesmereUI's options (Quality of Life or Group Finder), "
+        .. "turn off Persistent Signup Note. PickupGroup's notes come back by themselves.\n\n"
+        .. "|cffffffffTo keep EllesmereUI's:|r nothing to do. Shift-click Apply still opens the sign-up window.")
+    -- Already on Blizzard's list: nothing overlaps, nothing to say.
+    Clash(not ns.db.useBlizzard and ns.FinderClash() or nil, "finderConflict", "group finder overlap", "PickupGroup: two group finders",
+        ". PickupGroup's list covers its filter row, and while the list shows, PickupGroup's filter sets "
+        .. "Blizzard's dungeons, role, score and class (EllesmereUI's picks there are replaced). "
+        .. "Its difficulty menu beside the search box still narrows every search.\n\n"
+        .. "|cffffffffTo use PickupGroup:|r turn off Group Finder in EllesmereUI's options.\n\n"
+        .. "|cffffffffTo use EllesmereUI's:|r PickupGroup Options > Use Blizzard's group list instead.")
 end
 ns.On("PLAYER_ENTERING_WORLD", function() C_Timer.After(4, Sidecar.CheckConflict) end)
 

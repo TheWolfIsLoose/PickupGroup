@@ -71,10 +71,19 @@ end
 -- a sentence saying which, or nil. Read from its saved settings, so a change
 -- there counts at once. (Its auto-sign-up doesn't clash: our shift-click
 -- holds Shift while the window opens, and it leaves the window open then.)
+-- (Its sign-up helpers run while its Quality of Life or Group Finder module is loaded.)
+local function EUI(module) return C_AddOns.IsAddOnLoaded(module) and type(EllesmereUIDB) == "table" end
 function Notes.Conflict()
-    if C_AddOns.IsAddOnLoaded("EllesmereUIQoL") and type(EllesmereUIDB) == "table" and EllesmereUIDB.persistSignupNote then
+    if (EUI("EllesmereUIQoL") or EUI("EllesmereUIGroupFinder")) and EllesmereUIDB.persistSignupNote then
         return "EllesmereUI's Persistent Signup Note is on"
     end
+end
+
+-- Another addon's premade-groups filter on the same search panel: its filter
+-- row ends up under our list, and both write Blizzard's filter.
+function ns.FinderClash()
+    local gf = EUI("EllesmereUIGroupFinder") and EllesmereUIDB.groupFinder
+    if type(gf) == "table" and gf.enabled == true then return "EllesmereUI's Group Finder is on" end
 end
 
 -- Our notes under Blizzard's window: the player's choice, unless something clashes.
