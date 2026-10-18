@@ -85,9 +85,9 @@ local function TitleHas(level)
     return title:find("%+" .. level .. "%f[%D]") ~= nil
 end
 
-local function Remind(level)
+local function Remind(level, dungeon)
     panel.pending = level
-    panel.note:SetText(("Type +%d in the title, then click again."):format(level))
+    panel.note:SetText(("Type +%d in the title, then click %s again."):format(level, dungeon))
     panel.note:Show()
     panel.outline:Show()
 end
@@ -96,7 +96,7 @@ local function List(row)
     local ec = LFGListFrame.EntryCreation
     if not TitleHas(row.level) then
         ns.Log.Emit("lead", { action = "quick list waiting for the title", name = ("%s +%d (%s key)"):format(row.code, row.level, row.who) })
-        return Remind(row.level)
+        return Remind(row.level, row.dungeon)
     end
     panel.note:Hide(); panel.outline:Hide()
     local ps = Playstyle()
@@ -137,7 +137,7 @@ local function Row(i)
         GameTooltip:SetText(self.dungeon, 1, 1, 1)
         local soft = Kit.Palette.soft
         GameTooltip:AddLine(self.activity
-            and ("Lists %s's +%d as Mythic+, %s, once the title names +%d (listings show the level only in the title)."):format(
+            and ("Lists %s's +%d as Mythic+, %s, once the title names +%d (listings show the level only in the title). Blizzard's form doesn't change; the listing goes up for this dungeon."):format(
                 self.who, self.level, PlaystyleName(Playstyle()), self.level)
             or "No key for this dungeon in your party.", soft[1], soft[2], soft[3], true)
         GameTooltip:Show()
