@@ -101,6 +101,7 @@ end
 function ns.Hints() return not ns.db.noHints end
 
 function ns.Version()
+    if ns.build then return "dev " .. ns.build end
     return C_AddOns.GetAddOnMetadata(addonName, "Version") or "?"
 end
 
