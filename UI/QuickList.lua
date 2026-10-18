@@ -170,6 +170,8 @@ local function Paint()
         y = y - ROW_H
     end
     for i = #ns.Filters.Dungeons() + 1, #rows do rows[i]:Hide() end
+    local last = rows[#ns.Filters.Dungeons()]
+    if last then panel.howto:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -14) end
     panel.style:SetText(PlaystyleName(Playstyle()))
 end
 
@@ -209,6 +211,21 @@ local function Build(ec)
     label:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
     panel.style = Kit.Text(panel, "LEFT")
     panel.style:SetPoint("LEFT", label, "RIGHT", 6, 0)
+    -- How-to, standing (player's call, 2026-10-17: the steps are precise and
+    -- one of them is trusting the click, so they stay in view).
+    panel.howto = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    panel.howto:SetPoint("RIGHT", -PAD, 0)
+    panel.howto:SetJustifyH("LEFT")
+    panel.howto:SetWordWrap(true)
+    panel.howto:SetSpacing(2)
+    local soft = Kit.Palette.soft
+    panel.howto:SetTextColor(soft[1], soft[2], soft[3])
+    panel.howto:SetText("|cffffffffListing a party member's key|r\n"
+        .. "1. Leave Blizzard's dungeon and difficulty alone. Changing them resets the form.\n"
+        .. "2. Type the key's level in the title, for example +12.\n"
+        .. "3. Click that dungeon here.\n\n"
+        .. "Blizzard's form will still show a different dungeon. That's expected: the click lists the dungeon on the row, as Mythic+. "
+        .. "The title is the only place a listing shows its key level.")
     -- Reminder (amber, a reason that changes): which level to type, with a
     -- mint outline over Blizzard's title box (our frame; the box isn't touched).
     panel.note = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
