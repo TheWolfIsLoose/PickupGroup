@@ -759,7 +759,8 @@ end
 ns.On("PLAYER_LOGIN", function()
     local last
     C_Timer.NewTicker(2, function()
-        local now = tostring(ns.Notes.Conflict()) .. tostring(ns.FinderClash()) .. tostring(ns.QuickList.Clash())
+        -- (Each returns nothing when there's no clash, so "or".)
+        local now = (ns.Notes.Conflict() or "") .. "|" .. (ns.FinderClash() or "") .. "|" .. (ns.QuickList.Clash() or "")
         if now == last then return end
         local first = last == nil
         last = now
