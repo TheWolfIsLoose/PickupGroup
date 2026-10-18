@@ -19,3 +19,4 @@ UI\LogPopup.lua
 UI\Pane.lua
 UI\Sidecar.lua
 UI\Leader.lua
+UI\QuickList.lua

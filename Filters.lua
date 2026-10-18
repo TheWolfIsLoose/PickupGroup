@@ -94,7 +94,7 @@ function Filters.Summary(f)
     return #out > 0 and table.concat(out, ", ") or "No rules"
 end
 
--- This season's dungeons, as { name, code, best }, from the game.
+-- This season's dungeons, as { name, code, best, mapID }, from the game.
 function Filters.Dungeons()
     local out = {}
     for _, mapID in ipairs(C_ChallengeMode.GetMapTable() or {}) do
@@ -102,7 +102,7 @@ function Filters.Dungeons()
         if name then
             -- The player's best in-time key there this season, if any.
             local timed = C_MythicPlus.GetSeasonBestForMap(mapID)
-            out[#out + 1] = { name = name, code = ns.Groups.Code(name), best = timed and timed.level }
+            out[#out + 1] = { name = name, code = ns.Groups.Code(name), best = timed and timed.level, mapID = mapID }
         end
     end
     table.sort(out, function(a, b) return a.code < b.code end)
@@ -181,6 +181,8 @@ local function GroupIDs()
     if n > 0 then groupIDs = out end  -- not ready yet at login: try again later
     return out
 end
+
+Filters.GroupIDs = GroupIDs  -- the quick list maps dungeons to activities with it
 
 local function SameSet(a, b)
     if #a ~= #b then return false end

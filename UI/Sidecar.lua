@@ -718,6 +718,10 @@ local CLASHES = {
       .. "Its difficulty menu beside the search box still narrows every search.\n\n"
       .. "|cffffffffTo use PickupGroup:|r turn off Group Finder in EllesmereUI's options.\n\n"
       .. "|cffffffffTo use EllesmereUI's:|r PickupGroup Options > Use Blizzard's group list instead." },
+    { function() return ns.QuickList and ns.QuickList.Clash() end, "quickConflict", "quick list", "PickupGroup: quick list is off",
+      ". It and PickupGroup both put quick-list buttons beside Blizzard's listing form, so PickupGroup's quick list is off while it's on.\n\n"
+      .. "|cffffffffTo use PickupGroup's:|r turn off LFG Quick Create in atrocityEssentials' options. PickupGroup's comes back by itself.\n\n"
+      .. "|cffffffffTo keep atrocityEssentials':|r nothing to do." },
 }
 
 -- atLoad (login / reload): every clash still on is said again. Otherwise

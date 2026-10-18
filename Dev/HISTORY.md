@@ -10,10 +10,13 @@ Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the l
 - Sidecar: generic `SetRow` (regions and difficulty share it); boss list scrolls (mouse wheel) above Reset with the pulsing chevron; boss checkboxes indent 18px under the raid name with 1px tree lines from the raid's checkbox.
 - Options: "Sorting: Raid, furthest along first" (`db.raidFurthest`, opt-in: most bosses down first, after friends / guild / My lockout) and "Alert: Dungeon, chime when group fills" grouped at the top above a rule. Clean-up's four rows, hours box and note folded into one "Clean up the list" switch (sets all four rules; tooltip lists them; stale stays at `staleHours`, 3 by default).
 
+- Quick list (player request, 2026-10-17: listing a party member's key flips Blizzard's form to plain Mythic, keeps the old "+12" title, and switching back to Mythic+ wipes every field). New `UI/QuickList.lua`: a panel beside Blizzard's listing form (Dungeons only, not in edit mode) with one row per season dungeon showing the highest party key there (own key from `C_MythicPlus`, party keys from LibKeystone when another addon has loaded it; not bundled). A click calls `C_LFGList.CreateListing` straight from the hardware click with that dungeon's activity for the key level (one activity per level, `GetKeystoneForActivity`), the playstyle last picked on Blizzard's form (`db.listPlaystyle`, read via a post-hook; Relaxed until one is picked), and the form's rating / item level / private / faction values read, never written. Writing the form's fields taints them and blocks Blizzard's List Group / Edit, so the title can't be set: the form's title box is used as is. Clash alert (`quickConflict`) when atrocityEssentials' LFG Quick Create is on; the panel hides while it is. Self-check: `Dev/test_quicklist.lua`.
+
 Player-facing notes for the CHANGELOG:
 - New: the raid filter picks difficulty and which raids to show, so the search box is free for words in group names (try "skip" or a boss name).
 - New: an option to sort raid groups furthest along first.
 - Clean-up is now one switch; hover it to see what it hides.
+- New: Quick list beside Blizzard's listing form: one click lists any party member's key as Mythic+ at its level, with your last playstyle.
 
 ## v1.0.9 (2026-10-17)
 
