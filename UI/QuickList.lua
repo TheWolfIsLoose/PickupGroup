@@ -221,15 +221,15 @@ local function Build(ec)
     local soft = Kit.Palette.soft
     panel.howto:SetTextColor(soft[1], soft[2], soft[3])
     panel.howto:SetText("|cffffffffListing a party member's key|r\n"
-        .. "1. Leave Blizzard's dungeon and difficulty alone. Changing them resets the form.\n"
-        .. "2. Type the key's level in the title, for example +12.\n"
+        .. "1. Leave Blizzard's dungeon and difficulty alone (changing them resets the form).\n"
+        .. "2. Type the key's level in the title, e.g. +12.\n"
         .. "3. Click that dungeon here.\n\n"
-        .. "Blizzard's form will still show a different dungeon. That's expected: the click lists the dungeon on the row, as Mythic+. "
-        .. "The title is the only place a listing shows its key level.")
+        .. "It lists this row's dungeon as Mythic+, even though Blizzard's form shows another. "
+        .. "Listings show the key level only in the title.")
     -- Reminder (amber, a reason that changes): which level to type, with a
     -- mint outline over Blizzard's title box (our frame; the box isn't touched).
     panel.note = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    panel.note:SetPoint("BOTTOMLEFT", PAD, 34)
+    panel.note:SetPoint("TOPLEFT", panel.howto, "BOTTOMLEFT", 0, -10)  -- right under the steps
     panel.note:SetPoint("RIGHT", -PAD, 0)
     panel.note:SetJustifyH("LEFT")
     panel.note:SetWordWrap(true)
