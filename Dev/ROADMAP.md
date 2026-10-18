@@ -17,7 +17,7 @@ cheap.
 
 ## Next session: start here
 
-**Release queued: v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
+**v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
 
 **2026-10-14: v1.0.8 hotfix released** (raid rows errored on 12.1.5's removed `EJ_GetCurrentInstance`; notes in `Dev/HISTORY.md`).
 

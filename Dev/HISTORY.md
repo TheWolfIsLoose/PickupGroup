@@ -2,7 +2,7 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## v1.1.0 (on `dev`, release queued for 2026-10-20)
+## v1.1.0 (on `dev`, release queued for 2026-10-20; beta v1.1.0-beta1 published 2026-10-17)
 
 Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the list filled with full clears). Listing titles are protected (unreadable), so the only title match is Blizzard's server-side search text; PickupGroup now owns raid and difficulty so the player can type words like "ula" or "skip" there without picking a suggestion. Tested in game.
 
