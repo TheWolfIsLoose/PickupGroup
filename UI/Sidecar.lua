@@ -753,6 +753,20 @@ function Sidecar.CheckConflict(atLoad)
     end
     Alert("PickupGroup: addon clashes", table.concat(text, "\n\n"))
 end
+-- Mid-session: another addon's option switched on (or off) without a reload.
+-- Checked every 2 s (a few table reads); a change re-runs the check, which
+-- alerts on a new clash, and the quick list steps aside or comes back.
+ns.On("PLAYER_LOGIN", function()
+    local last
+    C_Timer.NewTicker(2, function()
+        local now = tostring(ns.Notes.Conflict()) .. tostring(ns.FinderClash()) .. tostring(ns.QuickList.Clash())
+        if now == last then return end
+        local first = last == nil
+        last = now
+        if not first then Sidecar.CheckConflict(); ns.QuickList.Update() end
+    end)
+end)
+
 -- As soon as the UI is up on login or reload (not on every loading screen).
 ns.On("PLAYER_ENTERING_WORLD", function(login, reload)
     if login or reload then C_Timer.After(0, function() Sidecar.CheckConflict(true) end) end
