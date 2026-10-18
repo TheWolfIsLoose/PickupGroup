@@ -600,23 +600,26 @@ end
 
 -- Raider.IO places its profile panel by anchoring a small frame to the
 -- Group Finder's right edge (and re-places it whenever it updates). While
--- the sidecar is open that anchor follows the sidecar instead; only an
--- anchor on the Group Finder is touched (a user-placed panel stays put).
+-- one of our docked panels is open (the sidecar, or the quick list beside
+-- Blizzard's listing form) that anchor follows the panel instead; only an
+-- anchor on the Group Finder or one of our panels is touched (a
+-- user-placed panel stays put).
 local rioHooked, moving
-local RIO_GAP = 2  -- a little air between the sidecar and Raider.IO's panel
+local RIO_GAP = 2  -- a little air between our panel and Raider.IO's
 function Sidecar.MoveRaiderIO()
     local a = _G.RaiderIO_ProfileTooltipAnchor
-    if not (a and frame) then return end
+    if not a then return end
     if not rioHooked then
         rioHooked = true
         hooksecurefunc(a, "SetPoint", function(_, _, rel) if not moving and rel == PVEFrame then Sidecar.MoveRaiderIO() end end)
     end
     local p, rel, rp, x, y = a:GetPoint()
-    local to = (frame:IsShown() and rel == PVEFrame and frame) or (not frame:IsShown() and rel == frame and PVEFrame)
-    if not to then return end
+    local ql = ns.QuickList and ns.QuickList.Panel()
+    local dock = (frame and frame:IsShown() and frame) or (ql and ql:IsShown() and ql) or PVEFrame
+    if rel == dock or not (rel == PVEFrame or rel == frame or (ql and rel == ql)) then return end
     moving = true
     a:ClearAllPoints()
-    a:SetPoint(p, to, rp, x + (to == frame and RIO_GAP or -RIO_GAP), y)
+    a:SetPoint(p, dock, rp, x + (rel == PVEFrame and RIO_GAP or 0) - (dock == PVEFrame and RIO_GAP or 0), y)
     moving = false
 end
 

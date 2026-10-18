@@ -104,23 +104,27 @@ local function Row(i)
     r.key = Kit.Text(r, "RIGHT", "PickupGroupFontSmall")
     r.key:SetPoint("RIGHT", -8, 0)
     r.name:SetPoint("RIGHT", r.key, "LEFT", -6, 0)
+    r:SetDisabledFontObject("PickupGroupFontDisabled")
     r:SetScript("OnClick", function(self) if self.activity then List(self) end end)
-    Kit.Tip(r, function(self) return self.dungeon end, nil, "ANCHOR_RIGHT")
+    -- Information tooltip (always shows): what a click lists, or why it can't.
     r:HookScript("OnEnter", function(self)
-        if not ns.Hints() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(self.dungeon, 1, 1, 1)
+        local soft = Kit.Palette.soft
         GameTooltip:AddLine(self.activity
-            and ("Lists %s's +%d now as Mythic+, %s. Uses the title, rating and item level in Blizzard's form."):format(
+            and ("Lists %s's +%d now as Mythic+, %s, with the title, rating and item level in Blizzard's form."):format(
                 self.who, self.level, PlaystyleName(Playstyle()))
-            or "No key for this dungeon in your party.", Kit.Palette.soft[1], Kit.Palette.soft[2], Kit.Palette.soft[3], true)
+            or "No key for this dungeon in your party.", soft[1], soft[2], soft[3], true)
         GameTooltip:Show()
     end)
+    r:HookScript("OnLeave", function() GameTooltip:Hide() end)
     rows[i] = r
     return r
 end
 
 local function Paint()
     local keys = QuickList.Keys()
-    local y = -44
+    local y = -52
     for i, d in ipairs(ns.Filters.Dungeons()) do
         local r, k = Row(i), keys[d.mapID]
         r:ClearAllPoints()
@@ -130,7 +134,10 @@ local function Paint()
         r.name:SetText(d.name)
         r.level, r.who = k and k.level, k and k.who
         r.activity = k and QuickList.Activity(d.name, k.level) or nil
-        r.key:SetText(k and ("|cffffffff+%d|r %s"):format(k.level, k.who) or "no key")
+        -- The holder in their class colour (Blizzard's colours pass through).
+        local cls = k and select(2, UnitClass(k.who))
+        local hex = cls and RAID_CLASS_COLORS[cls] and RAID_CLASS_COLORS[cls]:GenerateHexColor()
+        r.key:SetText(k and ("|cffffffff+%d|r %s"):format(k.level, hex and ("|c" .. hex .. k.who .. "|r") or k.who) or "no key")
         r.key:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
         r:SetEnabled(r.activity ~= nil)
         r.name:SetTextColor(r.activity and 1 or 0.55, r.activity and 1 or 0.55, r.activity and 1 or 0.55)
@@ -138,7 +145,7 @@ local function Paint()
         y = y - ROW_H
     end
     for i = #ns.Filters.Dungeons() + 1, #rows do rows[i]:Hide() end
-    panel.hint:SetText("One click lists the key as Mythic+, " .. PlaystyleName(Playstyle()) .. ".")
+    panel.style:SetText(PlaystyleName(Playstyle()))
 end
 
 local function Build(ec)
@@ -151,14 +158,44 @@ local function Build(ec)
     panel:EnableMouse(true)
     Kit.Fill(panel, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(panel)
-    local title = Kit.Text(panel, "LEFT", "PickupGroupFont")
-    title:SetPoint("TOPLEFT", PAD, -9)
+    -- Header: title (hint tooltip on it) over a black line, as the sidecar's.
+    local head = CreateFrame("Frame", nil, panel)
+    head:SetPoint("TOPLEFT")
+    head:SetPoint("TOPRIGHT")
+    head:SetHeight(26)
+    head:EnableMouse(true)
+    local title = Kit.Text(head, "LEFT", "PickupGroupFont")
+    title:SetPoint("LEFT", PAD, 0)
     title:SetText("Quick list")
-    panel.hint = Kit.Text(panel, "LEFT")
-    panel.hint:SetPoint("TOPLEFT", PAD, -27)
-    panel.hint:SetPoint("RIGHT", -PAD, 0)
-    panel.hint:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
+    Kit.Tip(head, "Quick list", "One click lists that dungeon's key in your party as Mythic+ at its level."
+        .. " Party members' keys show when they run an addon that shares them (BigWigs and others).", "ANCHOR_TOP")
+    local rule = panel:CreateTexture(nil, "OVERLAY")
+    rule:SetColorTexture(0, 0, 0, 1)
+    rule:SetHeight(1)
+    rule:SetPoint("TOPLEFT", 0, -26)
+    rule:SetPoint("TOPRIGHT", 0, -26)
+    -- Status: the playstyle a click lists with (changes with Blizzard's form).
+    local label = Kit.Text(panel, "LEFT")
+    label:SetPoint("TOPLEFT", PAD, -34)
+    label:SetText("Lists as")
+    label:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
+    panel.style = Kit.Text(panel, "LEFT")
+    panel.style:SetPoint("LEFT", label, "RIGHT", 6, 0)
+    -- Name and version, bottom right, as on the sidecar.
+    local version = ns.Version()
+    local versionLabel = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    versionLabel:SetPoint("RIGHT", panel, "BOTTOMRIGHT", -PAD, PAD + 11)
+    versionLabel:SetText(((version:match("%-alpha") or version:match("%-beta")) and "|cffffb84d" or "|cff8c8c8c") .. version .. "|r")
+    local nameLabel = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    nameLabel:SetPoint("RIGHT", versionLabel, "LEFT", -6, 1)
+    nameLabel:SetText("|cff98FF98Pickup|rGroup")
+    -- Raider.IO's profile panel moves over to this one while it's open.
+    panel:HookScript("OnShow", ns.Sidecar.MoveRaiderIO)
+    panel:HookScript("OnHide", ns.Sidecar.MoveRaiderIO)
 end
+
+-- The panel, once built (Raider.IO's anchor follows it).
+function QuickList.Panel() return panel end
 
 -- Shown on Dungeons only, not while editing a listing, not while it clashes.
 function QuickList.Update()
