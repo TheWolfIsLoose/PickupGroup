@@ -76,8 +76,29 @@ function QuickList.Activity(dungeonName, level)
 end
 
 -- Straight from the click: the only path Blizzard accepts from an addon.
+-- A listing carries no key level: the title is the only place it shows, and
+-- Blizzard pre-fills it from the lister's own key. Addons can't set the
+-- title (protected), so a click lists only once the title names the key's
+-- level; until then the player is shown where to type it.
+local function TitleHas(level)
+    local title = LFGListFrame.EntryCreation.Name:GetText() or ""
+    return title:find("%+" .. level .. "%f[%D]") ~= nil
+end
+
+local function Remind(level)
+    panel.pending = level
+    panel.note:SetText(("Type +%d in the title, then click again."):format(level))
+    panel.note:Show()
+    panel.outline:Show()
+end
+
 local function List(row)
     local ec = LFGListFrame.EntryCreation
+    if not TitleHas(row.level) then
+        ns.Log.Emit("lead", { action = "quick list waiting for the title", name = ("%s +%d (%s key)"):format(row.code, row.level, row.who) })
+        return Remind(row.level)
+    end
+    panel.note:Hide(); panel.outline:Hide()
     local ps = Playstyle()
     local ok = C_LFGList.CreateListing({
         activityIDs = { row.activity },
@@ -116,8 +137,8 @@ local function Row(i)
         GameTooltip:SetText(self.dungeon, 1, 1, 1)
         local soft = Kit.Palette.soft
         GameTooltip:AddLine(self.activity
-            and ("Lists %s's +%d now as Mythic+, %s, with the title, rating and item level in Blizzard's form."):format(
-                self.who, self.level, PlaystyleName(Playstyle()))
+            and ("Lists %s's +%d as Mythic+, %s, once the title names +%d (listings show the level only in the title)."):format(
+                self.who, self.level, PlaystyleName(Playstyle()), self.level)
             or "No key for this dungeon in your party.", soft[1], soft[2], soft[3], true)
         GameTooltip:Show()
     end)
@@ -188,6 +209,25 @@ local function Build(ec)
     label:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
     panel.style = Kit.Text(panel, "LEFT")
     panel.style:SetPoint("LEFT", label, "RIGHT", 6, 0)
+    -- Reminder (amber, a reason that changes): which level to type, with a
+    -- mint outline over Blizzard's title box (our frame; the box isn't touched).
+    panel.note = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    panel.note:SetPoint("BOTTOMLEFT", PAD, 34)
+    panel.note:SetPoint("RIGHT", -PAD, 0)
+    panel.note:SetJustifyH("LEFT")
+    panel.note:SetWordWrap(true)
+    panel.note:SetTextColor(Kit.Palette.warn[1], Kit.Palette.warn[2], Kit.Palette.warn[3])
+    panel.note:Hide()
+    local outline = CreateFrame("Frame", nil, panel)
+    outline:SetPoint("TOPLEFT", ec.Name, "TOPLEFT", -3, 3)
+    outline:SetPoint("BOTTOMRIGHT", ec.Name, "BOTTOMRIGHT", 3, -3)
+    Kit.Border(outline, Kit.Palette.brand)
+    outline:Hide()
+    -- Once the title names the level, the reminder goes (checked while shown).
+    outline:SetScript("OnUpdate", function(self)
+        if panel.pending and TitleHas(panel.pending) then self:Hide(); panel.note:Hide() end
+    end)
+    panel.outline = outline
     -- Name and version, bottom right, as on the sidecar.
     local version = ns.Version()
     local versionLabel = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
@@ -208,7 +248,7 @@ function QuickList.Update()
     local on = ec:IsShown() and ec.selectedCategory == DUNGEONS and not LFGListEntryCreation_IsEditMode(ec)
         and not QuickList.Clash()
     if not on then
-        if panel and panel:IsShown() then panel:Hide(); ns.Sidecar.MoveRaiderIO() end
+        if panel and panel:IsShown() then panel:Hide(); panel.note:Hide(); panel.outline:Hide(); ns.Sidecar.MoveRaiderIO() end
         return
     end
     if not panel then Build(ec) end
