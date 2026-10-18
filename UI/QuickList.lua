@@ -150,11 +150,14 @@ end
 
 local function Build(ec)
     Kit.ApplyFontFace()
-    panel = CreateFrame("Frame", "PickupGroupQuickList", ec)
+    -- Docked exactly as the sidecar is (same parent, points, strata).
+    panel = CreateFrame("Frame", "PickupGroupQuickList", PVEFrame)
+    panel:Hide()
     panel:SetWidth(W)
     panel:SetPoint("TOPLEFT", PVEFrame, "TOPRIGHT", 1, 0)
     panel:SetPoint("BOTTOMLEFT", PVEFrame, "BOTTOMRIGHT", 1, 0)
     panel:SetFrameStrata("DIALOG")
+    panel:SetToplevel(true)
     panel:EnableMouse(true)
     Kit.Fill(panel, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(panel)
@@ -189,9 +192,6 @@ local function Build(ec)
     local nameLabel = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
     nameLabel:SetPoint("RIGHT", versionLabel, "LEFT", -6, 1)
     nameLabel:SetText("|cff98FF98Pickup|rGroup")
-    -- Raider.IO's profile panel moves over to this one while it's open.
-    panel:HookScript("OnShow", ns.Sidecar.MoveRaiderIO)
-    panel:HookScript("OnHide", ns.Sidecar.MoveRaiderIO)
 end
 
 -- The panel, once built (Raider.IO's anchor follows it).
@@ -203,9 +203,13 @@ function QuickList.Update()
     if not ec then return end
     local on = ec:IsShown() and ec.selectedCategory == DUNGEONS and not LFGListEntryCreation_IsEditMode(ec)
         and not QuickList.Clash()
-    if not on then if panel then panel:Hide() end return end
+    if not on then
+        if panel and panel:IsShown() then panel:Hide(); ns.Sidecar.MoveRaiderIO() end
+        return
+    end
     if not panel then Build(ec) end
     panel:Show()
+    ns.Sidecar.MoveRaiderIO()  -- also on the first show (OnShow doesn't fire for a new frame)
     Paint()
 end
 
