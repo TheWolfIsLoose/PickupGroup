@@ -63,12 +63,15 @@ end
 function QuickList.Activity(dungeonName, level)
     local groupID = ns.Filters.GroupIDs()[dungeonName]
     if not groupID then return nil end
-    local any
+    local any, seen = nil, {}
     for _, id in ipairs(C_LFGList.GetAvailableActivities(DUNGEONS, groupID) or {}) do
-        if C_LFGList.GetKeystoneForActivity(id) == level then return id end
+        local lvl = C_LFGList.GetKeystoneForActivity(id)
         local info = C_LFGList.GetActivityInfoTable(id)
+        seen[#seen + 1] = id .. "=" .. tostring(lvl) .. (info and info.isMythicPlusActivity and "+" or "")
+        if lvl == level then QuickList.seen = table.concat(seen, " "); return id end
         if info and info.isMythicPlusActivity then any = any or id end
     end
+    QuickList.seen = table.concat(seen, " ")  -- what the game offered (log: support)
     return any
 end
 
@@ -89,7 +92,8 @@ local function List(row)
         requiredPvpRating = 0,
     })
     ns.Log.Emit("lead", { action = ok and "quick-listed" or "quick list refused",
-        name = ("%s +%d (%s key, activity %d, %s)"):format(row.code, row.level, row.who, row.activity, PlaystyleName(ps)) })
+        name = ("%s +%d (%s key, activity %d, %s; offered %s)"):format(row.code, row.level, row.who, row.activity,
+            PlaystyleName(ps), QuickList.Activity(row.dungeon, row.level) and QuickList.seen or "?") })
     if not ok then print("|cff98ff98Pickup|rGroup: the game refused that listing.") end
 end
 
