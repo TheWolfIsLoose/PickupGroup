@@ -80,6 +80,25 @@ jobs:
           fi
           head -5 /tmp/release-notes.md
 
+      - name: CurseForge description (only when it changed)
+        if: steps.tag.outputs.skip != 'true'
+        # CurseForge's description isn't set from the repo, so when
+        # Dev/CURSEFORGE.md changed since the previous tag, the paste-ready
+        # Markdown (dev comment stripped) is attached to the release and
+        # shown in the run summary. First release: always attached.
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          PREV=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+          if [ -n "$PREV" ] && git diff --quiet "$PREV" "$TAG" -- Dev/CURSEFORGE.md; then
+            echo "CurseForge description unchanged since $PREV."; exit 0
+          fi
+          sed '/<!--/,/-->/d' Dev/CURSEFORGE.md | sed '/./,$!d' > /tmp/CurseForge-description.md
+          {
+            echo "## CurseForge description changed since ${PREV:-the first release}"
+            echo "Paste into CurseForge > Description (Markdown); also attached to the release."
+            echo '````markdown'; cat /tmp/CurseForge-description.md; echo '````'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Detect prerelease
         if: steps.tag.outputs.skip != 'true'
         id: prerelease
@@ -120,6 +139,7 @@ jobs:
           # Attach any zip the packager produced (usually a single file
           # in .release/).
           ZIP_FILES=(.release/*.zip)
+          [ -f /tmp/CurseForge-description.md ] && ZIP_FILES+=(/tmp/CurseForge-description.md)
           # On failure, surface gh's message as a public annotation so it can
           # be read from the run summary without the (sign-in only) logs.
           if ! OUT=$(gh release create "$TAG" \
