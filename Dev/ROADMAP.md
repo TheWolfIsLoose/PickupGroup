@@ -214,8 +214,8 @@ toggles are 24px targets on 24px rows; header role buttons 24px apart;
 (player, 2026-10-04): header role buttons 17px apart (24 looked too far).
 Still open: role icon off-state contrast (atlas art, unmeasured).
 
-**Known limits:** past-season raids are a named list in Groups.lua
-(update each season); the raid buff table is per class (check each
+**Known limits:** this season's raids come from the Adventure Guide's newest tier
+(no list to keep up); the raid buff table is per class (check each
 season); an open sign-up at /reload is re-attached by leader + activity.
 
 ---

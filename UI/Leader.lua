@@ -107,6 +107,8 @@ end
 local function Members(id, act, raid)
     local a = C_LFGList.GetApplicantInfo(id)
     if not a then return nil end
+    -- restricted content (in combat, a key): the sort order and status are secret too; skip
+    if issecretvalue(a.displayOrderID) or issecretvalue(a.applicationStatus) then return nil end
     a.members = {}
     for m = 1, a.numMembers or 0 do
         local name, class, _, _, ilvl, _, _, _, _, role, _, score, _, _, _, spec = C_LFGList.GetApplicantMemberInfo(id, m)
