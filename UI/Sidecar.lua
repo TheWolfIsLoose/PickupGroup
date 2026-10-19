@@ -438,6 +438,8 @@ local function BuildOptions(parent)
         -- Opt-out: on for everyone until turned off.
         { "noChime", "Alert: Dungeon, chime when group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
           function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
+        { "noShimmer", "Alert: Shimmer on new groups", "With fewer than 20 groups listed, a group new to your list gets one quick shimmer across its row. Its name stays mint either way.",
+          function() return not ns.db.noShimmer end, function(on) ns.db.noShimmer = (not on) or nil end },
         "-",  -- a rule between the sorting / alert pair and the rest
         { "useBlizzard", "Use Blizzard's group list instead", "A PickupGroup button on Blizzard's panel brings this back.",
           function() return ns.db.useBlizzard end,

@@ -17,6 +17,7 @@ Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the l
 - Options: **Hide groups that declined me** (`db.hideDecliners`, off by default): a `declined` sign-up adds its leader to a session set in Cleanup; their rows go under the hidden count ("declined your sign-up") until /reload. Full / delisted endings don't count.
 - Tested in game 2026-10-19: playstyle, leader timed my level, tooltip names pass; hide decliners awaits a real decline.
 - Leaver mark (2026-10-19, player): Blizzard's leaver flag (`isLeaver` on `GetSearchResultPlayerInfo`, 17th return of `GetApplicantMemberInfo`, 11.2.0+) shown as Blizzard's `groupfinder-icon-leaver` atlas on the spec tile's top-right corner (Kit.Tile, own frame above the leader ring), in search rows and the leader view; tooltips put the mark after the name with one amber line saying what it means. Secret values read as no mark (`Kit.IsLeaver`). Raids: not shown (no per-member tiles).
+- New-group shimmer (2026-10-19, player): with fewer than 20 groups listed, a group new to the list gets one soft mint band (90px, two gradient halves, peak alpha 0.22) swept across its row by a Translation animation (0.9 s), clipped to the row; once per group per search, the first time it's on screen; a reused row frame stops it. Options: "Alert: Shimmer on new groups" (`db.noShimmer`, on by default). Orbit's glow pack was ruled out (all rights reserved; its library's glows are square icon outlines that smear on a wide row).
 - Raid tooltip (2026-10-19, player: show all members for now): every member read at hover, one wrapped line per role (role icon, names in class colours, leaver mark after a name), an amber leaver line, then the bosses. Size and placement wait for the v1.2 GUI pass.
 - Row states (2026-10-19, player; the new dot was easy to miss): the dot is gone. New to your list = mint name (friend / guild name colours win). Not in the list on the previous search (newly listed or newly let through); after a filter / clean-up / hidden-view change (signature compare) only groups missing from Blizzard's previous results count. The baseline rolls only after a redraw (a second results event before one marked everything). The 2px left edge is for sign-up outcomes only (`Pane.Edge`): waiting / invited mint, declined / failed amber (also a leader who declined you elsewhere this session, `Cleanup.WasDeclined`), other endings grey; ended rows stay at half opacity. The tooltip's second line says new / declined in words.
 
@@ -27,7 +28,8 @@ Player-facing notes for the CHANGELOG:
 - New: Quick list beside Blizzard's listing form: one click lists any party member's key as Mythic+ with your last playstyle (type the key's level in the title first; it reminds you).
 - New: a playstyle filter (Learning, Relaxed, Competitive).
 - New: members who left groups early lately show Blizzard's leaver mark, in the list and when leading.
-- Group names are coloured by state with a matching edge: green for new since your last search, amber for groups that declined you.
+- Groups new to your list since the last search have a mint name, with a quick shimmer when the list is short (Options can turn it off).
+- The left edge on your sign-ups shows how they went: mint while waiting, amber when declined, grey for other endings.
 - New: "Leader timed it at my level" keeps groups whose leader has timed the dungeon at your best key there or higher.
 - New: group tooltips show the leader's best run in the dungeon and every member's name.
 - New: an option to hide groups that declined you, until you reload.

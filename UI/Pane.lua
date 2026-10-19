@@ -26,6 +26,9 @@ local ROW_H, BAR_H, HEAD_H = 24, 26, 20
 local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 97, 34, 56, 6, 6
 local TILE, TILE_GAP = 17, 3  -- five tiles: 5 x 17 + 4 x 3 = W_COMP
 local W_DIFF = 16
+-- New-group shimmer: band width, and only while the list is short enough
+-- that a sweep reads as news rather than noise.
+local SHIMMER_W, SHIMMER_MAX = 90, 20
 -- Raid view: no Bosses column (the count rides in the raid cell, dimmed),
 -- and the comp is three role counts (up to 30), so names get the room.
 local W_RAID_INST, W_RAID_COMP, COUNT_STEP = 42, 68, 22  -- 2 x 22 + 24 = W_RAID_COMP
@@ -68,6 +71,7 @@ local lastSearch, armed = 0, nil
 local seen, rawPrev, shown, base = nil, nil, {}, nil  -- Blizzard's results now / before; our list now / before
 local searchSig, prevSig                                 -- filter as it was at this / the previous search
 local fresh = {}
+local shone = {}  -- result IDs that already shimmered this search
 
 -- The filter, clean-up and hidden view as one comparable string.
 local function Sig(v)
@@ -422,6 +426,36 @@ local function BuildRow(i)
         m:Hide()
         r[key] = m
     end
+    -- Shimmer: one soft mint band sweeps across a new group's row (once,
+    -- under a second). Clipped to the row; two gradient halves make the band.
+    local clip = CreateFrame("Frame", nil, r)
+    clip:SetAllPoints()
+    clip:SetClipsChildren(true)
+    local band = CreateFrame("Frame", nil, clip)
+    band:SetSize(SHIMMER_W, ROW_H)
+    band:SetPoint("RIGHT", clip, "LEFT")
+    for half = 1, 2 do
+        local t = band:CreateTexture(nil, "ARTWORK")
+        t:SetColorTexture(1, 1, 1, 1)
+        t:SetSize(SHIMMER_W / 2, ROW_H)
+        t:SetPoint(half == 1 and "LEFT" or "RIGHT")
+        local none, peak = CreateColor(MINT[1], MINT[2], MINT[3], 0), CreateColor(MINT[1], MINT[2], MINT[3], 0.22)
+        t:SetGradient("HORIZONTAL", half == 1 and none or peak, half == 1 and peak or none)
+    end
+    band:Hide()
+    local sweep = band:CreateAnimationGroup()
+    sweep.move = sweep:CreateAnimation("Translation")
+    sweep.move:SetDuration(0.9)
+    sweep.move:SetSmoothing("IN_OUT")
+    sweep:SetScript("OnPlay", function() band:Show() end)
+    sweep:SetScript("OnFinished", function() band:Hide() end)
+    sweep:SetScript("OnStop", function() band:Hide() end)
+    r.Shimmer = function()
+        sweep:Stop()
+        sweep.move:SetOffset(r:GetWidth() + SHIMMER_W, 0)
+        sweep:Play()
+    end
+    r.StopShimmer = function() sweep:Stop() end
     r.name = Text(r)
     r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
@@ -458,6 +492,7 @@ local function BuildRow(i)
 end
 
 local function PaintRow(r, row, isPinned, index, full, raidView)
+    if r.row and r.row.id ~= row.id then r.StopShimmer() end  -- the frame now shows another group
     r.row, r.act.row = row, row
     r:Show()
     -- New to the list: a mint name. The edge: sign-up outcomes. The
@@ -604,10 +639,14 @@ function Pane.Render()
     pane.divider:SetShown(nPinned > 0)
     pane.divider:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + nPinned * ROW_H))
     pane.divider:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + nPinned * ROW_H))
+    local shimmer = not ns.db.noShimmer and #results < SHIMMER_MAX
     for i = offset + 1, #results do
         slot = slot + 1
         if slot > fit then break end
-        PaintRow(rows[slot] or BuildRow(slot), results[i], false, slot, full, raidView)
+        local row = results[i]
+        PaintRow(rows[slot] or BuildRow(slot), row, false, slot, full, raidView)
+        -- Once per group per search, the first time it's on screen.
+        if shimmer and fresh[row.id] and not shone[row.id] then shone[row.id] = true; rows[slot].Shimmer() end
     end
     for i = slot + 1, #rows do rows[i]:Hide(); rows[i].row = nil end
     pane.more:Set(offset + (math.min(slot, fit) - nPinned) < #results)
@@ -908,6 +947,7 @@ ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
     if drawn or seen == nil then
         rawPrev, base = seen, seen and shown or nil
         shown = {}
+        wipe(shone)
         prevSig, searchSig = searchSig, pane and FilterSig() or nil
     end
     seen = now
