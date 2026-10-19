@@ -427,7 +427,7 @@ local function BuildRow(i)
         r[key] = m
     end
     -- Shimmer: one soft mint band sweeps across a new group's row (once,
-    -- under a second). Clipped to the row; two gradient halves make the band.
+    -- two seconds). Clipped to the row; two gradient halves make the band.
     local clip = CreateFrame("Frame", nil, r)
     clip:SetAllPoints()
     clip:SetClipsChildren(true)
@@ -445,7 +445,7 @@ local function BuildRow(i)
     band:Hide()
     local sweep = band:CreateAnimationGroup()
     sweep.move = sweep:CreateAnimation("Translation")
-    sweep.move:SetDuration(0.9)
+    sweep.move:SetDuration(2)
     sweep.move:SetSmoothing("IN_OUT")
     sweep:SetScript("OnPlay", function() band:Show() end)
     sweep:SetScript("OnFinished", function() band:Hide() end)
