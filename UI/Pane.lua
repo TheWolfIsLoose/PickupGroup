@@ -65,10 +65,12 @@ local offset = 0
 local lastSearch, armed = 0, nil
 -- New to the list: a group (leader + activity) that wasn't in our list on
 -- the previous search, newly listed or newly let through. After a filter or
--- clean-up change, only groups listed since the previous search count, so a
--- changed filter doesn't paint the whole list. Nothing is marked on a
--- category's first search.
-local seen, rawPrev, shown, base = nil, nil, {}, nil  -- Blizzard's results now / before; our list now / before
+-- clean-up change, only groups listed since the previous search count (by
+-- the listing's age: our filter also sets Blizzard's, so its results can't
+-- tell), so a changed filter doesn't paint the whole list. Nothing is
+-- marked on a category's first search.
+local seen, shown, base = nil, {}, nil  -- Blizzard's results now; our list now / before
+local resultsAt, prevAt                 -- when this / the previous search's results came
 local searchSig, prevSig                                 -- filter as it was at this / the previous search
 local fresh = {}
 local shone = {}  -- result IDs that already shimmered this search
@@ -619,7 +621,9 @@ function Pane.Render()
     for _, row in ipairs(results) do
         local key = Key(row)
         shown[key] = true
-        if base and not base[key] and not (changed and rawPrev and rawPrev[key]) then fresh[row.id] = true end
+        -- ponytail: 2 s slack on the age check; listing ages are whole seconds.
+        local listedSince = prevAt and row.age and row.age <= resultsAt - prevAt + 2
+        if base and not base[key] and (not changed or listedSince) then fresh[row.id] = true end
     end
     local p = Panel()
     local raidView = p and p.categoryID == 3
@@ -945,8 +949,9 @@ ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
     local drawn = next(shown) ~= nil
     ns.Log.Emit("new_mark", { listed = #(ids or {}), drawn = drawn, marked = marked, first = seen == nil })
     if drawn or seen == nil then
-        rawPrev, base = seen, seen and shown or nil
+        base = seen and shown or nil
         shown = {}
+        prevAt, resultsAt = seen and resultsAt or nil, GetTime()
         wipe(shone)
         prevSig, searchSig = searchSig, pane and FilterSig() or nil
     end
