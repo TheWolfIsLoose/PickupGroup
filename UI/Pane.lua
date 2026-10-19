@@ -60,9 +60,29 @@ local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
 local offset = 0
 local lastSearch, armed = 0, nil
--- New mark: listings not in the previous search's results (leader + activity),
--- until the next search. Nothing is marked on a category's first search.
-local seen, fresh = nil, {}
+-- New to the list: a group (leader + activity) that wasn't in our list on
+-- the previous search, newly listed or newly let through. After a filter or
+-- clean-up change, only groups listed since the previous search count, so a
+-- changed filter doesn't paint the whole list. Nothing is marked on a
+-- category's first search.
+local seen, rawPrev, shown, base = nil, nil, {}, nil  -- Blizzard's results now / before; our list now / before
+local searchSig, prevSig                                 -- filter as it was at this / the previous search
+local fresh = {}
+
+-- The filter, clean-up and hidden view as one comparable string.
+local function Sig(v)
+    if type(v) ~= "table" then return tostring(v) end
+    local keys = {}
+    for k in pairs(v) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    local out = {}
+    for _, k in ipairs(keys) do out[#out + 1] = tostring(k) .. "=" .. Sig(v[k]) end
+    return "{" .. table.concat(out, ",") .. "}"
+end
+local function FilterSig()
+    return Sig(ns.Filters.Active()) .. Sig(ns.db.cleanup) .. tostring(ns.db.hideDecliners) .. tostring(showHidden)
+end
+local function Key(row) return (row.leader or "?") .. "|" .. tostring(row.activityID) end
 
 -- Friends / guild marks at the end of the name column, in the colours WoW
 -- players know (Battle.net blue, guild chat green) and in two shapes, so
@@ -152,7 +172,7 @@ function Pane.State(row, isPinned)
         return { color = AMBER, declined = true, text = "Declined you this session" }
     end
     if not isPinned and fresh[row.id] then
-        return { color = MINT, text = "New since your last search" }
+        return { color = MINT, text = "New to your list since the last search" }
     end
 end
 
@@ -549,6 +569,13 @@ function Pane.Render()
         end
     end
     for i = #results, 1, -1 do if showing[results[i].id] then table.remove(results, i) end end
+    local changed = prevSig ~= nil and FilterSig() ~= prevSig
+    wipe(fresh)
+    for _, row in ipairs(results) do
+        local key = Key(row)
+        shown[key] = true
+        if base and not base[key] and not (changed and rawPrev and rawPrev[key]) then fresh[row.id] = true end
+    end
     local p = Panel()
     local raidView = p and p.categoryID == 3
     local _, active = C_LFGList.GetNumApplications()
@@ -837,7 +864,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     if not p then return ns.Trace("pane", "no search panel") end
     p:HookScript("OnShow", Pane.Update)
     p:HookScript("OnHide", Pane.Update)
-    hooksecurefunc("LFGListSearchPanel_SetCategory", function() seen = nil; Pane.Update() end)
+    hooksecurefunc("LFGListSearchPanel_SetCategory", function() seen, searchSig = nil, nil; Pane.Update() end)
     -- Every search restarts the cooldown line.
     hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); if cooldown then cooldown:Show() end end)
     -- Blizzard's Filter button: our keys filter writes its settings, so say so.
@@ -855,18 +882,15 @@ end)
 ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
     for id, o in pairs(recent) do if o.untilT == math.huge then recent[id] = nil end end
     local now = {}
-    wipe(fresh)
     local _, ids = C_LFGList.GetSearchResults()
     for _, id in ipairs(ids or {}) do
         local info = C_LFGList.GetSearchResultInfo(id)
-        local act = info and info.activityIDs and info.activityIDs[1]
-        if info and info.leaderName and act then
-            local key = info.leaderName .. "|" .. act
-            now[key] = true
-            if seen and not seen[key] then fresh[id] = true end
-        end
+        local act = info and (info.activityIDs and info.activityIDs[1] or info.activityID)
+        if info and info.leaderName and act then now[info.leaderName .. "|" .. act] = true end
     end
-    seen = now
+    rawPrev, base = seen, seen and shown or nil
+    seen, shown = now, {}
+    prevSig, searchSig = searchSig, pane and FilterSig() or nil
     offset = 0
     RenderSoon()
 end)

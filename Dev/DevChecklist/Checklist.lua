@@ -4,7 +4,8 @@ DevChecklist_Round = "PickupGroup: leaver mark and row states"
 local S = "PickupGroup: dungeon search"
 local R = "PickupGroup: raid search"
 DevChecklist_Items = {
-    { S, "Search Dungeons, wait a minute, refresh. No dots on any row; groups new since the last search have a mint name and a thin mint edge on the left. Hover one: the second tooltip line says 'New since your last search'. Your sign-ups keep their mint edge with white names.", "screenshot of the list" },
+    { S, "Search Dungeons, wait a minute, refresh. No dots on any row; groups new to your list have a mint name and a thin mint edge on the left. Hover one: the second tooltip line says 'New to your list since the last search'. Your sign-ups keep their mint edge with white names.", "screenshot of the list" },
+    { S, "Turn a playstyle off, refresh, then back on and refresh: the groups that come back are NOT mint (only ones listed in between are). Then refresh twice with no change: mint marks only what's new since the search before.", "say yes / no" },
     { S, "Scroll for a spec icon with Blizzard's leaver mark (small icon on its top-right corner). Hover the group: the mark sits after that member's name, with an amber line under the names. None after a few searches? Say 'none seen'.", "screenshot of the tooltip, or 'none seen'" },
     { S, "Turn on Options > Color names for friends / guild, check a friend or guild group still shows its colour, then turn it back the way you like it.", "say done" },
     { R, "Search Raids: new groups get the mint name and edge too. Hover a raid group: under the role counts, a line per role (tank, healer, damage icons) with every member's name in class colours, then the bosses. Big groups make a long tooltip for now (the 1.2 GUI pass handles it). Then /reload so I can read the log.", "screenshot of a raid tooltip" },

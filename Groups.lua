@@ -316,7 +316,7 @@ function Groups.Read(id, keepDelisted)
     end
 
     local row = {
-        id = id, name = info.name, leader = info.leaderName, comment = info.comment,
+        id = id, name = info.name, leader = info.leaderName, comment = info.comment, activityID = activityID,
         region = Groups.Region(info.leaderName),
         score = info.leaderOverallDungeonScore, activity = name, code = Code(name),
         difficulty = DIFFICULTY[activity.difficultyID], isRaid = isRaid,

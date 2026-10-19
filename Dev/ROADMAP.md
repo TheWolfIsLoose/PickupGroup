@@ -131,7 +131,7 @@ PickupGroup is an original design and an original codebase.
   blacklist), each with its reason in the tooltip.
 - **Application log**: the saved record of every sign-up and how it
   ended (Options > Sign-up history).
-- **Row states**: a coloured name plus a matching left edge: mint = new since the last search, amber = declined you this session (mint edge alone = your sign-up). Leaver mark on members who left groups early lately (search and leader view).
+- **Row states**: a coloured name plus a matching left edge: mint = new to your list since the last search (a filter change marks only newly listed groups), amber = declined you this session (mint edge alone = your sign-up). Leaver mark on members who left groups early lately (search and leader view).
 - **Leader view**: our frame over Blizzard's applicant list while the
   player leads a key or raid listing.
 - **Target comp**: the raid leader's wanted tanks / healers / damage.
