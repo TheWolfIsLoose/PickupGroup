@@ -166,14 +166,26 @@ local function OnAction(btn)
     end
 end
 
--- A row's state for its name colour, edge and tooltip line, or nil.
+-- A row's state for its tooltip line and cues, or nil. New groups get a
+-- mint name; the left edge is kept for sign-up outcomes (Pane.Edge).
 function Pane.State(row, isPinned)
     if row.status == "declined" or ns.Cleanup.WasDeclined(row.leader) then
         return { color = AMBER, declined = true, text = "Declined you this session" }
     end
     if not isPinned and fresh[row.id] then
-        return { color = MINT, text = "New to your list since the last search" }
+        return { color = MINT, new = true, text = "New to your list since the last search" }
     end
+end
+
+-- The left edge: your sign-up and how it went. Waiting / invited mint,
+-- declined or failed amber (also a leader who declined you elsewhere this
+-- session), other endings (filled, delisted, withdrawn, expired) grey.
+local DOWN = { declined = true, failed = true }
+function Pane.Edge(row, isPinned)
+    if row.outcome then return row.outcome.color end
+    if DOWN[row.status] or ns.Cleanup.WasDeclined(row.leader) then return AMBER end
+    if OVER[row.status] then return GREY end
+    if isPinned then return MINT end
 end
 
 -- ---------------------------------------------------------------------------
@@ -448,12 +460,10 @@ end
 local function PaintRow(r, row, isPinned, index, full, raidView)
     r.row, r.act.row = row, row
     r:Show()
-    -- State as a coloured name plus the left edge in the same colour:
-    -- declined you (this listing, or its leader this session) amber, new
-    -- since the last search mint; a sign-up keeps its mint edge. The
-    -- tooltip says which in words (WCAG 1.4.1).
+    -- New to the list: a mint name. The edge: sign-up outcomes. The
+    -- tooltip says both in words (WCAG 1.4.1).
     local state = Pane.State(row, isPinned)
-    local edge = isPinned and MINT or state and state.color
+    local edge = Pane.Edge(row, isPinned)
     r.edge:SetShown(edge ~= nil)
     if edge then r.edge:SetColorTexture(edge[1], edge[2], edge[3], 1) end
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.05 or 0)  -- every other row: easier to track across
@@ -464,8 +474,8 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if ns.db.nameColors then
         ink = row.friends > 0 and FRIEND or row.guild > 0 and GuildColor() or ink
     end
-    -- Declined beats friend colours; new only colours a plain name.
-    if state and (state.declined or ink[1] == 1 and ink[2] == 1 and ink[3] == 1) then ink = state.color end
+    -- New only colours a plain name (friend / guild colours win).
+    if state and state.new and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = MINT end
     if not ns.db.nameColors then
         if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
         if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
