@@ -19,7 +19,9 @@ cheap.
 
 **v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
 
-**Added to v1.1.0 (player, 2026-10-19), on `dev`, needs tonight's in-game round:** playstyle filter, "Leader timed it at my level", leader's best run and member names in the group tooltip, "Hide groups that declined me" (notes in `Dev/HISTORY.md`). A listing carries no key level, so a filter by the key's own level isn't possible; the dungeon buttons already show the player's best key.
+**Added to v1.1.0 (player, 2026-10-19), on `dev`:** playstyle filter, "Leader timed it at my level", leader's best run and member names in the group tooltip, "Hide groups that declined me" (tested in game), then the leaver mark, row states as a coloured name plus matching left edge (replaces the new dot) and every raid member in the raid tooltip, by role (in-game round set) (notes in `Dev/HISTORY.md`).
+
+**v1.2: GUI overhaul (parked, player 2026-10-19).** Talk through PickupGroup's overall GUI approach before building more UI. The player wants things in predictable places. The group tooltip is part of it: today it opens to the row's right and covers the sidecar and the score panel beside it. Its placement and size (big raid member lists) wait for this pass. Not wanted: moving the score panel to ride beside the tooltip. Ideas on the table: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Nothing decided. A listing carries no key level, so a filter by the key's own level isn't possible; the dungeon buttons already show the player's best key.
 
 **2026-10-14: v1.0.8 hotfix released** (raid rows errored on 12.1.5's removed `EJ_GetCurrentInstance`; notes in `Dev/HISTORY.md`).
 

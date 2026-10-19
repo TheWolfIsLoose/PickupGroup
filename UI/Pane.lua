@@ -172,10 +172,23 @@ local function RowTooltip(frame)
         0.85, 0.85, 0.85, GREY_T, GREY_T, GREY_T)
     -- The leader: crown + name in class colour (raids: found among the members).
     local leaderClass = row.leaderClass
-    if row.isRaid and not leaderClass then
+    -- Raids: every member, read here (rows carry only role counts).
+    local byRole, raidLeavers = { TANK = {}, HEALER = {}, DAMAGER = {} }, 0
+    if row.isRaid then
         for m = 1, row.members or 0 do
             local p = C_LFGList.GetSearchResultPlayerInfo(row.id, m)
-            if p and p.isLeader then leaderClass = p.classFilename; break end
+            if p then
+                if p.isLeader then leaderClass = p.classFilename end
+                local leaver = Kit.IsLeaver(p.isLeaver)
+                if leaver then raidLeavers = raidLeavers + 1 end
+                local n = type(p.name) == "string" and not issecretvalue(p.name) and Ambiguate(p.name, "short")
+                local list = byRole[p.assignedRole] or byRole.DAMAGER
+                if n then
+                    local c = RAID_CLASS_COLORS[p.classFilename or ""]
+                    list[#list + 1] = (c and ("|c" .. c.colorStr .. n .. "|r") or n)
+                        .. (leaver and (" |A:" .. Kit.LEAVER_ATLAS .. ":12:12|a") or "")
+                end
+            end
         end
     end
     local cc = RAID_CLASS_COLORS[leaderClass or ""] or { r = 1, g = 1, b = 1 }
@@ -184,6 +197,17 @@ local function RowTooltip(frame)
         GameTooltip:AddLine(leaderText, cc.r, cc.g, cc.b)
         GameTooltip:AddLine(("|A:%s:14:14|a %d   |A:%s:14:14|a %d   |A:%s:14:14|a %d"):format(
             ROLE_ATLAS.TANK, row.counts.TANK, ROLE_ATLAS.HEALER, row.counts.HEALER, ROLE_ATLAS.DAMAGER, row.counts.DAMAGER), 1, 1, 1)
+        -- Members by role, names wrapped (ponytail: one long tooltip for big
+        -- raids; placement and size are part of the 1.2 GUI pass).
+        for _, role in ipairs(ROLES) do
+            if #byRole[role] > 0 then
+                GameTooltip:AddLine("|A:" .. ROLE_ATLAS[role] .. ":12:12|a " .. table.concat(byRole[role], ", "), 1, 1, 1, true)
+            end
+        end
+        if raidLeavers > 0 then
+            GameTooltip:AddLine("|A:" .. Kit.LEAVER_ATLAS .. ":12:12|a " .. (raidLeavers == 1 and "1 member has" or (raidLeavers .. " members have"))
+                .. " left groups early lately", AMBER[1], AMBER[2], AMBER[3], true)
+        end
         GameTooltip:AddLine(row.total and (row.down .. "/" .. row.total .. " bosses down") or (row.down .. " bosses down"),
             GREY_T, GREY_T, GREY_T)
         -- Which bosses, by name: a lockout isn't cleared in order.
