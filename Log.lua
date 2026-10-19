@@ -37,6 +37,8 @@ local KINDS = {
     apply   = { "activity", function(p) return ("Signed up: %s, led by %s"):format(Plain(p.code), Plain(p.leader)) end },
     cancel  = { "activity", function(p) return ("Cancelled sign-up: %s, led by %s"):format(Plain(p.code), Plain(p.leader)) end },
     search_failed = { "detail", function(p) return "Search refused: " .. Plain(p.reason) end },
+    new_mark = { "detail", function(p) return ("Results: %d listed, %d marked new last time%s%s"):format(p.listed or 0, p.marked or 0,
+        p.first and ", first search" or "", p.drawn and "" or ", not drawn since the last results") end },
     app_end = { "activity", function(p)
         local words = { declined = "declined", filled = "group filled up", delisted = "group delisted",
             withdrawn = "withdrawn", timedout = "timed out", invitedeclined = "invite declined",

@@ -888,9 +888,19 @@ ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
         local act = info and (info.activityIDs and info.activityIDs[1] or info.activityID)
         if info and info.leaderName and act then now[info.leaderName .. "|" .. act] = true end
     end
-    rawPrev, base = seen, seen and shown or nil
-    seen, shown = now, {}
-    prevSig, searchSig = searchSig, pane and FilterSig() or nil
+    -- Roll "last time" forward only once the list has been drawn since the
+    -- last roll: a second results event before a redraw would otherwise
+    -- make an empty "last time" and mark every group new.
+    local marked = 0
+    for _ in pairs(fresh) do marked = marked + 1 end
+    local drawn = next(shown) ~= nil
+    ns.Log.Emit("new_mark", { listed = #(ids or {}), drawn = drawn, marked = marked, first = seen == nil })
+    if drawn or seen == nil then
+        rawPrev, base = seen, seen and shown or nil
+        shown = {}
+        prevSig, searchSig = searchSig, pane and FilterSig() or nil
+    end
+    seen = now
     offset = 0
     RenderSoon()
 end)

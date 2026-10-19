@@ -4,7 +4,7 @@ DevChecklist_Round = "PickupGroup: leaver mark and row states"
 local S = "PickupGroup: dungeon search"
 local R = "PickupGroup: raid search"
 DevChecklist_Items = {
-    { S, "Search Dungeons, wait a minute, refresh. No dots on any row; groups new to your list have a mint name and a thin mint edge on the left. Hover one: the second tooltip line says 'New to your list since the last search'. Your sign-ups keep their mint edge with white names.", "screenshot of the list" },
+    { S, "Search Dungeons, then refresh a few times a minute apart with no filter change. Only a few rows go mint (new to your list), not the whole list. Hover one: 'New to your list since the last search'.", "screenshot after a refresh" },
     { S, "Turn a playstyle off, refresh, then back on and refresh: the groups that come back are NOT mint (only ones listed in between are). Then refresh twice with no change: mint marks only what's new since the search before.", "say yes / no" },
     { S, "Scroll for a spec icon with Blizzard's leaver mark (small icon on its top-right corner). Hover the group: the mark sits after that member's name, with an amber line under the names. None after a few searches? Say 'none seen'.", "screenshot of the tooltip, or 'none seen'" },
     { S, "Turn on Options > Color names for friends / guild, check a friend or guild group still shows its colour, then turn it back the way you like it.", "say done" },
