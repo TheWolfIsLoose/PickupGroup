@@ -15,7 +15,9 @@ Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the l
 - Keys filter, 2026-10-19 (player): **Playstyle** row (Learning / Relaxed / Competitive; `filter.styles`, nil = all) written to Blizzard's advanced filter (`generalPlaystyle1..3`, carry `4` off once any is picked; `RestoreBlizzard` clears them) and checked locally against `row.playstyle`. **Leader timed it at my level** (`leaderMyLevel`): passes when the leader's best run in the dungeon (`info.leaderDungeonScoreInfo[1]`, `row.leaderBest`) is timed and at least the player's best timed key there (the +N on the dungeon button); dungeons the player hasn't timed aren't judged. Self-check: `Dev/test_keys.lua`.
 - Group tooltip (keys): "Leader's best here" line (+N timed / not timed, amber when not) and every member's name, class coloured, leader first (`GetSearchResultPlayerInfo().name`; missing or secret names are skipped).
 - Options: **Hide groups that declined me** (`db.hideDecliners`, off by default): a `declined` sign-up adds its leader to a session set in Cleanup; their rows go under the hidden count ("declined your sign-up") until /reload. Full / delisted endings don't count.
-- Not tested in game yet (round set in the DevChecklist 2026-10-19 evening).
+- Tested in game 2026-10-19: playstyle, leader timed my level, tooltip names pass; hide decliners awaits a real decline.
+- Leaver mark (2026-10-19, player): Blizzard's leaver flag (`isLeaver` on `GetSearchResultPlayerInfo`, 17th return of `GetApplicantMemberInfo`, 11.2.0+) shown as Blizzard's `groupfinder-icon-leaver` atlas on the spec tile's top-right corner (Kit.Tile, own frame above the leader ring), in search rows and the leader view; tooltips put the mark after the name with one amber line saying what it means. Secret values read as no mark (`Kit.IsLeaver`). Raids: not shown (no per-member tiles).
+- Row states (2026-10-19, player: the new dot was easy to miss): the dot is gone; a row's name and its 2px left edge share a state colour, amber = declined you (this listing's status, or its leader declined you this session, `Cleanup.WasDeclined`), mint = new since the last search. A sign-up keeps its mint edge. Declined beats friend / guild name colours; new only colours a plain name. The tooltip's second line says the state in words.
 
 Player-facing notes for the CHANGELOG:
 - New: the raid filter picks difficulty and which raids to show, so the search box is free for words in group names (try "skip" or a boss name).
@@ -23,6 +25,8 @@ Player-facing notes for the CHANGELOG:
 - Clean-up is now one switch; hover it to see what it hides.
 - New: Quick list beside Blizzard's listing form: one click lists any party member's key as Mythic+ with your last playstyle (type the key's level in the title first; it reminds you).
 - New: a playstyle filter (Learning, Relaxed, Competitive).
+- New: members who left groups early lately show Blizzard's leaver mark, in the list and when leading.
+- Group names are coloured by state with a matching edge: green for new since your last search, amber for groups that declined you.
 - New: "Leader timed it at my level" keeps groups whose leader has timed the dungeon at your best key there or higher.
 - New: group tooltips show the leader's best run in the dungeon and every member's name.
 - New: an option to hide groups that declined you, until you reload.

@@ -8,6 +8,7 @@
            tiles (dungeons: 5 x { icon? , role, mine, leader? }), leaderClass,
            counts (raids: { TANK, HEALER, DAMAGER }), down, total,
            age, fits, status, pending, remaining, playstyle,
+           specs (dungeons: { spec, class, file, icon, name?, leader, leaver }),
            leaderBest (dungeons: { level, timed } = the leader's best run
            in this dungeon, nil when none) }
 --]]
@@ -357,7 +358,7 @@ function Groups.Read(id, keepDelisted)
             if p then
                 for _, t in ipairs(tiles) do
                     if t.role == p.assignedRole and not t.filled then
-                        t.filled, t.icon, t.leader = true, SpecIcon(p.classFilename, p.specName), p.isLeader
+                        t.filled, t.icon, t.leader, t.leaver = true, SpecIcon(p.classFilename, p.specName), p.isLeader, ns.Kit.IsLeaver(p.isLeaver)
                         break
                     end
                 end
@@ -365,7 +366,8 @@ function Groups.Read(id, keepDelisted)
                 -- Names can be missing (or secret): the tooltip skips those.
                 local pname = type(p.name) == "string" and not issecretvalue(p.name) and p.name or nil
                 row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename,
-                    icon = SpecIcon(p.classFilename, p.specName), name = pname, leader = p.isLeader }
+                    icon = SpecIcon(p.classFilename, p.specName), name = pname, leader = p.isLeader,
+                    leaver = ns.Kit.IsLeaver(p.isLeaver) }
                 if p.classFilename then row.classes[p.classFilename] = true end
             end
         end

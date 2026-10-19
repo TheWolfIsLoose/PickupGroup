@@ -146,6 +146,16 @@ local function OnAction(btn)
     end
 end
 
+-- A row's state for its name colour, edge and tooltip line, or nil.
+function Pane.State(row, isPinned)
+    if row.status == "declined" or ns.Cleanup.WasDeclined(row.leader) then
+        return { color = AMBER, declined = true, text = "Declined you this session" }
+    end
+    if not isPinned and fresh[row.id] then
+        return { color = MINT, text = "New since your last search" }
+    end
+end
+
 -- ---------------------------------------------------------------------------
 -- Tooltips
 -- ---------------------------------------------------------------------------
@@ -156,6 +166,8 @@ local function RowTooltip(frame)
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
     if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
+    local state = Pane.State(row, row.status == "applied" or row.status == "invited")
+    if state then GameTooltip:AddLine(state.text, state.color[1], state.color[2], state.color[3]) end
     GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
         0.85, 0.85, 0.85, GREY_T, GREY_T, GREY_T)
     -- The leader: crown + name in class colour (raids: found among the members).
@@ -202,15 +214,22 @@ local function RowTooltip(frame)
             GREY_T, GREY_T, GREY_T, bc[1], bc[2], bc[3])
         if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
         -- Everyone by name, class coloured, leader first.
-        local names = {}
+        -- A leaver gets Blizzard's mark after the name, and one line says what it means.
+        local names, leavers = {}, 0
+        local mark = "|A:" .. Kit.LEAVER_ATLAS .. ":12:12|a"
         for _, s in ipairs(row.specs) do
+            if s.leaver then leavers = leavers + 1 end
             if s.name then
                 local c = RAID_CLASS_COLORS[s.file or ""]
                 local n = c and ("|c" .. c.colorStr .. Ambiguate(s.name, "short") .. "|r") or Ambiguate(s.name, "short")
-                table.insert(names, s.leader and 1 or #names + 1, n)
+                table.insert(names, s.leader and 1 or #names + 1, n .. (s.leaver and (" " .. mark) or ""))
             end
         end
         if #names > 0 then GameTooltip:AddLine(table.concat(names, ", "), 1, 1, 1, true) end
+        if leavers > 0 then
+            GameTooltip:AddLine(mark .. " " .. (leavers == 1 and "1 member has" or (leavers .. " members have"))
+                .. " left groups early lately", AMBER[1], AMBER[2], AMBER[3], true)
+        end
     end
     -- People you know, by name (the game gives Battle.net friends, character
     -- friends and guildmates as name lists); counts if the names don't come.
@@ -294,7 +313,6 @@ local function BuildRow(i)
     r.hover:SetColorTexture(MINT[1], MINT[2], MINT[3], 0.07)
     r.hover:Hide()
     r.edge = r:CreateTexture(nil, "OVERLAY")
-    r.edge:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
     r.edge:SetPoint("TOPLEFT")
     r.edge:SetPoint("BOTTOMLEFT")
     r.edge:SetWidth(2)
@@ -341,14 +359,6 @@ local function BuildRow(i)
     r.diff = Text(r, "CENTER")
     r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
-    r.new = r:CreateTexture(nil, "OVERLAY")
-    r.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-    r.new:SetSize(5, 5)
-    r.new:SetPoint("LEFT", 3, 0)
-    local round = r:CreateMaskTexture()
-    round:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    round:SetAllPoints(r.new)
-    r.new:AddMaskTexture(round)
     for key, shape in pairs({ friendMark = PEOPLE, guildMark = BANNER }) do
         local m = CreateFrame("Frame", nil, r)
         m:SetSize(10, 12)
@@ -357,7 +367,7 @@ local function BuildRow(i)
         r[key] = m
     end
     r.name = Text(r)
-    r.name:SetPoint("LEFT", PAD + 5, 0)  -- room for the new mark
+    r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
     -- Right-click: whisper, report, blacklist or hide the leader.
@@ -394,8 +404,14 @@ end
 local function PaintRow(r, row, isPinned, index, full, raidView)
     r.row, r.act.row = row, row
     r:Show()
-    r.edge:SetShown(isPinned)
-    r.new:SetShown(not isPinned and fresh[row.id] == true)
+    -- State as a coloured name plus the left edge in the same colour:
+    -- declined you (this listing, or its leader this session) amber, new
+    -- since the last search mint; a sign-up keeps its mint edge. The
+    -- tooltip says which in words (WCAG 1.4.1).
+    local state = Pane.State(row, isPinned)
+    local edge = isPinned and MINT or state and state.color
+    r.edge:SetShown(edge ~= nil)
+    if edge then r.edge:SetColorTexture(edge[1], edge[2], edge[3], 1) end
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.05 or 0)  -- every other row: easier to track across
     r.name:SetText(row.name or "?")
     -- Pinned sign-ups too (player). A mixed group: two marks; a coloured name
@@ -403,7 +419,10 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     local marks, ink = {}, { 1, 1, 1 }
     if ns.db.nameColors then
         ink = row.friends > 0 and FRIEND or row.guild > 0 and GuildColor() or ink
-    else
+    end
+    -- Declined beats friend colours; new only colours a plain name.
+    if state and (state.declined or ink[1] == 1 and ink[2] == 1 and ink[3] == 1) then ink = state.color end
+    if not ns.db.nameColors then
         if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
         if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
     end
@@ -440,6 +459,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             -- Black rings (an empty seat already reads as open); the leader's
             -- seat also gets the light outer ring.
             tile.lead:SetShown(s.leader == true)
+            tile.leaver:SetShown(s.filled == true and s.leaver == true)
         end
     end
     for _, c in ipairs(r.counts) do

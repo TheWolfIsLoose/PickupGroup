@@ -111,14 +111,14 @@ local function Members(id, act, raid)
     if issecretvalue(a.displayOrderID) or issecretvalue(a.applicationStatus) then return nil end
     a.members = {}
     for m = 1, a.numMembers or 0 do
-        local name, class, _, _, ilvl, _, _, _, _, role, _, score, _, _, _, spec = C_LFGList.GetApplicantMemberInfo(id, m)
+        local name, class, _, _, ilvl, _, _, _, _, role, _, score, _, _, _, spec, leaver = C_LFGList.GetApplicantMemberInfo(id, m)
         if issecretvalue(name) then return nil end  -- restricted content (in combat, a key): skip
         local best = C_LFGList.GetApplicantDungeonScoreForListing(id, m, act) or {}
         local _, specName, _, icon = GetSpecializationInfoByID(spec or 0)
         a.members[m] = { name = name, class = class, ilvl = ilvl or 0, role = role, score = score or 0,
                          icon = icon, specName = specName, keyLevel = best.bestRunLevel or 0,
                          timed = best.finishedSuccess, keyMs = best.bestRunDurationMs,
-                         prog = raid and Progress(name, raid) }
+                         prog = raid and Progress(name, raid), leaver = Kit.IsLeaver(leaver) }
     end
     return a
 end
@@ -241,6 +241,9 @@ local function Tooltip(line)
         GameTooltip:AddLine("Adds " .. table.concat(names, ", "), MINT[1], MINT[2], MINT[3])
     end
     if m.fills then GameTooltip:AddLine("Fills an open " .. (_G[m.role] or "seat"):lower() .. " seat", MINT[1], MINT[2], MINT[3]) end
+    if m.leaver then
+        GameTooltip:AddLine("|A:" .. Kit.LEAVER_ATLAS .. ":12:12|a Has left groups early lately", AMBER[1], AMBER[2], AMBER[3])
+    end
     if m.why then GameTooltip:AddLine("Dimmed: " .. m.why, AMBER[1], AMBER[2], AMBER[3], true) end
     if a.numMembers > 1 then GameTooltip:AddLine("Applied with " .. (a.numMembers - 1) .. " more", 0.85, 0.85, 0.85) end
     if a.comment and a.comment ~= "" then GameTooltip:AddLine(a.comment, 1, 1, 1, true) end
@@ -351,6 +354,7 @@ local function PaintMember(l, a, m, first, index, raid)
     l.tile:SetPoint("LEFT", first and (PAD + 1) or (PAD + 13), 0)
     l.linkV:SetShown(not first); l.linkH:SetShown(not first)
     l.icon:SetTexture(m.icon)
+    l.tile.leaver:SetShown(m.leaver == true)
     l.edge:SetShown(m.ring == true and a.applicationStatus == "applied")
     l.name:SetText((m.name or "?"):match("^[^%-]+") or "?")
     l.ilvl:SetText(("%.0f"):format(m.ilvl))

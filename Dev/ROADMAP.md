@@ -129,7 +129,7 @@ PickupGroup is an original design and an original codebase.
   blacklist), each with its reason in the tooltip.
 - **Application log**: the saved record of every sign-up and how it
   ended (Options > Sign-up history).
-- **New mark**: the dot on a row that wasn't in the previous results.
+- **Row states**: a coloured name plus a matching left edge: mint = new since the last search, amber = declined you this session (mint edge alone = your sign-up). Leaver mark on members who left groups early lately (search and leader view).
 - **Leader view**: our frame over Blizzard's applicant list while the
   player leads a key or raid listing.
 - **Target comp**: the raid leader's wanted tanks / healers / damage.
@@ -150,7 +150,7 @@ PickupGroup is an original design and an original codebase.
 - Our keys filter drives Blizzard's advanced filter (server-side
   narrowing, 100-result cap); Bloodlust / battle rez / region stay local.
   "Use Blizzard's group list instead" hands Blizzard's filter back clear.
-- Columns: Name (new mark, friend / guild marks), Dungeon / Raid (+
+- Columns: Name (state colour, friend / guild marks), Dungeon / Raid (+
   difficulty letter), Comp, Score / Bosses, action button. Friends and
   guildmates' groups always show (Blizzard's search still applies) and
   sort first.

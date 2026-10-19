@@ -81,6 +81,11 @@ function Cleanup.Declined(name)
     if name then declined[name] = true end
 end
 
+function Cleanup.WasDeclined(name)
+    name = Full(name)
+    return name and declined[name] == true or false
+end
+
 function Cleanup.Count()
     local n = 0
     for _ in pairs(ns.db.blacklist) do n = n + 1 end
