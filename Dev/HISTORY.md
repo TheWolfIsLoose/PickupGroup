@@ -12,11 +12,20 @@ Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the l
 
 - Quick list (player request, 2026-10-17: listing a party member's key flips Blizzard's form to plain Mythic, keeps the old "+12" title, and switching back to Mythic+ wipes every field). New `UI/QuickList.lua`: a panel beside Blizzard's listing form (Dungeons only, not in edit mode) with one row per season dungeon showing the highest party key there (own key from `C_MythicPlus`, party keys from LibKeystone when another addon has loaded it; not bundled). A click calls `C_LFGList.CreateListing` straight from the hardware click with that dungeon's activity for the key level (one activity per level, `GetKeystoneForActivity`), the playstyle last picked on Blizzard's form (`db.listPlaystyle`, read via a post-hook; Relaxed until one is picked), and the form's rating / item level / private / faction values read, never written. Writing the form's fields taints them and blocks Blizzard's List Group / Edit, so the title can't be set: the form's title box is used as is. Clash alert (`quickConflict`) when atrocityEssentials' LFG Quick Create is on; the panel hides while it is. Tested 2026-10-17: a dungeon offers one Mythic+ activity, not one per level (RLP: 1173 / 1174 / 1175 / 1176+, `GetKeystoneForActivity` nil for each), and a listing carries no key level: the title is the only place it shows (Blizzard pre-fills it from the lister's own key). So a click lists only once Blizzard's title box names the row's level (`+12`, read, never written); otherwise an amber reminder and a mint outline over the title box (our frame) say what to type. Self-check: `Dev/test_quicklist.lua`.
 
+- Keys filter, 2026-10-19 (player): **Playstyle** row (Learning / Relaxed / Competitive; `filter.styles`, nil = all) written to Blizzard's advanced filter (`generalPlaystyle1..3`, carry `4` off once any is picked; `RestoreBlizzard` clears them) and checked locally against `row.playstyle`. **Leader timed it at my level** (`leaderMyLevel`): passes when the leader's best run in the dungeon (`info.leaderDungeonScoreInfo[1]`, `row.leaderBest`) is timed and at least the player's best timed key there (the +N on the dungeon button); dungeons the player hasn't timed aren't judged. Self-check: `Dev/test_keys.lua`.
+- Group tooltip (keys): "Leader's best here" line (+N timed / not timed, amber when not) and every member's name, class coloured, leader first (`GetSearchResultPlayerInfo().name`; missing or secret names are skipped).
+- Options: **Hide groups that declined me** (`db.hideDecliners`, off by default): a `declined` sign-up adds its leader to a session set in Cleanup; their rows go under the hidden count ("declined your sign-up") until /reload. Full / delisted endings don't count.
+- Not tested in game yet (round set in the DevChecklist 2026-10-19 evening).
+
 Player-facing notes for the CHANGELOG:
 - New: the raid filter picks difficulty and which raids to show, so the search box is free for words in group names (try "skip" or a boss name).
 - New: an option to sort raid groups furthest along first.
 - Clean-up is now one switch; hover it to see what it hides.
 - New: Quick list beside Blizzard's listing form: one click lists any party member's key as Mythic+ with your last playstyle (type the key's level in the title first; it reminds you).
+- New: a playstyle filter (Learning, Relaxed, Competitive).
+- New: "Leader timed it at my level" keeps groups whose leader has timed the dungeon at your best key there or higher.
+- New: group tooltips show the leader's best run in the dungeon and every member's name.
+- New: an option to hide groups that declined you, until you reload.
 
 ## v1.0.9 (2026-10-17)
 

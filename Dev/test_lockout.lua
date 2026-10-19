@@ -1,4 +1,5 @@
 -- Self-check for Filters.Lockout (My lockout): lua5.1 Dev/test_lockout.lua from the repo root.
+Enum = { LFGEntryGeneralPlaystyle = { Learning = 1, FunRelaxed = 2, FunSerious = 3, Expert = 4 } }
 local saved  -- { name, diffID, killed = { boss = true } }
 local BOSSES = { "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8" }
 GetNumSavedInstances = function() return saved and 1 or 0 end

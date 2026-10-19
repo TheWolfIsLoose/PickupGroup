@@ -6,7 +6,9 @@
 
     keys: room, lust / brez (true = the group has it), noMyClass, minScore,
           atLeastMine, dungeons (nil = all,
-          else set of dungeon names)
+          else set of dungeon names), styles (nil = all, else set of
+          "L" / "R" / "C": Learning, Relaxed, Competitive), leaderMyLevel
+          (the leader has timed this dungeon at my best timed level there)
     raid: diffs (nil = all, else set of "N" / "H" / "M"), raidsOff[raid name]
           = true (hidden): both ours, so Blizzard's search box is free for
           words in group titles (the one name match there is),
@@ -36,6 +38,17 @@ local function Roles(...) local o = {} for _, r in ipairs({ ... }) do o[r] = tru
 local LUST = { SHAMAN = Roles(H, D), MAGE = Roles(D), HUNTER = Roles(D), EVOKER = Roles(H, D) }
 local BREZ = { DRUID = Roles(T, H, D), DEATHKNIGHT = Roles(T, D), WARLOCK = Roles(D), PALADIN = Roles(T, H, D) }
 Filters.LUST, Filters.BREZ = LUST, BREZ  -- the leader view reads them too
+
+-- Playstyles in the keys filter, in Blizzard's order (its advanced filter
+-- calls them generalPlaystyle1..3; 4 is a carry, left to clean-up).
+local STYLES = { "L", "R", "C" }
+Filters.STYLES = STYLES
+Filters.STYLE_NAME = { L = "Learning", R = "Relaxed", C = "Competitive" }
+local STYLE_OF = {
+    [Enum.LFGEntryGeneralPlaystyle.Learning] = "L",
+    [Enum.LFGEntryGeneralPlaystyle.FunRelaxed] = "R",
+    [Enum.LFGEntryGeneralPlaystyle.FunSerious] = "C",
+}
 
 function Filters.Kind()
     local p = LFGListFrame and LFGListFrame.SearchPanel
@@ -79,6 +92,12 @@ function Filters.Summary(f)
         local n = 0
         for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
         if f.dungeons and n < #Filters.Dungeons() then out[#out + 1] = n .. (n == 1 and " dungeon" or " dungeons") end
+        if f.styles then
+            local st = {}
+            for _, c in ipairs(STYLES) do if f.styles[c] then st[#st + 1] = Filters.STYLE_NAME[c] end end
+            out[#out + 1] = #st > 0 and table.concat(st, " / ") or "no playstyle"
+        end
+        if f.leaderMyLevel then out[#out + 1] = "leader timed my level" end
         if f.room then out[#out + 1] = "room for me" end
         if f.lust then out[#out + 1] = "has Bloodlust" end
         if f.brez then out[#out + 1] = "has battle rez" end
@@ -107,6 +126,17 @@ function Filters.Dungeons()
     end
     table.sort(out, function(a, b) return a.code < b.code end)
     return out
+end
+
+-- My best timed key per dungeon name, re-read at most every few seconds
+-- (Filters.Pass asks once per row).
+local myBest, myBestAt = nil, 0
+local function MyBest()
+    if not myBest or GetTime() - myBestAt > 5 then
+        myBest, myBestAt = {}, GetTime()
+        for _, d in ipairs(Filters.Dungeons()) do myBest[d.name] = d.best end
+    end
+    return myBest
 end
 
 -- My lockout (live, per raid): judged against each group at the group's
@@ -206,25 +236,33 @@ function Filters.Sync()
     local need = f.room and ns.Groups.SoleRole()
     local rating = math.max(f.minScore or 0, f.atLeastMine and C_ChallengeMode.GetOverallDungeonScore() or 0)
     local mine = f.noMyClass == true
+    -- Playstyles: none ticked is Blizzard's "all"; a carry (4) stays off
+    -- once any is picked.
+    local st = f.styles or {}
+    local s1, s2, s3 = st.L == true, st.R == true, st.C == true
     local adv = C_LFGList.GetAdvancedFilter()
     if not adv then return end
     if SameSet(adv.activities or {}, acts) and adv.needsTank == (need == "TANK")
         and adv.needsHealer == (need == "HEALER") and adv.needsDamage == (need == "DAMAGER")
-        and (adv.minimumRating or 0) == rating and (adv.needsMyClass == true) == mine then return end
+        and (adv.minimumRating or 0) == rating and (adv.needsMyClass == true) == mine
+        and adv.generalPlaystyle1 == s1 and adv.generalPlaystyle2 == s2 and adv.generalPlaystyle3 == s3
+        and adv.generalPlaystyle4 == false then return end
     adv.activities = acts
     adv.needsTank, adv.needsHealer, adv.needsDamage = need == "TANK", need == "HEALER", need == "DAMAGER"
     adv.minimumRating = rating
     adv.needsMyClass = mine
+    adv.generalPlaystyle1, adv.generalPlaystyle2, adv.generalPlaystyle3, adv.generalPlaystyle4 = s1, s2, s3, false
     C_LFGList.SaveAdvancedFilter(adv)
     local key = table.concat(acts, ",") .. "|" .. tostring(need) .. "|" .. rating .. (mine and "|no other mine" or "")
+        .. ((s1 or s2 or s3) and ("|styles " .. (s1 and "L" or "") .. (s2 and "R" or "") .. (s3 and "C" or "")) or "")
     ns.Log.Emit("filter", { action = "blizzard filter", name = f.name .. ": " .. key
         .. (missing and (" (unmapped: " .. missing .. ")") or "") })
 end
 
 -- "Use Blizzard's group list instead": hand Blizzard's filter back clear of
--- what we wrote (every dungeon, no role / class / score narrowing), so
--- Blizzard's list isn't quietly narrowed by our filter. Its other settings
--- (playstyle, difficulty) were never ours and stay.
+-- what we wrote (every dungeon, no role / class / score / playstyle
+-- narrowing), so Blizzard's list isn't quietly narrowed by our filter. Its
+-- difficulty was never ours and stays.
 function Filters.RestoreBlizzard()
     local adv = C_LFGList.GetAdvancedFilter()
     if not adv then return end
@@ -233,6 +271,7 @@ function Filters.RestoreBlizzard()
     adv.activities = acts
     adv.needsTank, adv.needsHealer, adv.needsDamage, adv.needsMyClass = false, false, false, false
     adv.minimumRating = 0
+    adv.generalPlaystyle1, adv.generalPlaystyle2, adv.generalPlaystyle3, adv.generalPlaystyle4 = false, false, false, false
     C_LFGList.SaveAdvancedFilter(adv)
     ns.Log.Emit("filter", { action = "blizzard filter cleared", name = #acts .. " dungeons" })
 end
@@ -254,6 +293,12 @@ function Filters.Pass(row)
         return not caught or left
     end
     if f.dungeons and not f.dungeons[row.activity] then return false end
+    if f.styles and not f.styles[STYLE_OF[row.playstyle] or ""] then return false end
+    -- Judged only in dungeons where I have a timed key.
+    if f.leaderMyLevel then
+        local need, b = MyBest()[row.activity], row.leaderBest
+        if need and not (b and b.timed and b.level >= need) then return false end
+    end
     if f.lust and not ns.Groups.CanHave(row, LUST) then return false end
     if f.brez and not ns.Groups.CanHave(row, BREZ) then return false end
     if f.noMyClass and row.classes and row.classes[select(2, UnitClass("player"))] then return false end

@@ -26,18 +26,21 @@ and filter keep working underneath; PickupGroup just shows you more, faster.
   showing the role they need, and the leader marked. Raids show role
   counts and bosses down.
 - **One filter per content type.** Room for my role, has Bloodlust, has
-  battle rez, no other of my class, leader score floor, realm regions
+  battle rez, no other of my class, playstyle, leader score floor, leader
+  has timed the dungeon at your level, realm regions
   (NA, Oceanic, Brazil, Latin America; Americas realms only) and, for raids, which bosses must
   still be alive. It sets Blizzard's own filter too, so the two always
   agree. The filter panel opens with the list, ready to tweak.
 - **One-click sign-ups.** Click **Apply** to sign up at once.
   Shift-click to pick one of up to five saved notes first. Your sign-ups
   stay pinned at the top, with the time each has left, and survive a
-  `/reload`.
+  `/reload`. Hover a group for every member's name and the leader's best
+  run in that dungeon.
 - **Friends first.** Groups with a friend or guildmate in them go to the
   top of the list, marked.
 - **Clean-up built in.** Hides listings that have been up for hours,
-  adverts, carry offers and leaders you've blacklisted. Right-click any
+  adverts, carry offers and leaders you've blacklisted (and, if you like,
+  groups that declined you). Right-click any
   row to whisper, report, blacklist or hide its leader.
 - **Leading a group.** Applicants show spec, item level, score and their
   best run in your key, with anyone below your bar dimmed (never hidden).

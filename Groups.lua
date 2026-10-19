@@ -7,7 +7,9 @@
            activity (full name), code (short), difficulty, isRaid,
            tiles (dungeons: 5 x { icon? , role, mine, leader? }), leaderClass,
            counts (raids: { TANK, HEALER, DAMAGER }), down, total,
-           age, fits, status, pending, remaining }
+           age, fits, status, pending, remaining, playstyle,
+           leaderBest (dungeons: { level, timed } = the leader's best run
+           in this dungeon, nil when none) }
 --]]
 
 local _, ns = ...
@@ -360,12 +362,21 @@ function Groups.Read(id, keepDelisted)
                     end
                 end
                 if p.isLeader then row.leaderClass = p.classFilename end
+                -- Names can be missing (or secret): the tooltip skips those.
+                local pname = type(p.name) == "string" and not issecretvalue(p.name) and p.name or nil
                 row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename,
-                    icon = SpecIcon(p.classFilename, p.specName) }
+                    icon = SpecIcon(p.classFilename, p.specName), name = pname, leader = p.isLeader }
                 if p.classFilename then row.classes[p.classFilename] = true end
             end
         end
         row.tiles = tiles
+        -- The leader's best run in this dungeon (Blizzard's "Best for Dungeon").
+        -- ponytail: the best run by score, so a leader whose best is an
+        -- untimed +15 reads as not timed even with a timed +14 there.
+        local best = type(info.leaderDungeonScoreInfo) == "table" and info.leaderDungeonScoreInfo[1]
+        if best and not issecretvalue(best.bestRunLevel) and (best.bestRunLevel or 0) > 0 then
+            row.leaderBest = { level = best.bestRunLevel, timed = best.finishedSuccess == true }
+        end
         -- Once: if the game stops naming the leader, the crown has nothing to show.
         if not row.leaderClass and (info.numMembers or 0) > 0 and not Groups.noLeaderTraced then
             Groups.noLeaderTraced = true

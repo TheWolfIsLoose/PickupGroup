@@ -1,11 +1,14 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "PickupGroup 1.0.6 candidate: My lockout (loot left for me)"
-local R = "PickupGroup: raid view (on the Rogue)"
+DevChecklist_Round = "PickupGroup 1.1.0 additions: playstyle, leader's level, tooltip names, hide decliners"
+local F = "PickupGroup: keys filter"
+local T = "PickupGroup: group tooltip"
+local O = "PickupGroup: options"
 DevChecklist_Items = {
-    { R, "Sidecar: untick any VA boss checkboxes left over from the old My lockout (they still mean 'must be alive', all of them).", "say done" },
-    { R, "Search The Venomous Abyss (Heroic). Click My lockout on the VA heading: it goes mint, the summary says 'loot left for me'.", "screenshot" },
-    { R, "6/8 and 7/8 groups (if any) are at the top; 0/8-5/8 below them. No group whose bosses 7 and 8 are both dead shows.", "screenshot of the list" },
-    { R, "Click My lockout again: off, and the list goes back to fewest bosses down first.", "say done" },
-    { R, "Search VA on Normal with it on: groups sort by your Normal lockout (or plain order if you have none there).", "say done (then /reload so I can read the log)" },
+    { F, "Search Dungeons. The sidecar's Filter tab has a Playstyle row (Learning / Relaxed / Competitive) under the dungeon buttons, and 'Leader timed it at my level' under 'Leader at least my score'. Everything fits above Reset.", "screenshot of the sidecar" },
+    { F, "Turn Learning and Relaxed off (only Competitive on). The list keeps only Competitive groups; the top bar says 'Competitive'. Open Blizzard's Filters menu: only Competitive is ticked under playstyle.", "screenshot of the list, and say yes / no for Blizzard's menu" },
+    { F, "Turn them all back on. Blizzard's Filters menu shows no playstyle ticked (its 'all'), and the list fills back up.", "say done" },
+    { F, "Tick 'Leader timed it at my level'. Hover a few groups: each one's 'Leader's best here' is timed and at least the +N on that dungeon's button. The top bar says 'leader timed my level'.", "screenshot of one tooltip" },
+    { T, "Hover a dungeon group: under the leader, 'Leader's best here' (+N timed, or amber +N not timed, or 'none'), the spec icons, then everyone's names in class colours, leader first.", "screenshot; say if names are missing" },
+    { O, "Options tab: 'Hide groups that declined me' is there and everything fits. Turn it on. If a leader declines you this session, their groups move under the hidden count with 'declined your sign-up' in the tooltip.", "screenshot of Options; say yes if a decline happened and hid (or 'no decline yet'), then /reload so I can read the log" },
 }

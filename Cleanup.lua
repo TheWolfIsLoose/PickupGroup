@@ -10,6 +10,8 @@
       carry      the listing's playstyle offers a carry
       blacklist  the leader is on the blacklist (account-wide, name-realm),
                  or hidden for this session
+    Separate from the switch (Options, off by default): db.hideDecliners
+    hides a leader who declined one of the player's sign-ups, until /reload.
 
     Blacklist entries remember when the leader was last seen in results;
     ones not seen for a year drop off.
@@ -22,6 +24,7 @@ ns.Cleanup = Cleanup
 
 local YEAR = 365 * 24 * 3600
 local session = {}  -- leaders hidden until /reload
+local declined = {}  -- leaders who declined a sign-up, until /reload
 
 local function Settings() return ns.db.cleanup end
 
@@ -38,6 +41,7 @@ function Cleanup.Reason(row)
     local s = Settings()
     local leader = Full(row.leader)
     if leader and session[leader] then return "hidden for this session" end
+    if ns.db.hideDecliners and leader and declined[leader] then return "declined your sign-up" end
     if s.blacklist and leader and ns.db.blacklist[leader] then
         ns.db.blacklist[leader] = time()  -- last seen
         return "leader is on your blacklist"
@@ -69,6 +73,12 @@ function Cleanup.HideForSession(name)
         session[name] = true
         ns.Log.Emit("hide", { name = name, why = "until reload" })
     end
+end
+
+-- A leader turned down a sign-up (not a full or delisted group).
+function Cleanup.Declined(name)
+    name = Full(name)
+    if name then declined[name] = true end
 end
 
 function Cleanup.Count()

@@ -195,7 +195,22 @@ local function RowTooltip(frame)
         for _, s in ipairs(row.specs) do
             if s.icon then icons[#icons + 1] = ("|T%s:20:20:0:0:64:64:5:59:5:59|t"):format(s.icon) end
         end
+        -- The leader's best run in this dungeon (amber when not in time).
+        local b = row.leaderBest
+        local bc = not b and GREY or (b.timed and WHITE or AMBER)
+        GameTooltip:AddDoubleLine("Leader's best here", b and ("+" .. b.level .. (b.timed and " timed" or " not timed")) or "none",
+            GREY_T, GREY_T, GREY_T, bc[1], bc[2], bc[3])
         if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
+        -- Everyone by name, class coloured, leader first.
+        local names = {}
+        for _, s in ipairs(row.specs) do
+            if s.name then
+                local c = RAID_CLASS_COLORS[s.file or ""]
+                local n = c and ("|c" .. c.colorStr .. Ambiguate(s.name, "short") .. "|r") or Ambiguate(s.name, "short")
+                table.insert(names, s.leader and 1 or #names + 1, n)
+            end
+        end
+        if #names > 0 then GameTooltip:AddLine(table.concat(names, ", "), 1, 1, 1, true) end
     end
     -- People you know, by name (the game gives Battle.net friends, character
     -- friends and guildmates as name lists); counts if the names don't come.

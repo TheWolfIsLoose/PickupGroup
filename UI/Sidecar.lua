@@ -5,9 +5,9 @@
     Raider.IO's panel while open; that frame is never moved.
 
     Filter tab: the one filter of the kind in view
-      keys  dungeons (this season), room for my role, leader at least my
-            score, has Bloodlust, has battle rez, no other of my class,
-            leader score floor, leader's realm
+      keys  dungeons (this season), playstyle, room for my role, leader at
+            least my score, leader timed my level, has Bloodlust, has battle
+            rez, no other of my class, leader score floor, leader's realm
       raid  leader's realm, bosses that must be alive, My lockout (loot left for me)
     Notes tab: up to five sign-up notes, offered to copy under Blizzard's
     sign-up dialog.
@@ -321,9 +321,14 @@ local function BuildKeys(parent)
         dungeonButtons[#dungeonButtons + 1] = b
     end
     y = y - math.ceil(#dungeonButtons / 4) * 24 - 8
+    y = SetRow(box, y, "Playstyle", "styles", Filters.STYLES, Filters.STYLE_NAME,
+        "Groups listed with this playstyle.") - 8
 
     for _, c in ipairs({
         { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
+        { "leaderMyLevel", "Leader timed it at my level", "Keeps groups whose leader has timed this dungeon "
+            .. "at your best timed key there (the number on its button above) or higher. "
+            .. "Dungeons you haven't timed a key in aren't judged." },
         { "lust", "Group has Bloodlust", "Keeps groups that have it, or will: you or your party bring it, "
             .. "or a seat is still open after you join that a Bloodlust class can take (healer or damage)." },
         { "brez", "Group has battle rez", "Keeps groups that have it, or will: you or your party bring it, "
@@ -439,6 +444,8 @@ local function BuildOptions(parent)
           function(on) ns.db.useBlizzard = on; if on then ns.Filters.RestoreBlizzard() end; ns.Pane.Update() end },
         { "nameColors", "Color names for friends / guild", "Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.",
           function() return ns.db.nameColors end, function(on) ns.db.nameColors = on or nil; ns.Pane.Render() end },
+        { "hideDecliners", "Hide groups that declined me", "Once a leader turns down your sign-up, their groups are hidden (under the hidden count) until you /reload. Full or delisted groups don't count.",
+          function() return ns.db.hideDecliners end, function(on) ns.db.hideDecliners = on or nil; ns.Pane.Render() end },
         { "swap", "Swap when all sign-ups are out", "With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.",
           function() return ns.db.swap end, function(on) ns.db.swap = on or nil; ns.Pane.Render() end },
         -- Opt-in (player): veterans can turn off the how-to tooltips.
@@ -717,7 +724,7 @@ local CLASHES = {
     -- Already on Blizzard's list: nothing overlaps, nothing to say.
     { function() return not ns.db.useBlizzard and ns.FinderClash() or nil end, "finderConflict", "group finder overlap", "PickupGroup: two group finders",
       ". PickupGroup's list covers its filter row, and while the list shows, PickupGroup's filter sets "
-      .. "Blizzard's dungeons, role, score and class (EllesmereUI's picks there are replaced). "
+      .. "Blizzard's dungeons, role, score, class and playstyle (EllesmereUI's picks there are replaced). "
       .. "Its difficulty menu beside the search box still narrows every search.\n\n"
       .. "|cffffffffTo use PickupGroup:|r turn off Group Finder in EllesmereUI's options.\n\n"
       .. "|cffffffffTo use EllesmereUI's:|r PickupGroup Options > Use Blizzard's group list instead." },
