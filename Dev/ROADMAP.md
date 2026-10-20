@@ -17,6 +17,8 @@ cheap.
 
 ## Next session: start here
 
+**v1.1.0 released 2026-10-20** (stable; everything below from v1.1.0-beta1 and the 2026-10-19 additions; notes in `Dev/HISTORY.md`).
+
 **v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
 
 **Added to v1.1.0 (player, 2026-10-19), on `dev`:** playstyle filter, "Leader timed it at my level", leader's best run and member names in the group tooltip, "Hide groups that declined me" (tested in game), then the leaver mark, row states as a coloured name plus matching left edge (replaces the new dot) and every raid member in the raid tooltip, by role (in-game round set) (notes in `Dev/HISTORY.md`).
