@@ -1,11 +1,12 @@
 -- Rewritten by Claude each test round: { heading, what to do and expect, what to send }.
 -- Grouped by area: the heading ("Addon: area") prints once per run of items.
-DevChecklist_Round = "PickupGroup 1.0.6 candidate: My lockout (loot left for me)"
-local R = "PickupGroup: raid view (on the Rogue)"
+DevChecklist_Round = "PickupGroup: row states, leftovers"
+local S = "PickupGroup: dungeon search"
+local O = "PickupGroup: options"
+local R = "PickupGroup: raid search"
 DevChecklist_Items = {
-    { R, "Sidecar: untick any VA boss checkboxes left over from the old My lockout (they still mean 'must be alive', all of them).", "say done" },
-    { R, "Search The Venomous Abyss (Heroic). Click My lockout on the VA heading: it goes mint, the summary says 'loot left for me'.", "screenshot" },
-    { R, "6/8 and 7/8 groups (if any) are at the top; 0/8-5/8 below them. No group whose bosses 7 and 8 are both dead shows.", "screenshot of the list" },
-    { R, "Click My lockout again: off, and the list goes back to fewest bosses down first.", "say done" },
-    { R, "Search VA on Normal with it on: groups sort by your Normal lockout (or plain order if you have none there).", "say done (then /reload so I can read the log)" },
+    { S, "Tick 'Leader at least my score', refresh, untick it, refresh: only a few groups go mint (ones listed in between), not most of the list.", "say yes / no" },
+    { S, "Sign up for a group (mint edge while waiting), then withdraw it: its edge turns grey and the row fades. New groups never get an edge.", "screenshot after withdrawing" },
+    { O, "Options: 'Alert: Shimmer on new groups' sits under the chime switch and everything still fits above the footer.", "screenshot of Options" },
+    { R, "Hover a raid group: under the role counts, one line per role with every member's name in class colours, then the bosses. Then /reload so I can read the log.", "screenshot of a raid tooltip" },
 }

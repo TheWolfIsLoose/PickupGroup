@@ -26,6 +26,9 @@ local ROW_H, BAR_H, HEAD_H = 24, 26, 20
 local W_INST, W_COMP, W_SCORE, W_ACT, GAP, PAD = 38, 97, 34, 56, 6, 6
 local TILE, TILE_GAP = 17, 3  -- five tiles: 5 x 17 + 4 x 3 = W_COMP
 local W_DIFF = 16
+-- New-group shimmer: band width, and only while the list is short enough
+-- that a sweep reads as news rather than noise.
+local SHIMMER_W, SHIMMER_MAX = 90, 20
 -- Raid view: no Bosses column (the count rides in the raid cell, dimmed),
 -- and the comp is three role counts (up to 30), so names get the room.
 local W_RAID_INST, W_RAID_COMP, COUNT_STEP = 42, 68, 22  -- 2 x 22 + 24 = W_RAID_COMP
@@ -60,9 +63,32 @@ local rows, roleButtons = {}, {}
 local pinned, results = {}, {}
 local offset = 0
 local lastSearch, armed = 0, nil
--- New mark: listings not in the previous search's results (leader + activity),
--- until the next search. Nothing is marked on a category's first search.
-local seen, fresh = nil, {}
+-- New to the list: a group (leader + activity) that wasn't in our list on
+-- the previous search, newly listed or newly let through. After a filter or
+-- clean-up change, only groups listed since the previous search count (by
+-- the listing's age: our filter also sets Blizzard's, so its results can't
+-- tell), so a changed filter doesn't paint the whole list. Nothing is
+-- marked on a category's first search.
+local seen, shown, base = nil, {}, nil  -- Blizzard's results now; our list now / before
+local resultsAt, prevAt                 -- when this / the previous search's results came
+local searchSig, prevSig                                 -- filter as it was at this / the previous search
+local fresh = {}
+local shone = {}  -- result IDs that already shimmered this search
+
+-- The filter, clean-up and hidden view as one comparable string.
+local function Sig(v)
+    if type(v) ~= "table" then return tostring(v) end
+    local keys = {}
+    for k in pairs(v) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    local out = {}
+    for _, k in ipairs(keys) do out[#out + 1] = tostring(k) .. "=" .. Sig(v[k]) end
+    return "{" .. table.concat(out, ",") .. "}"
+end
+local function FilterSig()
+    return Sig(ns.Filters.Active()) .. Sig(ns.db.cleanup) .. tostring(ns.db.hideDecliners) .. tostring(showHidden)
+end
+local function Key(row) return (row.leader or "?") .. "|" .. tostring(row.activityID) end
 
 -- Friends / guild marks at the end of the name column, in the colours WoW
 -- players know (Battle.net blue, guild chat green) and in two shapes, so
@@ -146,6 +172,28 @@ local function OnAction(btn)
     end
 end
 
+-- A row's state for its tooltip line and cues, or nil. New groups get a
+-- mint name; the left edge is kept for sign-up outcomes (Pane.Edge).
+function Pane.State(row, isPinned)
+    if row.status == "declined" or ns.Cleanup.WasDeclined(row.leader) then
+        return { color = AMBER, declined = true, text = "Declined you this session" }
+    end
+    if not isPinned and fresh[row.id] then
+        return { color = MINT, new = true, text = "New to your list since the last search" }
+    end
+end
+
+-- The left edge: your sign-up and how it went. Waiting / invited mint,
+-- declined or failed amber (also a leader who declined you elsewhere this
+-- session), other endings (filled, delisted, withdrawn, expired) grey.
+local DOWN = { declined = true, failed = true }
+function Pane.Edge(row, isPinned)
+    if row.outcome then return row.outcome.color end
+    if DOWN[row.status] or ns.Cleanup.WasDeclined(row.leader) then return AMBER end
+    if OVER[row.status] then return GREY end
+    if isPinned then return MINT end
+end
+
 -- ---------------------------------------------------------------------------
 -- Tooltips
 -- ---------------------------------------------------------------------------
@@ -156,14 +204,29 @@ local function RowTooltip(frame)
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
     if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
+    local state = Pane.State(row, row.status == "applied" or row.status == "invited")
+    if state then GameTooltip:AddLine(state.text, state.color[1], state.color[2], state.color[3]) end
     GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
         0.85, 0.85, 0.85, GREY_T, GREY_T, GREY_T)
     -- The leader: crown + name in class colour (raids: found among the members).
     local leaderClass = row.leaderClass
-    if row.isRaid and not leaderClass then
+    -- Raids: every member, read here (rows carry only role counts).
+    local byRole, raidLeavers = { TANK = {}, HEALER = {}, DAMAGER = {} }, 0
+    if row.isRaid then
         for m = 1, row.members or 0 do
             local p = C_LFGList.GetSearchResultPlayerInfo(row.id, m)
-            if p and p.isLeader then leaderClass = p.classFilename; break end
+            if p then
+                if p.isLeader then leaderClass = p.classFilename end
+                local leaver = Kit.IsLeaver(p.isLeaver)
+                if leaver then raidLeavers = raidLeavers + 1 end
+                local n = type(p.name) == "string" and not issecretvalue(p.name) and Ambiguate(p.name, "short")
+                local list = byRole[p.assignedRole] or byRole.DAMAGER
+                if n then
+                    local c = RAID_CLASS_COLORS[p.classFilename or ""]
+                    list[#list + 1] = (c and ("|c" .. c.colorStr .. n .. "|r") or n)
+                        .. (leaver and (" |A:" .. Kit.LEAVER_ATLAS .. ":12:12|a") or "")
+                end
+            end
         end
     end
     local cc = RAID_CLASS_COLORS[leaderClass or ""] or { r = 1, g = 1, b = 1 }
@@ -172,6 +235,17 @@ local function RowTooltip(frame)
         GameTooltip:AddLine(leaderText, cc.r, cc.g, cc.b)
         GameTooltip:AddLine(("|A:%s:14:14|a %d   |A:%s:14:14|a %d   |A:%s:14:14|a %d"):format(
             ROLE_ATLAS.TANK, row.counts.TANK, ROLE_ATLAS.HEALER, row.counts.HEALER, ROLE_ATLAS.DAMAGER, row.counts.DAMAGER), 1, 1, 1)
+        -- Members by role, names wrapped (ponytail: one long tooltip for big
+        -- raids; placement and size are part of the 1.2 GUI pass).
+        for _, role in ipairs(ROLES) do
+            if #byRole[role] > 0 then
+                GameTooltip:AddLine("|A:" .. ROLE_ATLAS[role] .. ":12:12|a " .. table.concat(byRole[role], ", "), 1, 1, 1, true)
+            end
+        end
+        if raidLeavers > 0 then
+            GameTooltip:AddLine("|A:" .. Kit.LEAVER_ATLAS .. ":12:12|a " .. (raidLeavers == 1 and "1 member has" or (raidLeavers .. " members have"))
+                .. " left groups early lately", AMBER[1], AMBER[2], AMBER[3], true)
+        end
         GameTooltip:AddLine(row.total and (row.down .. "/" .. row.total .. " bosses down") or (row.down .. " bosses down"),
             GREY_T, GREY_T, GREY_T)
         -- Which bosses, by name: a lockout isn't cleared in order.
@@ -195,7 +269,29 @@ local function RowTooltip(frame)
         for _, s in ipairs(row.specs) do
             if s.icon then icons[#icons + 1] = ("|T%s:20:20:0:0:64:64:5:59:5:59|t"):format(s.icon) end
         end
+        -- The leader's best run in this dungeon (amber when not in time).
+        local b = row.leaderBest
+        local bc = not b and GREY or (b.timed and WHITE or AMBER)
+        GameTooltip:AddDoubleLine("Leader's best here", b and ("+" .. b.level .. (b.timed and " timed" or " not timed")) or "none",
+            GREY_T, GREY_T, GREY_T, bc[1], bc[2], bc[3])
         if #icons > 0 then GameTooltip:AddLine(table.concat(icons, " ")) end
+        -- Everyone by name, class coloured, leader first.
+        -- A leaver gets Blizzard's mark after the name, and one line says what it means.
+        local names, leavers = {}, 0
+        local mark = "|A:" .. Kit.LEAVER_ATLAS .. ":12:12|a"
+        for _, s in ipairs(row.specs) do
+            if s.leaver then leavers = leavers + 1 end
+            if s.name then
+                local c = RAID_CLASS_COLORS[s.file or ""]
+                local n = c and ("|c" .. c.colorStr .. Ambiguate(s.name, "short") .. "|r") or Ambiguate(s.name, "short")
+                table.insert(names, s.leader and 1 or #names + 1, n .. (s.leaver and (" " .. mark) or ""))
+            end
+        end
+        if #names > 0 then GameTooltip:AddLine(table.concat(names, ", "), 1, 1, 1, true) end
+        if leavers > 0 then
+            GameTooltip:AddLine(mark .. " " .. (leavers == 1 and "1 member has" or (leavers .. " members have"))
+                .. " left groups early lately", AMBER[1], AMBER[2], AMBER[3], true)
+        end
     end
     -- People you know, by name (the game gives Battle.net friends, character
     -- friends and guildmates as name lists); counts if the names don't come.
@@ -279,7 +375,6 @@ local function BuildRow(i)
     r.hover:SetColorTexture(MINT[1], MINT[2], MINT[3], 0.07)
     r.hover:Hide()
     r.edge = r:CreateTexture(nil, "OVERLAY")
-    r.edge:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
     r.edge:SetPoint("TOPLEFT")
     r.edge:SetPoint("BOTTOMLEFT")
     r.edge:SetWidth(2)
@@ -326,14 +421,6 @@ local function BuildRow(i)
     r.diff = Text(r, "CENTER")
     r.diff:SetPoint("RIGHT", r.inst, "LEFT", 0, 0)
 
-    r.new = r:CreateTexture(nil, "OVERLAY")
-    r.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
-    r.new:SetSize(5, 5)
-    r.new:SetPoint("LEFT", 3, 0)
-    local round = r:CreateMaskTexture()
-    round:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    round:SetAllPoints(r.new)
-    r.new:AddMaskTexture(round)
     for key, shape in pairs({ friendMark = PEOPLE, guildMark = BANNER }) do
         local m = CreateFrame("Frame", nil, r)
         m:SetSize(10, 12)
@@ -341,8 +428,38 @@ local function BuildRow(i)
         m:Hide()
         r[key] = m
     end
+    -- Shimmer: one soft mint band sweeps across a new group's row (once,
+    -- two seconds). Clipped to the row; two gradient halves make the band.
+    local clip = CreateFrame("Frame", nil, r)
+    clip:SetAllPoints()
+    clip:SetClipsChildren(true)
+    local band = CreateFrame("Frame", nil, clip)
+    band:SetSize(SHIMMER_W, ROW_H)
+    band:SetPoint("RIGHT", clip, "LEFT")
+    for half = 1, 2 do
+        local t = band:CreateTexture(nil, "ARTWORK")
+        t:SetColorTexture(1, 1, 1, 1)
+        t:SetSize(SHIMMER_W / 2, ROW_H)
+        t:SetPoint(half == 1 and "LEFT" or "RIGHT")
+        local none, peak = CreateColor(MINT[1], MINT[2], MINT[3], 0), CreateColor(MINT[1], MINT[2], MINT[3], 0.22)
+        t:SetGradient("HORIZONTAL", half == 1 and none or peak, half == 1 and peak or none)
+    end
+    band:Hide()
+    local sweep = band:CreateAnimationGroup()
+    sweep.move = sweep:CreateAnimation("Translation")
+    sweep.move:SetDuration(2)
+    sweep.move:SetSmoothing("IN_OUT")
+    sweep:SetScript("OnPlay", function() band:Show() end)
+    sweep:SetScript("OnFinished", function() band:Hide() end)
+    sweep:SetScript("OnStop", function() band:Hide() end)
+    r.Shimmer = function()
+        sweep:Stop()
+        sweep.move:SetOffset(r:GetWidth() + SHIMMER_W, 0)
+        sweep:Play()
+    end
+    r.StopShimmer = function() sweep:Stop() end
     r.name = Text(r)
-    r.name:SetPoint("LEFT", PAD + 5, 0)  -- room for the new mark
+    r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
 
     -- Right-click: whisper, report, blacklist or hide the leader.
@@ -377,10 +494,15 @@ local function BuildRow(i)
 end
 
 local function PaintRow(r, row, isPinned, index, full, raidView)
+    if r.row and r.row.id ~= row.id then r.StopShimmer() end  -- the frame now shows another group
     r.row, r.act.row = row, row
     r:Show()
-    r.edge:SetShown(isPinned)
-    r.new:SetShown(not isPinned and fresh[row.id] == true)
+    -- New to the list: a mint name. The edge: sign-up outcomes. The
+    -- tooltip says both in words (WCAG 1.4.1).
+    local state = Pane.State(row, isPinned)
+    local edge = Pane.Edge(row, isPinned)
+    r.edge:SetShown(edge ~= nil)
+    if edge then r.edge:SetColorTexture(edge[1], edge[2], edge[3], 1) end
     r.stripe:SetColorTexture(1, 1, 1, (index % 2 == 0) and 0.05 or 0)  -- every other row: easier to track across
     r.name:SetText(row.name or "?")
     -- Pinned sign-ups too (player). A mixed group: two marks; a coloured name
@@ -388,7 +510,10 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     local marks, ink = {}, { 1, 1, 1 }
     if ns.db.nameColors then
         ink = row.friends > 0 and FRIEND or row.guild > 0 and GuildColor() or ink
-    else
+    end
+    -- New only colours a plain name (friend / guild colours win).
+    if state and state.new and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = MINT end
+    if not ns.db.nameColors then
         if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
         if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
     end
@@ -425,6 +550,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
             -- Black rings (an empty seat already reads as open); the leader's
             -- seat also gets the light outer ring.
             tile.lead:SetShown(s.leader == true)
+            tile.leaver:SetShown(s.filled == true and s.leaver == true)
         end
     end
     for _, c in ipairs(r.counts) do
@@ -490,6 +616,15 @@ function Pane.Render()
         end
     end
     for i = #results, 1, -1 do if showing[results[i].id] then table.remove(results, i) end end
+    local changed = prevSig ~= nil and FilterSig() ~= prevSig
+    wipe(fresh)
+    for _, row in ipairs(results) do
+        local key = Key(row)
+        shown[key] = true
+        -- ponytail: 2 s slack on the age check; listing ages are whole seconds.
+        local listedSince = prevAt and row.age and row.age <= resultsAt - prevAt + 2
+        if base and not base[key] and (not changed or listedSince) then fresh[row.id] = true end
+    end
     local p = Panel()
     local raidView = p and p.categoryID == 3
     local _, active = C_LFGList.GetNumApplications()
@@ -508,10 +643,14 @@ function Pane.Render()
     pane.divider:SetShown(nPinned > 0)
     pane.divider:SetPoint("TOPLEFT", 1, -(BAR_H + HEAD_H + nPinned * ROW_H))
     pane.divider:SetPoint("TOPRIGHT", -1, -(BAR_H + HEAD_H + nPinned * ROW_H))
+    local shimmer = not ns.db.noShimmer and #results < SHIMMER_MAX
     for i = offset + 1, #results do
         slot = slot + 1
         if slot > fit then break end
-        PaintRow(rows[slot] or BuildRow(slot), results[i], false, slot, full, raidView)
+        local row = results[i]
+        PaintRow(rows[slot] or BuildRow(slot), row, false, slot, full, raidView)
+        -- Once per group per search, the first time it's on screen.
+        if shimmer and fresh[row.id] and not shone[row.id] then shone[row.id] = true; rows[slot].Shimmer() end
     end
     for i = slot + 1, #rows do rows[i]:Hide(); rows[i].row = nil end
     pane.more:Set(offset + (math.min(slot, fit) - nPinned) < #results)
@@ -778,7 +917,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     if not p then return ns.Trace("pane", "no search panel") end
     p:HookScript("OnShow", Pane.Update)
     p:HookScript("OnHide", Pane.Update)
-    hooksecurefunc("LFGListSearchPanel_SetCategory", function() seen = nil; Pane.Update() end)
+    hooksecurefunc("LFGListSearchPanel_SetCategory", function() seen, searchSig = nil, nil; Pane.Update() end)
     -- Every search restarts the cooldown line.
     hooksecurefunc("LFGListSearchPanel_DoSearch", function() lastSearch = GetTime(); if cooldown then cooldown:Show() end end)
     -- Blizzard's Filter button: our keys filter writes its settings, so say so.
@@ -796,16 +935,25 @@ end)
 ns.On("LFG_LIST_SEARCH_RESULTS_RECEIVED", function()
     for id, o in pairs(recent) do if o.untilT == math.huge then recent[id] = nil end end
     local now = {}
-    wipe(fresh)
     local _, ids = C_LFGList.GetSearchResults()
     for _, id in ipairs(ids or {}) do
         local info = C_LFGList.GetSearchResultInfo(id)
-        local act = info and info.activityIDs and info.activityIDs[1]
-        if info and info.leaderName and act then
-            local key = info.leaderName .. "|" .. act
-            now[key] = true
-            if seen and not seen[key] then fresh[id] = true end
-        end
+        local act = info and (info.activityIDs and info.activityIDs[1] or info.activityID)
+        if info and info.leaderName and act then now[info.leaderName .. "|" .. act] = true end
+    end
+    -- Roll "last time" forward only once the list has been drawn since the
+    -- last roll: a second results event before a redraw would otherwise
+    -- make an empty "last time" and mark every group new.
+    local marked = 0
+    for _ in pairs(fresh) do marked = marked + 1 end
+    local drawn = next(shown) ~= nil
+    ns.Log.Emit("new_mark", { listed = #(ids or {}), drawn = drawn, marked = marked, first = seen == nil })
+    if drawn or seen == nil then
+        base = seen and shown or nil
+        shown = {}
+        prevAt, resultsAt = seen and resultsAt or nil, GetTime()
+        wipe(shone)
+        prevSig, searchSig = searchSig, pane and FilterSig() or nil
     end
     seen = now
     offset = 0

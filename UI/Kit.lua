@@ -92,7 +92,11 @@ function Kit.Text(parent, justify, font)
     return fs
 end
 
--- Spec icon tile: dark square, black ring, trimmed icon (t.icon).
+Kit.LEAVER_ATLAS = "groupfinder-icon-leaver"
+-- Secret in restricted content: read as "no mark" then.
+function Kit.IsLeaver(v) return not issecretvalue(v) and v == true end
+
+-- Spec icon tile: dark square, black ring, trimmed icon (t.icon), leaver mark (t.leaver).
 function Kit.Tile(parent, size)
     local t = CreateFrame("Frame", nil, parent)
     t:SetSize(size, size)
@@ -102,6 +106,16 @@ function Kit.Tile(parent, size)
     t.icon:SetPoint("TOPLEFT", 1, -1)
     t.icon:SetPoint("BOTTOMRIGHT", -1, 1)
     t.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)  -- icon border trimmed, plus a ~10% zoom
+    -- Blizzard's leaver mark (the player left groups early lately), on its
+    -- own frame so the leader ring drawn over the tile doesn't cover it.
+    local top = CreateFrame("Frame", nil, t)
+    top:SetAllPoints()
+    top:SetFrameLevel(t:GetFrameLevel() + 3)
+    t.leaver = top:CreateTexture(nil, "OVERLAY")
+    t.leaver:SetAtlas(Kit.LEAVER_ATLAS)
+    t.leaver:SetSize(math.floor(size * 0.6), math.floor(size * 0.6))
+    t.leaver:SetPoint("CENTER", t, "TOPRIGHT", -1, -1)
+    t.leaver:Hide()
     return t
 end
 

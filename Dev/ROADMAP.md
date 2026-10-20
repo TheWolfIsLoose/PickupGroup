@@ -17,7 +17,13 @@ cheap.
 
 ## Next session: start here
 
+**v1.1.0 released 2026-10-20** (stable; everything below from v1.1.0-beta1 and the 2026-10-19 additions; notes in `Dev/HISTORY.md`).
+
 **v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
+
+**Added to v1.1.0 (player, 2026-10-19), on `dev`:** playstyle filter, "Leader timed it at my level", leader's best run and member names in the group tooltip, "Hide groups that declined me" (tested in game), then the leaver mark, row states as a coloured name plus matching left edge (replaces the new dot) and every raid member in the raid tooltip, by role (in-game round set) (notes in `Dev/HISTORY.md`).
+
+**v1.2: GUI overhaul (parked, player 2026-10-19).** Talk through PickupGroup's overall GUI approach before building more UI. The player wants things in predictable places. The group tooltip is part of it: today it opens to the row's right and covers the sidecar and the score panel beside it. Its placement and size (big raid member lists) wait for this pass. Not wanted: moving the score panel to ride beside the tooltip. Ideas on the table: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Nothing decided. A listing carries no key level, so a filter by the key's own level isn't possible; the dungeon buttons already show the player's best key.
 
 **2026-10-14: v1.0.8 hotfix released** (raid rows errored on 12.1.5's removed `EJ_GetCurrentInstance`; notes in `Dev/HISTORY.md`).
 
@@ -127,7 +133,7 @@ PickupGroup is an original design and an original codebase.
   blacklist), each with its reason in the tooltip.
 - **Application log**: the saved record of every sign-up and how it
   ended (Options > Sign-up history).
-- **New mark**: the dot on a row that wasn't in the previous results.
+- **Row states**: mint name = new to your list since the last search (a filter change marks only newly listed groups). Left edge = sign-up outcome: mint waiting / invited, amber declined / failed (or that leader declined you this session), grey other endings. Leaver mark on members who left groups early lately (search and leader view).
 - **Leader view**: our frame over Blizzard's applicant list while the
   player leads a key or raid listing.
 - **Target comp**: the raid leader's wanted tanks / healers / damage.
@@ -148,7 +154,7 @@ PickupGroup is an original design and an original codebase.
 - Our keys filter drives Blizzard's advanced filter (server-side
   narrowing, 100-result cap); Bloodlust / battle rez / region stay local.
   "Use Blizzard's group list instead" hands Blizzard's filter back clear.
-- Columns: Name (new mark, friend / guild marks), Dungeon / Raid (+
+- Columns: Name (state colour, friend / guild marks), Dungeon / Raid (+
   difficulty letter), Comp, Score / Bosses, action button. Friends and
   guildmates' groups always show (Blizzard's search still applies) and
   sort first.
@@ -214,8 +220,8 @@ toggles are 24px targets on 24px rows; header role buttons 24px apart;
 (player, 2026-10-04): header role buttons 17px apart (24 looked too far).
 Still open: role icon off-state contrast (atlas art, unmeasured).
 
-**Known limits:** past-season raids are a named list in Groups.lua
-(update each season); the raid buff table is per class (check each
+**Known limits:** this season's raids come from the Adventure Guide's newest tier
+(no list to keep up); the raid buff table is per class (check each
 season); an open sign-up at /reload is re-attached by leader + activity.
 
 ---

@@ -2,7 +2,7 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## v1.1.0 (on `dev`, release queued for 2026-10-20; beta v1.1.0-beta1 published 2026-10-17)
+## v1.1.0 (2026-10-20; beta v1.1.0-beta1 published 2026-10-17)
 
 Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the list filled with full clears). Listing titles are protected (unreadable), so the only title match is Blizzard's server-side search text; PickupGroup now owns raid and difficulty so the player can type words like "ula" or "skip" there without picking a suggestion. Tested in game.
 
@@ -12,11 +12,27 @@ Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the l
 
 - Quick list (player request, 2026-10-17: listing a party member's key flips Blizzard's form to plain Mythic, keeps the old "+12" title, and switching back to Mythic+ wipes every field). New `UI/QuickList.lua`: a panel beside Blizzard's listing form (Dungeons only, not in edit mode) with one row per season dungeon showing the highest party key there (own key from `C_MythicPlus`, party keys from LibKeystone when another addon has loaded it; not bundled). A click calls `C_LFGList.CreateListing` straight from the hardware click with that dungeon's activity for the key level (one activity per level, `GetKeystoneForActivity`), the playstyle last picked on Blizzard's form (`db.listPlaystyle`, read via a post-hook; Relaxed until one is picked), and the form's rating / item level / private / faction values read, never written. Writing the form's fields taints them and blocks Blizzard's List Group / Edit, so the title can't be set: the form's title box is used as is. Clash alert (`quickConflict`) when atrocityEssentials' LFG Quick Create is on; the panel hides while it is. Tested 2026-10-17: a dungeon offers one Mythic+ activity, not one per level (RLP: 1173 / 1174 / 1175 / 1176+, `GetKeystoneForActivity` nil for each), and a listing carries no key level: the title is the only place it shows (Blizzard pre-fills it from the lister's own key). So a click lists only once Blizzard's title box names the row's level (`+12`, read, never written); otherwise an amber reminder and a mint outline over the title box (our frame) say what to type. Self-check: `Dev/test_quicklist.lua`.
 
+- Keys filter, 2026-10-19 (player): **Playstyle** row (Learning / Relaxed / Competitive; `filter.styles`, nil = all) written to Blizzard's advanced filter (`generalPlaystyle1..3`, carry `4` off once any is picked; `RestoreBlizzard` clears them) and checked locally against `row.playstyle`. **Leader timed it at my level** (`leaderMyLevel`): passes when the leader's best run in the dungeon (`info.leaderDungeonScoreInfo[1]`, `row.leaderBest`) is timed and at least the player's best timed key there (the +N on the dungeon button); dungeons the player hasn't timed aren't judged. Self-check: `Dev/test_keys.lua`.
+- Group tooltip (keys): "Leader's best here" line (+N timed / not timed, amber when not) and every member's name, class coloured, leader first (`GetSearchResultPlayerInfo().name`; missing or secret names are skipped).
+- Options: **Hide groups that declined me** (`db.hideDecliners`, off by default): a `declined` sign-up adds its leader to a session set in Cleanup; their rows go under the hidden count ("declined your sign-up") until /reload. Full / delisted endings don't count.
+- Tested in game 2026-10-19: playstyle, leader timed my level, tooltip names pass; hide decliners awaits a real decline.
+- Leaver mark (2026-10-19, player): Blizzard's leaver flag (`isLeaver` on `GetSearchResultPlayerInfo`, 17th return of `GetApplicantMemberInfo`, 11.2.0+) shown as Blizzard's `groupfinder-icon-leaver` atlas on the spec tile's top-right corner (Kit.Tile, own frame above the leader ring), in search rows and the leader view; tooltips put the mark after the name with one amber line saying what it means. Secret values read as no mark (`Kit.IsLeaver`). Raids: not shown (no per-member tiles).
+- New-group shimmer (2026-10-19, player): with fewer than 20 groups listed, a group new to the list gets one soft mint band (90px, two gradient halves, peak alpha 0.22) swept across its row by a Translation animation (2 s, player 2026-10-19; first tried 0.9 s), clipped to the row; once per group per search, the first time it's on screen; a reused row frame stops it. Options: "Alert: Shimmer on new groups" (`db.noShimmer`, on by default). Orbit's glow pack was ruled out (all rights reserved; its library's glows are square icon outlines that smear on a wide row).
+- Raid tooltip (2026-10-19, player: show all members for now): every member read at hover, one wrapped line per role (role icon, names in class colours, leaver mark after a name), an amber leaver line, then the bosses. Size and placement wait for the v1.2 GUI pass.
+- Row states (2026-10-19, player; the new dot was easy to miss): the dot is gone. New to your list = mint name (friend / guild name colours win). Not in the list on the previous search (newly listed or newly let through); after a filter / clean-up / hidden-view change (signature compare) only groups listed since the previous search count, by listing age (`info.age` <= time between the two searches + 2 s). Comparing Blizzard's previous results failed: our filter writes Blizzard's, so loosening e.g. the score floor brought back 30 of 42 groups as "new" (log, 2026-10-19). The baseline rolls only after a redraw (a second results event before one marked everything). The 2px left edge is for sign-up outcomes only (`Pane.Edge`): waiting / invited mint, declined / failed amber (also a leader who declined you elsewhere this session, `Cleanup.WasDeclined`), other endings grey; ended rows stay at half opacity. The tooltip's second line says new / declined in words.
+
 Player-facing notes for the CHANGELOG:
 - New: the raid filter picks difficulty and which raids to show, so the search box is free for words in group names (try "skip" or a boss name).
 - New: an option to sort raid groups furthest along first.
 - Clean-up is now one switch; hover it to see what it hides.
 - New: Quick list beside Blizzard's listing form: one click lists any party member's key as Mythic+ with your last playstyle (type the key's level in the title first; it reminds you).
+- New: a playstyle filter (Learning, Relaxed, Competitive).
+- New: members who left groups early lately show Blizzard's leaver mark, in the list and when leading.
+- Groups new to your list since the last search have a mint name, with a quick shimmer when the list is short (Options can turn it off).
+- The left edge on your sign-ups shows how they went: mint while waiting, amber when declined, grey for other endings.
+- New: "Leader timed it at my level" keeps groups whose leader has timed the dungeon at your best key there or higher.
+- New: group tooltips show the leader's best run in the dungeon and every member's name.
+- New: an option to hide groups that declined you, until you reload.
 
 ## v1.0.9 (2026-10-17)
 

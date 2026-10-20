@@ -7,7 +7,10 @@
            activity (full name), code (short), difficulty, isRaid,
            tiles (dungeons: 5 x { icon? , role, mine, leader? }), leaderClass,
            counts (raids: { TANK, HEALER, DAMAGER }), down, total,
-           age, fits, status, pending, remaining }
+           age, fits, status, pending, remaining, playstyle,
+           specs (dungeons: { spec, class, file, icon, name?, leader, leaver }),
+           leaderBest (dungeons: { level, timed } = the leader's best run
+           in this dungeon, nil when none) }
 --]]
 
 local _, ns = ...
@@ -15,11 +18,34 @@ local _, ns = ...
 local Groups = {}
 ns.Groups = Groups
 
--- Raids Blizzard still lists under the current expansion but that belong to
--- a past season: left out of results and the boss list.
--- ponytail: a named list to edit each season; derive it from the journal if
--- that grows tedious.
-local PAST_RAIDS = { ["March on Quel'Danas"] = true, ["Sporefall"] = true }
+-- This season's raids: the Adventure Guide's newest tier (its world boss
+-- entry left out). Raids Blizzard still lists under the expansion from a past
+-- season are left out of results and the boss list. Read once; not while the
+-- journal is open (selecting a tier would move it). nil until read: then
+-- every raid shows.
+local currentRaids
+local function CurrentRaids()
+    if currentRaids then return currentRaids end
+    if not (EJ_GetNumTiers and EJ_SelectTier and EJ_GetInstanceByIndex) then return nil end
+    if EncounterJournal and EncounterJournal:IsShown() then return nil end
+    local before, out, n = EJ_GetCurrentTier and EJ_GetCurrentTier(), {}, 0
+    EJ_SelectTier(EJ_GetNumTiers())
+    for i = 1, 20 do
+        local id, name = EJ_GetInstanceByIndex(i, true)
+        if not id then break end
+        local hasDifficulty = select(9, EJ_GetInstanceInfo(id))
+        if name and hasDifficulty ~= false then out[name] = true; n = n + 1 end
+    end
+    if before and before > 0 then EJ_SelectTier(before) end
+    if n > 0 then
+        currentRaids = out
+        local names = {}
+        for name in pairs(out) do names[#names + 1] = name end
+        ns.Trace("raid", "this season:", table.concat(names, ", "))
+    end
+    return currentRaids
+end
+Groups.CurrentRaids = CurrentRaids
 
 local SEAT_ORDER = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
 local DIFFICULTY = { [14] = "N", [15] = "H", [16] = "M", [17] = "LFR" }
@@ -257,7 +283,10 @@ function Groups.Read(id, keepDelisted)
     local activity = activityID and C_LFGList.GetActivityInfoTable(activityID) or {}
     local isRaid = (activity.maxNumPlayers or 5) > 5
     local name = BaseName(activity.fullName)
-    if isRaid and PAST_RAIDS[name] then return nil end
+    if isRaid and activity.mapID ~= 0 then  -- world boss listings (map 0) stay
+        local current = CurrentRaids()
+        if current and not current[name] then return nil end
+    end
     local counts = C_LFGList.GetSearchResultMemberCounts(id) or {}
     local mine = Groups.MyRoles()
 
@@ -287,7 +316,7 @@ function Groups.Read(id, keepDelisted)
     end
 
     local row = {
-        id = id, name = info.name, leader = info.leaderName, comment = info.comment,
+        id = id, name = info.name, leader = info.leaderName, comment = info.comment, activityID = activityID,
         region = Groups.Region(info.leaderName),
         score = info.leaderOverallDungeonScore, activity = name, code = Code(name),
         difficulty = DIFFICULTY[activity.difficultyID], isRaid = isRaid,
@@ -329,17 +358,27 @@ function Groups.Read(id, keepDelisted)
             if p then
                 for _, t in ipairs(tiles) do
                     if t.role == p.assignedRole and not t.filled then
-                        t.filled, t.icon, t.leader = true, SpecIcon(p.classFilename, p.specName), p.isLeader
+                        t.filled, t.icon, t.leader, t.leaver = true, SpecIcon(p.classFilename, p.specName), p.isLeader, ns.Kit.IsLeaver(p.isLeaver)
                         break
                     end
                 end
                 if p.isLeader then row.leaderClass = p.classFilename end
+                -- Names can be missing (or secret): the tooltip skips those.
+                local pname = type(p.name) == "string" and not issecretvalue(p.name) and p.name or nil
                 row.specs[#row.specs + 1] = { spec = p.specName, class = p.className, file = p.classFilename,
-                    icon = SpecIcon(p.classFilename, p.specName) }
+                    icon = SpecIcon(p.classFilename, p.specName), name = pname, leader = p.isLeader,
+                    leaver = ns.Kit.IsLeaver(p.isLeaver) }
                 if p.classFilename then row.classes[p.classFilename] = true end
             end
         end
         row.tiles = tiles
+        -- The leader's best run in this dungeon (Blizzard's "Best for Dungeon").
+        -- ponytail: the best run by score, so a leader whose best is an
+        -- untimed +15 reads as not timed even with a timed +14 there.
+        local best = type(info.leaderDungeonScoreInfo) == "table" and info.leaderDungeonScoreInfo[1]
+        if best and not issecretvalue(best.bestRunLevel) and (best.bestRunLevel or 0) > 0 then
+            row.leaderBest = { level = best.bestRunLevel, timed = best.finishedSuccess == true }
+        end
         -- Once: if the game stops naming the leader, the crown has nothing to show.
         if not row.leaderClass and (info.numMembers or 0) > 0 and not Groups.noLeaderTraced then
             Groups.noLeaderTraced = true

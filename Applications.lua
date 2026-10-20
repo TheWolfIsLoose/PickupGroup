@@ -156,6 +156,7 @@ ns.On("LFG_LIST_APPLICATION_STATUS_UPDATED", function(id, new, old)
         end
     end
     if ended then ended[Key(e.leader, e.activityID)] = e end
+    if result == "declined" then ns.Cleanup.Declined(e.leader) end
     ns.Log.Emit("app_end", { code = e.code, leader = e.leader, result = result })
 end)
 

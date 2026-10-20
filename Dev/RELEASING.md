@@ -14,8 +14,11 @@ Cutting a version, in one commit:
    `CHANGELOG.md` (only the version being cut; short, player-facing).
 2. Detailed notes in `Dev/HISTORY.md`; planned work stays in
    `Dev/ROADMAP.md`.
-3. `lua5.1 Dev/check.lua *.lua UI/*.lua` passes.
-4. Commit and push `main`. The workflow tags the CHANGELOG version,
+3. If player-facing features changed, update `Dev/CURSEFORGE.md`. The
+   workflow then attaches `CurseForge-description.md` (paste-ready) to
+   the release and shows it in the run summary; unchanged = not attached.
+4. `lua5.1 Dev/check.lua *.lua UI/*.lua` passes.
+5. Commit and push `main`. The workflow tags the CHANGELOG version,
    packages it and makes the GitHub Release; CurseForge follows the tag.
    Don't tag by hand. A push whose version is already tagged publishes
    nothing, so roadmap-only commits are safe.
