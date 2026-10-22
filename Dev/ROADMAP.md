@@ -17,7 +17,7 @@ cheap.
 
 ## Next session: start here
 
-**Parked 2026-10-22 (on `dev`, unreleased):** My lockout marks (killed bosses dimmed with a drawn lock; checkboxes untouched) tested in game and working. New tooltips on boss / raid boxes and a rewritten My lockout tooltip (ff84144): player says they're too wordy in game. Next: trim that copy, then cut a release (changelog + CurseForge description in Markdown). Player's saved raid filter still has old must-be-alive ticks on VA bosses 4-8 (pre-1.0.6 leftovers); they decide whether to clear them.
+**v1.1.1 queued on `dev` for the 2026-10-27 scheduled release (2026-10-22):** My lockout marks (killed bosses dimmed with a drawn lock) and trimmed one-line copy for the boss boxes and My lockout; tested in game; notes in `Dev/HISTORY.md`. Player's saved raid filter still has old must-be-alive ticks on VA bosses 4-8 (pre-1.0.6 leftovers); their call whether to clear them. Next for PickupGroup: the suite-level style guide and palette pass (project doc `style-guide-review.md`), then the v1.2 GUI overhaul.
 
 **v1.1.0 released 2026-10-20** (stable; everything below from v1.1.0-beta1 and the 2026-10-19 additions; notes in `Dev/HISTORY.md`).
 
