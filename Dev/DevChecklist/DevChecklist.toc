@@ -1,9 +1,12 @@
 ## Interface: 120100
 ## Title: DevChecklist
-## Notes: Dev only: what to test in game this round, written by Claude between builds. /dc shows or hides it.
+## Notes: Dev only: what to test in game, one round per addon (Rounds/), written by Claude between builds. /dc shows or hides it.
 ## Author: Jakerator
 ## Version: 1
 ## SavedVariables: DevChecklistDB
 
-Checklist.lua
+Rounds\PickupGroup.lua
+Rounds\StockClerk.lua
+Rounds\TalentKeeper.lua
+Rounds\SharedMedia_Tones.lua
 DevChecklist.lua

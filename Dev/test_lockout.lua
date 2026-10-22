@@ -37,3 +37,15 @@ saved.killed.Typo = true
 saved.list = { "B1", "B2", "B3", "B4", "B5", "B6", "B7", "Typo" }
 F.Lockout(row("H"))
 check("unmatched lockout name logged", traced[1] and traced[1]:find("Typo"))
+-- Sidecar marks: highest selected difficulty I'm saved to.
+saved.list = nil
+local d, k = F.ShownLockout("VA", nil)
+check("marks: all diffs -> heroic kills", d == "H" and k.B6 and not k.B7)
+check("marks: normal only -> none", F.ShownLockout("VA", { N = true }) == nil)
+d = F.ShownLockout("VA", { H = true, M = true })
+check("marks: H+M -> heroic (not saved on M)", d == "H")
+-- One-boss raids: old boss ticks there no longer filter (no boss box).
+filter.lockout = nil
+filter.bosses = { K = { Kx = true } }
+check("one-boss raid ignores old tick", F.Pass({ isRaid = true, activity = "K", difficulty = "H", bosses = { "Kx" }, killed = { Kx = true } }) == true)
+filter.bosses = nil

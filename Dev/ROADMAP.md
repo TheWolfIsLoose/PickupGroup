@@ -17,6 +17,8 @@ cheap.
 
 ## Next session: start here
 
+**v1.1.1 queued on `dev` for the 2026-10-27 scheduled release (2026-10-22):** My lockout marks (killed bosses dimmed with a drawn lock) and trimmed one-line copy for the boss boxes and My lockout; tested in game; notes in `Dev/HISTORY.md`. Player's saved raid filter still has old must-be-alive ticks on VA bosses 4-8 (pre-1.0.6 leftovers); their call whether to clear them. Next for PickupGroup: the suite-level style guide and palette pass (project doc `style-guide-review.md`), then the v1.2 GUI overhaul.
+
 **v1.1.0 released 2026-10-20** (stable; everything below from v1.1.0-beta1 and the 2026-10-19 additions; notes in `Dev/HISTORY.md`).
 
 **v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
@@ -234,6 +236,8 @@ season); an open sign-up at /reload is re-attached by leader + activity.
   grey rest rings, toggle bar).
 
 ## Later (unscheduled)
+
+- Filter help window (player idea, 2026-10-22, optional): an Options button opening a window with the full rules and examples (boss boxes ANDed, My lockout's hide/sort, skip groups). Not built: the one-line tooltips cover it for now; revisit if players ask how filtering works.
 
 - Share a filter as an import/export string (parked by the player).
 - Quick-create for keystone listings, designed from scratch.

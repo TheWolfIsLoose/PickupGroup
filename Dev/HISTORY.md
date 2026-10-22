@@ -2,6 +2,32 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.2.0 (2026-10-22)
+
+### Suite style pass
+
+The suite moved to a monochrome palette and one header / options pattern (`Dev/SUITE-STYLE.md`).
+
+- Palette: `Kit.Palette.brand` (mint) is now `on` (white): on, live, hover, focus, tab bars, check squares, the shimmer (peak alpha 0.15). `glyphRest` 0.7. `warn` yellow FFD84A, `bad` FF6666, new `info` blue 5AA9FF for "new to your list" names and the leader view's fills-a-seat edge / adds line. Pinned sign-ups keep the white edge; their action label is plain white.
+- Two-tone name everywhere (white Pickup, 0.7 gray Group): chat prefix, headers, log window, Blizzard-list button.
+- `Kit.Header`: icon, name and version in a 26px band at the top of the sidecar and the quick list (were bottom right). Quick list title and "Lists as" sit under it.
+- Sidecar: the Options tab is gone; the header's three-bar icon (`Kit.MENU`, also on the pane's bar, tooltip "Settings & Activity") opens that view. Tabs (Filter, Notes) sit under the header with Reset at the row's end (Filter only), so every control is at the top.
+- Buttons use the Small font (disabled: Small in muted); sidecar buttons 20px.
+- Leader view refresh: drawn glyph (`Kit.REFRESH`, an open ring with a head) instead of the game's texture.
+- Clashes: the mid-screen alert window is gone. One chat line at login (or when a clash starts); the choice waits in the sidecar as a view (opens with the Group Finder until Later): a check row per clash, ticked = theirs stays on; unticking writes that one setting in the other addon's saved settings (off from the next reload) and holds ours off until then (`ns.clashHold`). Footer band: Reload now / Later.
+- The group finder clash now also hides PickupGroup's list (and the Blizzard-list button) while it stands, like the notes and quick list clashes.
+- Icons redrawn white (icon.png, `.assets/logo-256.png`, `.assets/logo.png`).
+- Armed "Sure?" (Reset, Clear) reads red with a red ring and flashes (`Kit.Pulse`, shared with the more-below chevron); Reapply's Sure? is red. Header and footer bands share `Kit.Strip`.
+
+### My lockout (was queued as v1.1.1)
+
+My lockout made visible (player, 2026-10-21: clicking it changed nothing in the sidecar, so it read as a dead button). Tested in game 2026-10-21.
+
+- With My lockout on, bosses this character killed this week are dimmed with a drawn lock after the name; the boss checkboxes are untouched (ticking them again would bring back the pre-1.0.6 ANDed "must be alive" model that hid skip groups). Kills follow the highest selected difficulty the character is saved to (`Filters.ShownLockout`, self-check in `Dev/test_lockout.lua`). The sidecar repaints on `UPDATE_INSTANCE_INFO`.
+- Copy: boss list line "Untick a raid to hide it. Ticked bosses must be alive."; boss and raid boxes get one-line tooltips (`Kit.Tip` body may now be a function); My lockout's tooltip trimmed to what it hides and what still shows.
+- One-boss raids (e.g. Kith'ix, Tidebound Grotto) take one line: no fold, no boss box (the raid box covers it); My lockout's lock sits after the raid's name. Old boss ticks there are dropped on paint and ignored by `Filters.Pass`.
+- Suggested CHANGELOG lines: "My lockout now dims the bosses you've killed this week, with a lock." / "Clearer tooltips on the raid filter's boss boxes and My lockout." / "One-boss raids take a single line in the raid filter."
+
 ## v1.1.0 (2026-10-20; beta v1.1.0-beta1 published 2026-10-17)
 
 Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the list filled with full clears). Listing titles are protected (unreadable), so the only title match is Blizzard's server-side search text; PickupGroup now owns raid and difficulty so the player can type words like "ula" or "skip" there without picking a suggestion. Tested in game.

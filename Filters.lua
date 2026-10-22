@@ -161,6 +161,17 @@ local function MyKills(raidName, diff)
     return killed
 end
 
+-- The sidecar's lockout marks for a raid: my kills at the highest selected
+-- difficulty (diffs nil = all) I'm saved to. nil when saved to none.
+function Filters.ShownLockout(raidName, diffs)
+    for _, d in ipairs({ "M", "H", "N" }) do
+        if not diffs or diffs[d] then
+            local killed = MyKills(raidName, d)
+            if next(killed) then return d, killed end
+        end
+    end
+end
+
 -- Names the journal's boss list lacks would quietly break the match: log each once.
 local unknown = {}
 local function Unmatched(known, names, from)
@@ -286,7 +297,10 @@ function Filters.Pass(row)
         if f.diffs and not f.diffs[row.difficulty] then return false end
         if f.raidsOff and f.raidsOff[row.activity] then return false end
         -- Raids aren't cleared in order: each ticked boss must be alive.
-        for boss, on in pairs(f.bosses and f.bosses[row.activity] or {}) do
+        -- One-boss raids have no boss box (the raid box covers it), so old
+        -- ticks there are ignored.
+        local rules = #(row.bosses or {}) ~= 1 and f.bosses and f.bosses[row.activity]
+        for boss, on in pairs(rules or {}) do
             if on and row.killed and row.killed[boss] then return false end
         end
         local caught, left = Filters.Lockout(row)
