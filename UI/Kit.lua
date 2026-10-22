@@ -142,14 +142,7 @@ local Ring  -- (below)
 function Kit.Confirm(btn, label, fn)
     btn:SetText(label)
     local fs = btn:GetFontString()
-    local flash = fs:CreateAnimationGroup()
-    local a = flash:CreateAnimation("Alpha")
-    a:SetFromAlpha(1); a:SetToAlpha(0.35); a:SetDuration(0.5); a:SetSmoothing("IN_OUT")
-    local b = flash:CreateAnimation("Alpha")
-    b:SetFromAlpha(0.35); b:SetToAlpha(1); b:SetDuration(0.5); b:SetStartDelay(0.5); b:SetSmoothing("IN_OUT")
-    flash:SetLooping("REPEAT")
-    local loops = 0
-    flash:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
+    local flash = Kit.Pulse(fs, 0.35, 0.5)
     local function disarm(self)
         self.armed = nil; flash:Stop(); fs:SetAlpha(1)
         self:SetText(label); Ring(self, Palette.ringRest)
@@ -159,7 +152,7 @@ function Kit.Confirm(btn, label, fn)
         self.armed = (self.armed or 0) + 1
         local token = self.armed
         self:SetText("|cffff6666Sure?|r"); Ring(self, Palette.bad)
-        loops = 0; flash:Play()
+        flash:Play()
         C_Timer.After(3, function() if self.armed == token then disarm(self) end end)
     end)
 end
@@ -240,6 +233,36 @@ end
 Kit.MENU = { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }  -- Settings & Activity
 Kit.SLIDERS = { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } }  -- filter setup
 
+-- The suite's pulse: fade to `low` and back (each half `half` s), three
+-- times, then stop (WCAG 2.2.2). Returns the animation group; Play restarts it.
+function Kit.Pulse(region, low, half)
+    local g = region:CreateAnimationGroup()
+    local a = g:CreateAnimation("Alpha")
+    a:SetFromAlpha(1); a:SetToAlpha(low); a:SetDuration(half); a:SetSmoothing("IN_OUT")
+    local b = g:CreateAnimation("Alpha")
+    b:SetFromAlpha(low); b:SetToAlpha(1); b:SetDuration(half); b:SetStartDelay(half); b:SetSmoothing("IN_OUT")
+    g:SetLooping("REPEAT")
+    local loops = 0
+    g:SetScript("OnPlay", function() loops = 0 end)
+    g:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
+    return g
+end
+
+-- A 26px (or h) faint band with a black rule on its inner edge, at the top
+-- (header) or bottom (footer) of a frame.
+function Kit.Strip(frame, edge, h)
+    local s = CreateFrame("Frame", nil, frame)
+    s:SetPoint(edge .. "LEFT"); s:SetPoint(edge .. "RIGHT")
+    s:SetHeight(h or 26)
+    Kit.Fill(s, { 1, 1, 1, 0.035 })
+    local inner = edge == "TOP" and "BOTTOM" or "TOP"
+    local rule = s:CreateTexture(nil, "OVERLAY")
+    rule:SetColorTexture(0, 0, 0, 1)
+    rule:SetHeight(1)
+    rule:SetPoint(inner .. "LEFT"); rule:SetPoint(inner .. "RIGHT")
+    return s
+end
+
 -- "More below": a small down chevron at the bottom centre of a list, in place
 -- of a scroll bar (the wheel scrolls). When it appears it pulses three times
 -- (1.5 s each) and then stays lit: blinking that stops within 5 s needs no
@@ -251,17 +274,10 @@ function Kit.More(parent)
     f:SetFrameLevel(parent:GetFrameLevel() + 10)
     Kit.Fill(f, Palette.bgDark)
     Kit.Glyph(f, { { 8, 2, 0, -math.pi / 4, -2.8 }, { 8, 2, 0, math.pi / 4, 2.8 } })
-    local pulse = f:CreateAnimationGroup()
-    local fade = pulse:CreateAnimation("Alpha")
-    fade:SetFromAlpha(1); fade:SetToAlpha(0.25); fade:SetDuration(0.75); fade:SetSmoothing("IN_OUT")
-    local back = pulse:CreateAnimation("Alpha")
-    back:SetFromAlpha(0.25); back:SetToAlpha(1); back:SetDuration(0.75); back:SetSmoothing("IN_OUT"); back:SetStartDelay(0.75)
-    pulse:SetLooping("REPEAT")
-    local loops = 0
-    pulse:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
+    local pulse = Kit.Pulse(f, 0.25, 0.75)
     f:Hide()
     function f:Set(on)
-        if on and not self:IsShown() then loops = 0; self:Show(); pulse:Play()
+        if on and not self:IsShown() then self:Show(); pulse:Play()
         elseif not on and self:IsShown() then pulse:Stop(); self:Hide() end
     end
     return f
@@ -271,16 +287,7 @@ end
 -- the two-tone name and the version (yellow for dev / alpha / beta, muted for
 -- releases) on the left. Header icons go on the right, close last.
 function Kit.Header(frame)
-    local head = CreateFrame("Frame", nil, frame)
-    head:SetPoint("TOPLEFT")
-    head:SetPoint("TOPRIGHT")
-    head:SetHeight(26)
-    Kit.Fill(head, { 1, 1, 1, 0.035 })
-    local rule = head:CreateTexture(nil, "OVERLAY")
-    rule:SetColorTexture(0, 0, 0, 1)
-    rule:SetHeight(1)
-    rule:SetPoint("BOTTOMLEFT")
-    rule:SetPoint("BOTTOMRIGHT")
+    local head = Kit.Strip(frame, "TOP")
     local mark = head:CreateTexture(nil, "ARTWORK")
     mark:SetSize(16, 16)
     mark:SetPoint("LEFT", 6, 0)

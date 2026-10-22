@@ -438,7 +438,7 @@ local function BuildNotes(parent)
     box.why:SetPoint("RIGHT")
     box.why:SetJustifyH("LEFT")
     box.why:SetWordWrap(true)
-    box.why:SetTextColor(1, 0.847, 0.29)
+    box.why:SetTextColor(unpack(Kit.Palette.warn))
     local prev = box.why
     for i = 1, ns.Notes.MAX do
         local e = Kit.Edit(box, W - 2 * PAD, function(text) ns.Notes.Set(i, text) end)
@@ -512,7 +512,7 @@ local function BuildOptions(parent)
     y = y + 6
     box.stripWhy = Label(box, "")
     box.stripWhy:SetPoint("TOPLEFT", 18, y)
-    box.stripWhy:SetTextColor(1, 0.847, 0.29)
+    box.stripWhy:SetTextColor(unpack(Kit.Palette.warn))
     y = y - 22
 
     -- Clean-up: one switch for all its rules; what it hides is in the tooltip.
@@ -770,16 +770,7 @@ function BuildPrompt(parent)
         v.rows[i] = cb
     end
     -- Footer band: the actions, the main one first from the right.
-    local foot = CreateFrame("Frame", nil, parent)
-    foot:SetPoint("BOTTOMLEFT", 1, 1)
-    foot:SetPoint("BOTTOMRIGHT", -1, 1)
-    foot:SetHeight(36)
-    Kit.Fill(foot, { 1, 1, 1, 0.035 })
-    local frule = foot:CreateTexture(nil, "OVERLAY")
-    frule:SetColorTexture(0, 0, 0, 1)
-    frule:SetHeight(1)
-    frule:SetPoint("TOPLEFT")
-    frule:SetPoint("TOPRIGHT")
+    local foot = Kit.Strip(parent, "BOTTOM", 36)
     local reload = CreateFrame("Button", nil, foot)
     reload:SetSize(84, 20)
     reload:SetPoint("RIGHT", -PAD, 0)
@@ -805,22 +796,20 @@ end
 
 function PaintPrompt()
     local v, list = prompt, Standing()
-    local shown, names = {}, {}
-    for _, c in ipairs(list) do shown[c] = true; names[#names + 1] = c[4] end
     v.title:SetText(#list == 1 and ("Turn off " .. list[1][4] .. "?") or "Turn off the overlapping features?")
     local parts = {}
     for _, c in ipairs(list) do parts[#parts + 1] = c[4] .. " does the job of PickupGroup's " .. c[5] .. "." end
     v.note:SetText(table.concat(parts, " ") .. " While " .. (#list == 1 and "it's" or "they're")
         .. " on, PickupGroup's part is off. Untick to turn " .. (#list == 1 and "it" or "them") .. " off from your next reload.")
-    local y, n = -(v.title:GetStringHeight() + 6 + v.note:GetStringHeight() + 12), 0
+    local y = -(v.title:GetStringHeight() + 6 + v.note:GetStringHeight() + 12)
     for i, c in ipairs(CLASHES) do
         local cb = v.rows[i]
-        cb:SetShown(shown[c] or ns.clashHold[c[2]] ~= nil)
+        cb:SetShown(c[1]() ~= nil or ns.clashHold[c[2]] ~= nil)
         if cb:IsShown() then
             cb:ClearAllPoints()
             cb:SetPoint("TOPLEFT", 0, y)
             cb:Set(ns.clashHold[c[2]] == nil)
-            y, n = y - 24, n + 1
+            y = y - 24
         end
     end
 end

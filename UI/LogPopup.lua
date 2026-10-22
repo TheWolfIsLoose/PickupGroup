@@ -96,7 +96,7 @@ end
 local History = {}
 ns.History = History
 
-local ON, AMBER, GREY = Kit.Palette.on, { 1, 0.847, 0.29 }, { 0.55, 0.55, 0.55 }
+local ON, AMBER, GREY = Kit.Palette.on, Kit.Palette.warn, { 0.55, 0.55, 0.55 }
 -- History is the fun corner: self-deprecating, never mean (player, 2026-10-04).
 local LOOK = {
     pending = { "Waiting...", GREY }, declined = { "Nope", AMBER }, filled = { "Too slow", GREY },

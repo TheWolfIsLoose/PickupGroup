@@ -3,6 +3,7 @@
 Enum = { LFGEntryGeneralPlaystyle = { Learning = 1, FunRelaxed = 2, FunSerious = 3, Expert = 4 },
          LFGListFilter = { CurrentSeason = 1, PvE = 2 } }
 GetTime = function() return 0 end
+bit = { bor = function(a, b) return a + b end }  -- the flags here never overlap
 C_ChallengeMode = { GetMapTable = function() return { 1, 2 } end,
     GetMapUIInfo = function(id) return id == 1 and "Murder Row" or "Kings' Rest" end,
     GetOverallDungeonScore = function() return 0 end }

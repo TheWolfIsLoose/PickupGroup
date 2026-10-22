@@ -48,7 +48,7 @@ local OVER = { declined = true, declined_full = true, declined_delisted = true, 
 
 -- How a sign-up ended, as its button shows it for OUTCOME_TTL seconds.
 local OUTCOME_TTL = 5
-local AMBER, GREY, WHITE = { 1, 0.847, 0.29 }, { 0.55, 0.55, 0.55 }, { 1, 1, 1 }
+local AMBER, GREY, WHITE = Kit.Palette.warn, { 0.55, 0.55, 0.55 }, { 1, 1, 1 }
 local OUTCOME = {
     declined = { "Declined", AMBER }, declined_full = { "Filled", GREY },
     declined_delisted = { "Delisted", GREY }, cancelled = { "Withdrawn", GREY },
@@ -203,7 +203,7 @@ local function RowTooltip(frame)
     local GREY_T = 0.55
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
-    if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.847, 0.29, true) end
+    if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, AMBER[1], AMBER[2], AMBER[3], true) end
     local state = Pane.State(row, row.status == "applied" or row.status == "invited")
     if state then GameTooltip:AddLine(state.text, state.color[1], state.color[2], state.color[3]) end
     GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
@@ -254,10 +254,10 @@ local function RowTooltip(frame)
             listed[boss] = true
             local dead = row.killed[boss]
             GameTooltip:AddDoubleLine("  " .. boss, dead and "Dead" or "Alive", 0.85, 0.85, 0.85,
-                dead and 1 or ON[1], dead and 0.847 or ON[2], dead and 0.29 or ON[3])
+                unpack(dead and AMBER or ON, 1, 3))
         end
         for boss in pairs(row.killed) do  -- a name the journal spells differently
-            if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.847, 0.29) end
+            if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, AMBER[1], AMBER[2], AMBER[3]) end
         end
     else
         local score = row.score or 0
