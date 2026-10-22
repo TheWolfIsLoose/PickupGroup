@@ -141,7 +141,7 @@ local function PaintRaid(f)
             l.check:SetPoint("LEFT")
             Kit.Tip(l.check, function() return l.headRaid or l.boss end, function()
                 if l.headRaid then return "Show this raid's groups." end
-                return "Only groups with this boss alive. Hides skip groups that killed it."
+                return "Only groups with this boss still alive."
             end)
             l.labelColor = { l.check.label:GetTextColor() }
             -- Drawn lock after a boss's name: killed this week (My lockout on).

@@ -237,6 +237,8 @@ season); an open sign-up at /reload is re-attached by leader + activity.
 
 ## Later (unscheduled)
 
+- Filter help window (player idea, 2026-10-22, optional): an Options button opening a window with the full rules and examples (boss boxes ANDed, My lockout's hide/sort, skip groups). Not built: the one-line tooltips cover it for now; revisit if players ask how filtering works.
+
 - Share a filter as an import/export string (parked by the player).
 - Quick-create for keystone listings, designed from scratch.
 
