@@ -2,6 +2,14 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.1.1 (on `dev`, queued for the 2026-10-27 scheduled release)
+
+My lockout made visible (player, 2026-10-21: clicking it changed nothing in the sidecar, so it read as a dead button). Tested in game 2026-10-21.
+
+- With My lockout on, bosses this character killed this week are dimmed with a drawn lock after the name; the boss checkboxes are untouched (ticking them again would bring back the pre-1.0.6 ANDed "must be alive" model that hid skip groups). Kills follow the highest selected difficulty the character is saved to (`Filters.ShownLockout`, self-check in `Dev/test_lockout.lua`). The sidecar repaints on `UPDATE_INSTANCE_INFO`.
+- Copy: boss list line "Untick a raid to hide it. Ticked bosses must be alive."; boss and raid boxes get one-line tooltips (`Kit.Tip` body may now be a function); My lockout's tooltip trimmed to what it hides and what still shows.
+- Suggested CHANGELOG lines: "My lockout now dims the bosses you've killed this week, with a lock." / "Clearer tooltips on the raid filter's boss boxes and My lockout."
+
 ## v1.1.0 (2026-10-20; beta v1.1.0-beta1 published 2026-10-17)
 
 Raid search by intent (player, 2026-10-17: hunting one boss, e.g. Ula'tek, the list filled with full clears). Listing titles are protected (unreadable), so the only title match is Blizzard's server-side search text; PickupGroup now owns raid and difficulty so the player can type words like "ula" or "skip" there without picking a suggestion. Tested in game.
