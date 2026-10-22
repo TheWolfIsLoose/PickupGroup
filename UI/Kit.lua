@@ -293,6 +293,7 @@ function Kit.Check(parent, label, onChange)
     text:SetPoint("LEFT", well, "RIGHT", 6, 0)
     text:SetText(label)
     b:SetWidth(18 + text:GetStringWidth() + 4)
+    b.label = text
     local on = false
     function b:Set(v) on = v and true or false; mark:SetShown(on) end
     function b:Get() return on end

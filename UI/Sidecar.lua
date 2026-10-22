@@ -139,6 +139,21 @@ local function PaintRaid(f)
                 Sidecar.Paint(); Changed()
             end)
             l.check:SetPoint("LEFT")
+            l.labelColor = { l.check.label:GetTextColor() }
+            -- Drawn lock after a boss's name: killed this week (My lockout on).
+            l.lock = CreateFrame("Frame", nil, l)
+            l.lock:SetSize(7, 9)
+            l.lock:SetPoint("LEFT", l.check, "RIGHT", 0, 0)
+            local function Bit(w, h, point, x, y)
+                local t = l.lock:CreateTexture(nil, "ARTWORK")
+                t:SetColorTexture(0.55, 0.55, 0.55, 1)
+                t:SetSize(w, h)
+                t:SetPoint(point, x, y)
+            end
+            Bit(7, 5, "BOTTOMLEFT", 0, 0)  -- body
+            Bit(1, 3, "BOTTOMLEFT", 1, 5)  -- shackle sides and top
+            Bit(1, 3, "BOTTOMLEFT", 5, 5)
+            Bit(5, 1, "BOTTOMLEFT", 1, 8)
             -- Tree lines from the raid's checkbox down to each boss's (bosses only).
             l.trunk = l:CreateTexture(nil, "ARTWORK")
             l.trunk:SetColorTexture(0.3, 0.3, 0.3, 1)
@@ -161,7 +176,9 @@ local function PaintRaid(f)
             l.want:SetPoint("RIGHT")
             Kit.Tip(l.want, "My lockout", "Hides groups with nothing left this character can loot this week,"
                 .. " at each group's difficulty. Groups that have killed more of what you've killed"
-                .. " come first; groups behind you (maybe skipping ahead) still show, lower down.")
+                .. " come first; groups behind you (maybe skipping ahead) still show, lower down."
+                .. " Bosses you've killed are dimmed with a lock, at the highest difficulty selected"
+                .. " that you're saved to (shown after the raid's name).")
             bossLines[n] = l
         end
         l:ClearAllPoints()
@@ -192,12 +209,17 @@ local function PaintRaid(f)
         h.check:Show()
         h.text:SetPoint("LEFT", 18, 0)
         h.text:Show()
+        local lockOn = editing.lockout ~= nil and editing.lockout[raid.name] == true
+        local lockDiff, mine
+        if lockOn then lockDiff, mine = Filters.ShownLockout(raid.name, editing.diffs) end
         h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
-            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or ""))
+            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or "")
+            .. (lockOn and ("  (" .. (lockDiff or "no lockout") .. ")") or ""))
         local grey = shown and 0.7 or 0.4
         h.text:SetTextColor(grey, grey, grey)
         h.want.raid = raid.name
-        h.want:Paint(editing.lockout ~= nil and editing.lockout[raid.name] == true)
+        h.want:Paint(lockOn)
+        h.lock:Hide()
         h.want:Show()
         local list = open[raid.name] and raid.bosses or {}
         for i, boss in ipairs(list) do
@@ -212,6 +234,10 @@ local function PaintRaid(f)
             l.check:SetPoint("LEFT", 18, 0)  -- under its raid's name, not its checkbox
             l.check:Set(rules and rules[boss])
             l.check:Show()
+            local killed = mine and mine[boss]
+            local c = killed and { 0.4, 0.4, 0.4 } or l.labelColor
+            l.check.label:SetTextColor(c[1], c[2], c[3])
+            l.lock:SetShown(killed == true)
         end
         y = y - 4
     end
@@ -220,6 +246,7 @@ local function PaintRaid(f)
         local l = Line()
         l.raid, l.headRaid = nil, nil
         l.check:Hide()
+        l.lock:Hide()
         l.trunk:Hide(); l.branch:Hide()
         l.text:SetPoint("LEFT")
         l.text:Show()
@@ -666,6 +693,8 @@ end
 function Sidecar.RefreshBosses()
     if frame and frame:IsShown() and editing and editing.kind == "raid" then PaintRaid(editing) end
 end
+
+ns.On("UPDATE_INSTANCE_INFO", function() Sidecar.RefreshBosses() end)  -- lockouts arrived
 
 -- Close the sidecar if it's on a filter of that side (leading or searching):
 -- the pane and the leader view each close only their own.

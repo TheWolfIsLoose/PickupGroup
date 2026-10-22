@@ -161,6 +161,17 @@ local function MyKills(raidName, diff)
     return killed
 end
 
+-- The sidecar's lockout marks for a raid: my kills at the highest selected
+-- difficulty (diffs nil = all) I'm saved to. nil when saved to none.
+function Filters.ShownLockout(raidName, diffs)
+    for _, d in ipairs({ "M", "H", "N" }) do
+        if not diffs or diffs[d] then
+            local killed = MyKills(raidName, d)
+            if next(killed) then return d, killed end
+        end
+    end
+end
+
 -- Names the journal's boss list lacks would quietly break the match: log each once.
 local unknown = {}
 local function Unmatched(known, names, from)
