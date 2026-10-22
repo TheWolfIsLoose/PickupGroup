@@ -2,7 +2,9 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## Suite style pass (on `dev`, 2026-10-22)
+## v1.2.0 (2026-10-22)
+
+### Suite style pass
 
 The suite moved to a monochrome palette and one header / options pattern (`Dev/SUITE-STYLE.md`).
 
@@ -15,8 +17,9 @@ The suite moved to a monochrome palette and one header / options pattern (`Dev/S
 - Clashes: the mid-screen alert window is gone. One chat line at login (or when a clash starts); the choice waits in the sidecar as a view (opens with the Group Finder until Later): a check row per clash, ticked = theirs stays on; unticking writes that one setting in the other addon's saved settings (off from the next reload) and holds ours off until then (`ns.clashHold`). Footer band: Reload now / Later.
 - The group finder clash now also hides PickupGroup's list (and the Blizzard-list button) while it stands, like the notes and quick list clashes.
 - Icons redrawn white (icon.png, `.assets/logo-256.png`, `.assets/logo.png`).
+- Armed "Sure?" (Reset, Clear) reads red with a red ring and flashes (`Kit.Pulse`, shared with the more-below chevron); Reapply's Sure? is red. Header and footer bands share `Kit.Strip`.
 
-## v1.1.1 (on `dev`, queued for the 2026-10-27 scheduled release)
+### My lockout (was queued as v1.1.1)
 
 My lockout made visible (player, 2026-10-21: clicking it changed nothing in the sidecar, so it read as a dead button). Tested in game 2026-10-21.
 
