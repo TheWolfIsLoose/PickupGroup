@@ -178,8 +178,8 @@ local function PaintRaid(f)
             end)
             l.want:SetHeight(18)
             l.want:SetPoint("RIGHT")
-            Kit.Tip(l.want, "My lockout", "Hides groups with no loot left for you. Groups that may be"
-                .. " skipping still show. Your kills are dimmed with a lock.")
+            Kit.Tip(l.want, "My lockout", "Hides groups with no loot left for you. Groups behind you"
+                .. " still show (they may be skipping). Your kills are dimmed with a lock.")
             bossLines[n] = l
         end
         l:ClearAllPoints()
