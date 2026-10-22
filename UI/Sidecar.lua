@@ -105,7 +105,7 @@ end
 
 local function PaintRaid(f)
     PaintRegions(f)
-    bossLabel:SetText("Untick a raid to hide it. Ticked bosses must be alive in the group.")
+    bossLabel:SetText("Raid box: show its groups. Boss box: only groups with that boss alive.")
     -- Pooled lines: a raid heading (fold, My lockout), then one checkbox
     -- per boss.
     local y, n = 0, 0
@@ -139,6 +139,12 @@ local function PaintRaid(f)
                 Sidecar.Paint(); Changed()
             end)
             l.check:SetPoint("LEFT")
+            Kit.Tip(l.check, function() return l.headRaid or l.boss end, function()
+                if l.headRaid then return "Ticked: show this raid's groups. Unticked: hide them." end
+                return "Ticked: only groups with this boss still alive. Every ticked boss must be alive,"
+                    .. " so a group that killed one on the way (or skipped past it) is hidden."
+                    .. " Looking for loot you can still get? Use My lockout instead."
+            end)
             l.labelColor = { l.check.label:GetTextColor() }
             -- Drawn lock after a boss's name: killed this week (My lockout on).
             l.lock = CreateFrame("Frame", nil, l)
@@ -174,11 +180,11 @@ local function PaintRaid(f)
             end)
             l.want:SetHeight(18)
             l.want:SetPoint("RIGHT")
-            Kit.Tip(l.want, "My lockout", "Hides groups with nothing left this character can loot this week,"
-                .. " at each group's difficulty. Groups that have killed more of what you've killed"
-                .. " come first; groups behind you (maybe skipping ahead) still show, lower down."
-                .. " Bosses you've killed are dimmed with a lock, at the highest difficulty selected"
-                .. " that you're saved to.")
+            Kit.Tip(l.want, "My lockout", "Hides only groups with nothing left you can loot this week"
+                .. " (every boss you haven't killed is dead there, at that group's difficulty)."
+                .. " Groups behind you still show, since they may use the skip, but sort below"
+                .. " groups that match your kills. Bosses you've killed (at the highest difficulty selected) are dimmed with a lock."
+                .. " It never ticks or unticks the boss boxes.")
             bossLines[n] = l
         end
         l:ClearAllPoints()

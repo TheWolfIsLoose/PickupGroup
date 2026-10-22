@@ -119,14 +119,15 @@ function Kit.Tile(parent, size)
     return t
 end
 
--- Hint tooltip on a control (Options can hide hints). title may be a
--- function(control); body is optional.
+-- Hint tooltip on a control (Options can hide hints). title and body may
+-- be a function(control); body is optional.
 function Kit.Tip(ctrl, title, body, anchor)
     ctrl:HookScript("OnEnter", function(self)
         if not ns.Hints() then return end
         GameTooltip:SetOwner(self, anchor or "ANCHOR_TOP")
         GameTooltip:SetText(type(title) == "function" and title(self) or title, 1, 1, 1)
-        if body then GameTooltip:AddLine(body, Palette.soft[1], Palette.soft[2], Palette.soft[3], true) end
+        local text = type(body) == "function" and body(self) or body
+        if text then GameTooltip:AddLine(text, Palette.soft[1], Palette.soft[2], Palette.soft[3], true) end
         GameTooltip:Show()
     end)
     ctrl:HookScript("OnLeave", function() GameTooltip:Hide() end)
