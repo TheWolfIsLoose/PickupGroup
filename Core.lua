@@ -73,7 +73,11 @@ end
 -- holds Shift while the window opens, and it leaves the window open then.)
 -- (Its sign-up helpers run while its Quality of Life or Group Finder module is loaded.)
 local function EUI(module) return C_AddOns.IsAddOnLoaded(module) and type(EllesmereUIDB) == "table" end
+-- A clash the player turned off on the other side holds until the reload
+-- (the other addon still runs its part until then): ns.clashHold[db key].
+ns.clashHold = {}
 function Notes.Conflict()
+    if ns.clashHold.noteConflict then return ns.clashHold.noteConflict end
     if (EUI("EllesmereUIQoL") or EUI("EllesmereUIGroupFinder")) and EllesmereUIDB.persistSignupNote then
         return "EllesmereUI's Persistent Signup Note is on"
     end
@@ -82,6 +86,7 @@ end
 -- Another addon's premade-groups filter on the same search panel: its filter
 -- row ends up under our list, and both write Blizzard's filter.
 function ns.FinderClash()
+    if ns.clashHold.finderConflict then return ns.clashHold.finderConflict end
     local gf = EUI("EllesmereUIGroupFinder") and EllesmereUIDB.groupFinder
     if type(gf) == "table" and gf.enabled == true then return "EllesmereUI's Group Finder is on" end
 end
@@ -106,7 +111,7 @@ function ns.Version()
 end
 
 function ns.Print(msg)
-    print("|cff98ff98PickupGroup|r: " .. tostring(msg))
+    print("|cffffffffPickup|r|cffb3b3b3Group|r: " .. tostring(msg))
 end
 
 -- ---------------------------------------------------------------------------
@@ -151,7 +156,7 @@ ns.On("ADDON_LOADED", function(name)
 
     SLASH_PICKUPGROUP1, SLASH_PICKUPGROUP2 = "/pug", "/pickupgroup"
     SlashCmdList.PICKUPGROUP = function(msg) ns.OnSlash(msg) end
-    ns.Print("v" .. version .. " loaded. Type |cff98ff98/pug|r for commands.")
+    ns.Print("v" .. version .. " loaded. Type |cffffffff/pug|r for commands.")
 end)
 
 -- A protected call our code made that the game refused (taint).
@@ -185,7 +190,7 @@ function ns.OnSlash(msg)
     elseif cmd == "debug" then
         ns.db.trace = not ns.db.trace
         ns.Log.Emit("setting", { key = "trace", on = ns.db.trace })
-        ns.Print("Detailed recording " .. (ns.db.trace and "|cff98ff98on|r." or "off."))
+        ns.Print("Detailed recording " .. (ns.db.trace and "on." or "off."))
     else
         for _, line in ipairs(HELP) do ns.Print(line) end
     end

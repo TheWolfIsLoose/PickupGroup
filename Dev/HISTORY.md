@@ -2,6 +2,20 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## Suite style pass (on `dev`, 2026-10-22)
+
+The suite moved to a monochrome palette and one header / options pattern (`Dev/SUITE-STYLE.md`).
+
+- Palette: `Kit.Palette.brand` (mint) is now `on` (white): on, live, hover, focus, tab bars, check squares, the shimmer (peak alpha 0.15). `glyphRest` 0.7. `warn` yellow FFD84A, `bad` FF6666, new `info` blue 5AA9FF for "new to your list" names and the leader view's fills-a-seat edge / adds line. Pinned sign-ups keep the white edge; their action label is plain white.
+- Two-tone name everywhere (white Pickup, 0.7 gray Group): chat prefix, headers, log window, Blizzard-list button.
+- `Kit.Header`: icon, name and version in a 26px band at the top of the sidecar and the quick list (were bottom right). Quick list title and "Lists as" sit under it.
+- Sidecar: the Options tab is gone; the header's three-bar icon (`Kit.MENU`, also on the pane's bar, tooltip "Settings & Activity") opens that view. Tabs (Filter, Notes) sit under the header with Reset at the row's end (Filter only), so every control is at the top.
+- Buttons use the Small font (disabled: Small in muted); sidecar buttons 20px.
+- Leader view refresh: drawn glyph (`Kit.REFRESH`, an open ring with a head) instead of the game's texture.
+- Clashes: the mid-screen alert window is gone. One chat line at login (or when a clash starts); the choice waits in the sidecar as a view (opens with the Group Finder until Later): a check row per clash, ticked = theirs stays on; unticking writes that one setting in the other addon's saved settings (off from the next reload) and holds ours off until then (`ns.clashHold`). Footer band: Reload now / Later.
+- The group finder clash now also hides PickupGroup's list (and the Blizzard-list button) while it stands, like the notes and quick list clashes.
+- Icons redrawn white (icon.png, `.assets/logo-256.png`, `.assets/logo.png`).
+
 ## v1.1.1 (on `dev`, queued for the 2026-10-27 scheduled release)
 
 My lockout made visible (player, 2026-10-21: clicking it changed nothing in the sidecar, so it read as a dead button). Tested in game 2026-10-21.

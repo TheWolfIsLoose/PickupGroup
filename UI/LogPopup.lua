@@ -2,7 +2,7 @@
     PickupGroup - UI/LogPopup.lua
     /pug log: the report (Log.Report) in a copyable text box, pre-selected so
     Ctrl+C works at once. A snapshot taken on open, so a selection survives
-    while copying. Also the sign-up history window (Options > Sign-up history).
+    while copying. Also the sign-up history window (Settings & Activity > Sign-up history).
 --]]
 
 local _, ns = ...
@@ -70,7 +70,7 @@ local function CopyWindow(name, title, hint)
 end
 
 local function Build()
-    local f = CopyWindow("PickupGroupLogPopup", "|cff98ff98Pickup|rGroup log",
+    local f = CopyWindow("PickupGroupLogPopup", "|cffffffffPickup|r|cffb3b3b3Group|r log",
         "Everything is selected: press Ctrl+C and paste it into your bug report.")
     local clear = CreateFrame("Button", nil, f)
     clear:SetSize(80, 22)
@@ -96,13 +96,13 @@ end
 local History = {}
 ns.History = History
 
-local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }
+local ON, AMBER, GREY = Kit.Palette.on, { 1, 0.847, 0.29 }, { 0.55, 0.55, 0.55 }
 -- History is the fun corner: self-deprecating, never mean (player, 2026-10-04).
 local LOOK = {
     pending = { "Waiting...", GREY }, declined = { "Nope", AMBER }, filled = { "Too slow", GREY },
     delisted = { "Vanished", GREY }, withdrawn = { "Cold feet", GREY }, timedout = { "Ghosted", GREY },
-    invitedeclined = { "You said no", GREY }, failed = { "Game said no", AMBER }, joined = { "Got in!", MINT },
-    unknown = { "Who knows", GREY }, timed = { "Timed", MINT }, depleted = { "Depleted", AMBER },
+    invitedeclined = { "You said no", GREY }, failed = { "Game said no", AMBER }, joined = { "Got in!", ON },
+    unknown = { "Who knows", GREY }, timed = { "Timed", ON }, depleted = { "Depleted", AMBER },
     movedon = { "Moved on", GREY }, abandoned = { "Bailed", AMBER },
 }
 -- A "no", as far as the applicant can tell: the game softens a leader's
@@ -294,7 +294,7 @@ local function BuildHistory()
     f.bigLabel:SetPoint("BOTTOMLEFT", f.big, "BOTTOMRIGHT", 6, 1)
     f.quip = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     f.quip:SetPoint("TOPLEFT", 12, -56)
-    f.quip:SetTextColor(MINT[1], MINT[2], MINT[3])
+    f.quip:SetTextColor(ON[1], ON[2], ON[3])
     -- Start over (two clicks, like Clear): this character, or every one with All characters.
     local reset = CreateFrame("Button", nil, f)
     reset:SetSize(60, 20)
@@ -332,7 +332,7 @@ local function BuildHistory()
     f.rates:SetPoint("TOPLEFT", f.records, "BOTTOMLEFT", 0, -4)
     f.rates:SetPoint("RIGHT", -12, 0)
     f.rates:SetJustifyH("LEFT")
-    f.rates:SetTextColor(MINT[1], MINT[2], MINT[3])
+    f.rates:SetTextColor(ON[1], ON[2], ON[3])
 
     local x = 12
     f.heads = {}

@@ -2,7 +2,7 @@
     PickupGroup - UI/Kit.lua
     The look, shared by every window: fonts, palette and the style helpers.
     Same visual language as StockClerk (its Dev/STYLE.md): flat fills, 1px
-    black lines (grey rings on controls), mint accent, drawn glyphs, no Blizzard templates.
+    black lines (grey rings on controls), monochrome (white = on), drawn glyphs, no Blizzard templates.
 --]]
 
 local _, ns = ...
@@ -19,7 +19,7 @@ ns.Kit = Kit
 local FONT_FALLBACK = "Interface\\AddOns\\PickupGroup\\Media\\BarlowSemiCondensed-Medium.ttf"
 local FONTS = {
     PickupGroupFontSmall = { 10, 1 }, PickupGroupFont = { 12, 1 }, PickupGroupFontLarge = { 16, 1 },
-    PickupGroupFontDisabled = { 12, 0.5 },
+    PickupGroupFontDisabled = { 10, 0.55 },  -- disabled button labels: Small in muted
 }
 for name, spec in pairs(FONTS) do
     local fo = CreateFont(name)
@@ -51,15 +51,17 @@ Kit.Palette = {
     hoverWash = { 0.851, 0.851, 0.851, 0.15 },
     pressFill = { 0.851, 0.851, 0.851, 0.22 },
     border    = { 0, 0, 0, 1 },                -- window edges, tiles (not controls)
-    brand     = { 0.596, 1, 0.596, 1 },        -- mint
-    glyphRest = { 0.85, 0.85, 0.85, 1 },
+    on        = { 1, 1, 1, 1 },                -- on, live, hover, focus (monochrome suite)
+    glyphRest = { 0.7, 0.7, 0.7, 1 },          -- header icons at rest
     -- Text and status tokens (suite style guide): soft 0.74 for tooltip bodies
     -- and secondary text, muted 0.55 (8C8C8C) for labels, headings and "off",
-    -- warn amber FFB84D, bad red FF8888. All 4.5:1+ on the panel.
+    -- warn yellow FFD84A, bad red FF6666, info blue 5AA9FF (new / worth a
+    -- look). All 4.5:1+ on the panel.
     soft      = { 0.74, 0.74, 0.74, 1 },
     muted     = { 0.55, 0.55, 0.55, 1 },
-    warn      = { 1, 0.72, 0.3, 1 },
-    bad       = { 1, 0.533, 0.533, 1 },
+    warn      = { 1, 0.847, 0.29, 1 },
+    bad       = { 1, 0.4, 0.4, 1 },
+    info      = { 0.353, 0.663, 1, 1 },
 }
 local Palette = Kit.Palette
 
@@ -144,7 +146,7 @@ function Kit.Confirm(btn, label, fn)
     end)
 end
 
--- Ring colour for an input: mint while typing, light grey under the mouse, else grey.
+-- Ring colour for an input: white while typing, light grey under the mouse, else grey.
 local function Ring(frame, c)
     for _, t in ipairs(frame._border) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
 end
@@ -179,8 +181,8 @@ function Kit.Button(btn)
     btn:HookScript("OnLeave", function() wash:Hide() end)
     btn:HookScript("OnMouseDown", function(self) if self:IsEnabled() then Kit.Band(self, Palette.pressFill) end end)
     btn:HookScript("OnMouseUp", function(self) Kit.Band(self, Palette.btnRest) end)
-    btn:SetNormalFontObject("PickupGroupFont")
-    btn:SetHighlightFontObject("PickupGroupFont")
+    btn:SetNormalFontObject("PickupGroupFontSmall")  -- buttons: Small, everywhere
+    btn:SetHighlightFontObject("PickupGroupFontSmall")
     btn:SetDisabledFontObject("PickupGroupFontDisabled")
 end
 
@@ -201,6 +203,23 @@ function Kit.Glyph(frame, bars)
 end
 
 Kit.CLOSE = { { 12, 2, 0, math.pi / 4 }, { 12, 2, 0, -math.pi / 4 } }
+-- Refresh: a circular arrow, an open ring of short bars with a head at its end.
+Kit.REFRESH = {}
+for i = 0, 9 do
+    local t = math.rad(120 + i * 30)  -- 120 round to 390 (30) degrees: open at the top right
+    Kit.REFRESH[#Kit.REFRESH + 1] = { 3.4, 2, 5 * math.sin(t), t + math.pi / 2, 5 * math.cos(t) }
+end
+do  -- the head: two bars meeting at a point just past the 30 degree end, pointing along the ring
+    local t = math.rad(390)
+    local tx, ty = -math.sin(t), math.cos(t)                      -- direction of travel
+    local px, py = 5 * math.cos(t) + 0.5 * tx, 5 * math.sin(t) + 0.5 * ty  -- the point
+    for _, s in ipairs({ 1, -1 }) do
+        local a = math.atan2(-ty, -tx) + s * math.rad(45)           -- back from the point
+        local dx, dy = math.cos(a), math.sin(a)
+        Kit.REFRESH[#Kit.REFRESH + 1] = { 4, 2, py + dy * 1.6, a, px + dx * 1.6 }
+    end
+end
+Kit.MENU = { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }  -- Settings & Activity
 Kit.SLIDERS = { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } }  -- filter setup
 
 -- "More below": a small down chevron at the bottom centre of a list, in place
@@ -230,13 +249,41 @@ function Kit.More(parent)
     return f
 end
 
--- Header icon: drawn glyph, mint on hover, one-line tooltip.
+-- Panel header (suite style guide): a 26px band over a black rule; the icon,
+-- the two-tone name and the version (yellow for dev / alpha / beta, muted for
+-- releases) on the left. Header icons go on the right, close last.
+function Kit.Header(frame)
+    local head = CreateFrame("Frame", nil, frame)
+    head:SetPoint("TOPLEFT")
+    head:SetPoint("TOPRIGHT")
+    head:SetHeight(26)
+    Kit.Fill(head, { 1, 1, 1, 0.035 })
+    local rule = head:CreateTexture(nil, "OVERLAY")
+    rule:SetColorTexture(0, 0, 0, 1)
+    rule:SetHeight(1)
+    rule:SetPoint("BOTTOMLEFT")
+    rule:SetPoint("BOTTOMRIGHT")
+    local mark = head:CreateTexture(nil, "ARTWORK")
+    mark:SetSize(16, 16)
+    mark:SetPoint("LEFT", 6, 0)
+    mark:SetTexture("Interface\\AddOns\\PickupGroup\\icon.png")
+    local name = head:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    name:SetPoint("LEFT", mark, "RIGHT", 6, 0)
+    name:SetText("|cffffffffPickup|r|cffb3b3b3Group|r")
+    local v = ns.Version()
+    local ver = head:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    ver:SetPoint("BOTTOMLEFT", name, "BOTTOMRIGHT", 6, 1)
+    ver:SetText(((v:match("%-alpha") or v:match("%-beta") or v:match("^dev")) and "|cffffd84a" or "|cff8c8c8c") .. v .. "|r")
+    return head
+end
+
+-- Header icon: drawn glyph, white on hover, one-line tooltip.
 function Kit.HeaderIcon(parent, bars, tip, onClick)
     local btn = CreateFrame("Button", nil, parent)
     btn:SetSize(24, 24)
     local tint = Kit.Glyph(btn, bars)
     btn:SetScript("OnEnter", function(self)
-        tint(Palette.brand)
+        tint(Palette.on)
         if not ns.Hints() then return end
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText(tip)
@@ -247,7 +294,7 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     return btn
 end
 
--- Toggle button: on = its colour (mint by default) as text and ring plus a
+-- Toggle button: on = its colour (white by default) as text and ring plus a
 -- 2px bar along the bottom, the same mark as an active sidecar tab, so "on"
 -- never rests on colour alone (WCAG 1.4.1). Off: grey text, grey ring.
 function Kit.Toggle(parent, text, w, onClick)
@@ -257,12 +304,12 @@ function Kit.Toggle(parent, text, w, onClick)
     b:SetNormalFontObject("PickupGroupFontSmall")
     b:SetHighlightFontObject("PickupGroupFontSmall")
     b:SetText(text)
-    local bar = Solid(b, "OVERLAY", 6, Palette.brand)
+    local bar = Solid(b, "OVERLAY", 6, Palette.on)
     bar:SetHeight(2)
     bar:SetPoint("BOTTOMLEFT", 1, 1)
     bar:SetPoint("BOTTOMRIGHT", -1, 1)
     function b:Paint(on, color)
-        local c = on and (color or Palette.brand) or { 0.55, 0.55, 0.55 }
+        local c = on and (color or Palette.on) or { 0.55, 0.55, 0.55 }
         self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
         Ring(self, on and c or Palette.ringRest)
         bar:SetColorTexture(c[1], c[2], c[3], 1)
@@ -272,7 +319,7 @@ function Kit.Toggle(parent, text, w, onClick)
     return b
 end
 
--- Checkbox: 12px light well (grey ring on hover), mint square when on; the label is part of the
+-- Checkbox: 12px light well (grey ring on hover), white square when on; the label is part of the
 -- click area, 24px tall (WCAG 2.5.8: rows of checkboxes sit 24px apart).
 -- box:Set(on), box:Get(); onChange(on) after a click.
 function Kit.Check(parent, label, onChange)
@@ -289,7 +336,7 @@ function Kit.Check(parent, label, onChange)
     local mark = well:CreateTexture(nil, "OVERLAY")
     mark:SetSize(8, 8)
     mark:SetPoint("CENTER")
-    mark:SetColorTexture(Palette.brand[1], Palette.brand[2], Palette.brand[3], 1)
+    mark:SetColorTexture(Palette.on[1], Palette.on[2], Palette.on[3], 1)
     local text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     text:SetPoint("LEFT", well, "RIGHT", 6, 0)
     text:SetText(label)
@@ -304,7 +351,7 @@ function Kit.Check(parent, label, onChange)
     return b
 end
 
--- Text box: light well + grey ring (grey on hover, mint while typing). onCommit(text) on Enter or losing
+-- Text box: light well + grey ring (grey on hover, white while typing). onCommit(text) on Enter or losing
 -- focus. Clears focus when hidden (a hidden focused box eats every key).
 function Kit.Edit(parent, width, onCommit, numeric)
     local e = CreateFrame("EditBox", nil, parent)
@@ -323,7 +370,7 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetScript("OnHide", function(self) self:ClearFocus() end)
     e:HookScript("OnEnter", function(self) if not self:HasFocus() then Ring(self, Palette.ringHover) end end)
     e:HookScript("OnLeave", function(self) if not self:HasFocus() then Ring(self, Palette.ringRest) end end)
-    e:HookScript("OnEditFocusGained", function(self) Ring(self, Palette.brand) end)
+    e:HookScript("OnEditFocusGained", function(self) Ring(self, Palette.on) end)
     e:HookScript("OnEditFocusLost", function(self) Ring(self, self:IsMouseOver() and Palette.ringHover or Palette.ringRest) end)
     return e
 end

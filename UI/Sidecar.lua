@@ -20,7 +20,7 @@ ns.Sidecar = Sidecar
 
 local Kit, Filters = ns.Kit, ns.Filters
 local W, PAD = 220, 8
-local MINT = Kit.Palette.brand
+local ON = Kit.Palette.on
 
 local frame, editing
 local keysBox, raidBox
@@ -29,7 +29,8 @@ local scoreBox, bossBox
 local bossLines = {}
 local bossLabel
 local filterView, optionsView, notesView, view = nil, nil, nil, "filter"
-local headTabs = {}
+local headTabs, resetBtn = {}
+local prompt, asking, BuildPrompt, PaintPrompt  -- the clash prompt (defined with the clashes below)
 local open = {}  -- raid name -> heading unfolded (this session)
 
 local function Changed()
@@ -326,7 +327,7 @@ local function BuildKeys(parent)
         b:SetHitRectInsets(-4, -4, -6, -6)  -- 24px tall to click (WCAG 2.5.8)
         if prevWord then b:SetPoint("RIGHT", prevWord, "LEFT", -8, 0) else b:SetPoint("TOPRIGHT", 0, y) end
         b:SetScript("OnClick", function() w[2](); Sidecar.Paint(); Changed() end)
-        b:SetScript("OnEnter", function() t:SetTextColor(MINT[1], MINT[2], MINT[3]) end)
+        b:SetScript("OnEnter", function() t:SetTextColor(ON[1], ON[2], ON[3]) end)
         b:SetScript("OnLeave", function() t:SetTextColor(0.55, 0.55, 0.55) end)
         prevWord = b
     end
@@ -437,7 +438,7 @@ local function BuildNotes(parent)
     box.why:SetPoint("RIGHT")
     box.why:SetJustifyH("LEFT")
     box.why:SetWordWrap(true)
-    box.why:SetTextColor(1, 0.72, 0.3)
+    box.why:SetTextColor(1, 0.847, 0.29)
     local prev = box.why
     for i = 1, ns.Notes.MAX do
         local e = Kit.Edit(box, W - 2 * PAD, function(text) ns.Notes.Set(i, text) end)
@@ -471,7 +472,7 @@ local function BuildOptions(parent)
         -- Opt-out: on for everyone until turned off.
         { "noChime", "Alert: Dungeon, chime when group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
           function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
-        { "noShimmer", "Alert: Shimmer on new groups", "With fewer than 20 groups listed, a group new to your list gets one quick shimmer across its row. Its name stays mint either way.",
+        { "noShimmer", "Alert: Shimmer on new groups", "With fewer than 20 groups listed, a group new to your list gets one quick shimmer across its row. Its name stays blue either way.",
           function() return not ns.db.noShimmer end, function(on) ns.db.noShimmer = (not on) or nil end },
         "-",  -- a rule between the sorting / alert pair and the rest
         { "useBlizzard", "Use Blizzard's group list instead", "A PickupGroup button on Blizzard's panel brings this back.",
@@ -511,7 +512,7 @@ local function BuildOptions(parent)
     y = y + 6
     box.stripWhy = Label(box, "")
     box.stripWhy:SetPoint("TOPLEFT", 18, y)
-    box.stripWhy:SetTextColor(1, 0.72, 0.3)
+    box.stripWhy:SetTextColor(1, 0.847, 0.29)
     y = y - 22
 
     -- Clean-up: one switch for all its rules; what it hides is in the tooltip.
@@ -537,7 +538,7 @@ local function BuildOptions(parent)
     Kit.Confirm(clear, "Clear", function() ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render() end)
     y = y - 30
     local history = CreateFrame("Button", nil, box)
-    history:SetSize(W - 2 * PAD, 22)
+    history:SetSize(W - 2 * PAD, 20)
     history:SetPoint("TOPLEFT", 0, y)
     Kit.Button(history)
     history:SetText("Sign-up history")
@@ -569,42 +570,51 @@ local function Build()
     Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(frame)
 
-    -- Header tabs: Filter (the filter being edited), Notes and Options.
+    -- Header: icon, name and version; Settings & Activity and close on the
+    -- right. Below it the tabs (Filter, Notes) with Reset at the row's end,
+    -- so every control sits at the top.
+    local head = Kit.Header(frame)
+    local close = Kit.HeaderIcon(head, Kit.CLOSE, "Close", function() frame:Hide() end)
+    close:SetPoint("RIGHT", -1, 0)
+    Kit.HeaderIcon(head, Kit.MENU, "Settings & Activity", function() Sidecar.Show("options") end)
+        :SetPoint("RIGHT", close, "LEFT", 2, 0)
     local prev
-    for _, t in ipairs({ { "filter", "Filter" }, { "notes", "Notes" }, { "options", "Options" } }) do
+    for _, t in ipairs({ { "filter", "Filter" }, { "notes", "Notes" } }) do
         local b = CreateFrame("Button", nil, frame)
-        b:SetHeight(26)
+        b:SetHeight(24)
         b.text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
         b.text:SetPoint("LEFT")
         b.text:SetText(t[2])
         b:SetWidth(b.text:GetStringWidth())
         b.under = b:CreateTexture(nil, "OVERLAY")
-        b.under:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+        b.under:SetColorTexture(ON[1], ON[2], ON[3], 1)
         b.under:SetHeight(2)
         b.under:SetPoint("BOTTOMLEFT", 0, 1)
         b.under:SetPoint("BOTTOMRIGHT", 0, 1)
         b.view = t[1]
         b:SetScript("OnClick", function(self) Sidecar.Show(self.view) end)
-        if prev then b:SetPoint("LEFT", prev, "RIGHT", 14, 0) else b:SetPoint("TOPLEFT", PAD, 0) end
+        if prev then b:SetPoint("LEFT", prev, "RIGHT", 14, 0) else b:SetPoint("TOPLEFT", PAD, -27) end
         headTabs[#headTabs + 1] = b
         prev = b
     end
-    Kit.HeaderIcon(frame, Kit.CLOSE, "Close", function() frame:Hide() end):SetPoint("TOPRIGHT", -2, -1)
     local rule = frame:CreateTexture(nil, "OVERLAY")
     rule:SetColorTexture(0, 0, 0, 1)
     rule:SetHeight(1)
-    rule:SetPoint("TOPLEFT", 0, -26)
-    rule:SetPoint("TOPRIGHT", 0, -26)
+    rule:SetPoint("TOPLEFT", 0, -52)
+    rule:SetPoint("TOPRIGHT", 0, -52)
 
     local body = CreateFrame("Frame", nil, frame)
-    body:SetPoint("TOPLEFT", PAD, -34)
+    body:SetPoint("TOPLEFT", PAD, -60)
     body:SetPoint("BOTTOMRIGHT", -PAD, PAD)
     filterView = body
     optionsView = BuildOptions(frame)
-    optionsView:SetPoint("TOPLEFT", PAD, -34)
+    optionsView:SetPoint("TOPLEFT", PAD, -60)
     optionsView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+    prompt = BuildPrompt(frame)
+    prompt:SetPoint("TOPLEFT", PAD, -60)
+    prompt:SetPoint("BOTTOMRIGHT", -PAD, 44)
     notesView = BuildNotes(frame)
-    notesView:SetPoint("TOPLEFT", PAD, -34)
+    notesView:SetPoint("TOPLEFT", PAD, -60)
     notesView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
 
     keysBox = BuildKeys(body)
@@ -612,27 +622,19 @@ local function Build()
     keysBox:SetPoint("RIGHT")
     raidBox = BuildRaid(body)
     raidBox:SetPoint("TOPLEFT")
-    raidBox:SetPoint("BOTTOMRIGHT", 0, 30)  -- down to just above Reset
+    raidBox:SetPoint("BOTTOMRIGHT")
     leadBox = BuildLead(body)
     leadBox:SetPoint("TOPLEFT")
     leadBox:SetPoint("RIGHT")
 
-    -- Reset: the filter back to its starting rules; a second
-    -- click confirms.
-    local resetBtn = CreateFrame("Button", nil, body)
-    resetBtn:SetSize(72, 22)
-    resetBtn:SetPoint("BOTTOMLEFT")
+    -- Reset: the filter back to its starting rules; a second click
+    -- confirms. At the end of the tab row, on the Filter tab only.
+    resetBtn = CreateFrame("Button", nil, frame)
+    resetBtn:SetSize(60, 20)
+    resetBtn:SetPoint("TOPRIGHT", -PAD, -29)
     Kit.Button(resetBtn)
+    resetBtn:SetNormalFontObject("PickupGroupFontSmall")
     Kit.Confirm(resetBtn, "Reset", function() Filters.Reset(editing); Sidecar.Paint(); Changed() end)
-    -- Name and version, bottom right on every tab (level with Reset), as
-    -- StockClerk's header shows them; amber for alpha/beta.
-    local version = ns.Version()
-    local versionLabel = frame:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    versionLabel:SetPoint("RIGHT", frame, "BOTTOMRIGHT", -PAD, PAD + 11)
-    versionLabel:SetText(((version:match("%-alpha") or version:match("%-beta") or version:match("^dev")) and "|cffffb84d" or "|cff8c8c8c") .. version .. "|r")
-    local nameLabel = frame:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-    nameLabel:SetPoint("RIGHT", versionLabel, "LEFT", -6, 1)
-    nameLabel:SetText("|cff98FF98Pickup|rGroup")
     -- Raider.IO's profile panel (when loaded) moves over to the sidecar's
     -- right edge while it's open, and back when it closes.
     frame:HookScript("OnShow", Sidecar.MoveRaiderIO)
@@ -665,18 +667,21 @@ function Sidecar.MoveRaiderIO()
     moving = false
 end
 
--- Switch the sidecar between its Filter, Notes and Options views.
+-- Switch the sidecar between its Filter, Notes and Settings & Activity views.
 function Sidecar.Show(which)
     view = which
     filterView:SetShown(which == "filter")
     optionsView:SetShown(which == "options")
     notesView:SetShown(which == "notes")
+    resetBtn:SetShown(which == "filter")
+    prompt:SetShown(which == "clash")
     for _, t in ipairs(headTabs) do
         local on = t.view == which
-        t.text:SetTextColor(on and MINT[1] or 0.74, on and MINT[2] or 0.74, on and MINT[3] or 0.74)
+        t.text:SetTextColor(on and ON[1] or 0.74, on and ON[2] or 0.74, on and ON[3] or 0.74)
         t.under:SetShown(on)
     end
-    if which == "options" then PaintOptions()
+    if which == "clash" then PaintPrompt()
+    elseif which == "options" then PaintOptions()
     elseif which == "notes" then PaintNotes()
     else Sidecar.Paint() end
 end
@@ -705,98 +710,154 @@ ns.On("UPDATE_INSTANCE_INFO", function() Sidecar.RefreshBosses() end)  -- lockou
 -- Close the sidecar if it's on a filter of that side (leading or searching):
 -- the pane and the leader view each close only their own.
 function Sidecar.Close(leading)
-    if frame and frame:IsShown() and Leading(editing) == leading then frame:Hide() end
+    if frame and frame:IsShown() and view ~= "clash" and Leading(editing) == leading then frame:Hide() end
 end
 
 -- ---------------------------------------------------------------------------
--- Clash alerts: another addon doing the same job on the same Blizzard frame.
--- Said once, in a window you can't miss, each time a clash starts (login, or
--- the other addon's option switched on mid-session).
+-- Clashes: another addon doing the same job on the same Blizzard frame.
+-- While one stands, PickupGroup's part is off. The choice waits in the
+-- sidecar (the clash prompt): ticked = theirs stays on; untick to turn
+-- theirs off from the next reload (we write that one setting in its saved
+-- settings). One chat line says so at login or when a clash starts.
 -- ---------------------------------------------------------------------------
-local alert
-local function Alert(title, body)
-    if not alert then
-        Kit.ApplyFontFace()
-        alert = CreateFrame("Frame", "PickupGroupConflictAlert", UIParent)
-        alert:SetWidth(360)
-        alert:SetPoint("TOP", 0, -180)
-        alert:SetFrameStrata("DIALOG")
-        alert:SetToplevel(true)
-        alert:EnableMouse(true)
-        alert:SetClampedToScreen(true)
-        tinsert(UISpecialFrames, "PickupGroupConflictAlert")  -- Escape closes it
-        Kit.Fill(alert, Kit.Palette.panelBg)
-        Kit.Border(alert, { 1, 0.72, 0.3, 1 })
-        alert.title = alert:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
-        alert.title:SetPoint("TOPLEFT", 14, -12)
-        alert.title:SetTextColor(1, 0.72, 0.3)
-        alert.body = alert:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-        alert.body:SetPoint("TOPLEFT", alert.title, "BOTTOMLEFT", 0, -10)
-        alert.body:SetWidth(332)
-        alert.body:SetJustifyH("LEFT")
-        alert.body:SetWordWrap(true)
-        local ok = CreateFrame("Button", nil, alert)
-        ok:SetSize(90, 24)
-        ok:SetPoint("BOTTOMRIGHT", -12, 12)
-        Kit.Button(ok)
-        ok:SetText("Got it")
-        ok:SetScript("OnClick", function() alert:Hide() end)
-    end
-    alert.title:SetText(title)
-    alert.body:SetText(body)
-    alert.body:SetTextColor(0.85, 0.85, 0.85)
-    alert:SetHeight(12 + alert.title:GetStringHeight() + 10 + alert.body:GetStringHeight() + 16 + 24 + 12)
-    alert:Show()
-end
-
--- The clashes: why (a sentence, or nil), the db key that remembers it, the
--- log line, and the alert's title and text.
+-- { why(), db key, log line, their feature, our part, set(on) on theirs }
+local function EUISet(k, on) if type(EllesmereUIDB) == "table" then EllesmereUIDB[k] = on end end
 local CLASHES = {
-    { function() return ns.Notes.Conflict() end, "noteConflict", "notes under Blizzard's window", "PickupGroup: sign-up notes are off",
-      ". It and PickupGroup both put a note helper on Blizzard's sign-up window, "
-      .. "so PickupGroup's notes are off while it's on.\n\n"
-      .. "|cffffffffTo use PickupGroup's notes:|r in EllesmereUI's options (Quality of Life or Group Finder), "
-      .. "turn off Persistent Signup Note. PickupGroup's notes come back by themselves.\n\n"
-      .. "|cffffffffTo keep EllesmereUI's:|r nothing to do. Shift-click Apply still opens the sign-up window." },
-    -- Already on Blizzard's list: nothing overlaps, nothing to say.
-    { function() return not ns.db.useBlizzard and ns.FinderClash() or nil end, "finderConflict", "group finder overlap", "PickupGroup: two group finders",
-      ". PickupGroup's list covers its filter row, and while the list shows, PickupGroup's filter sets "
-      .. "Blizzard's dungeons, role, score, class and playstyle (EllesmereUI's picks there are replaced). "
-      .. "Its difficulty menu beside the search box still narrows every search.\n\n"
-      .. "|cffffffffTo use PickupGroup:|r turn off Group Finder in EllesmereUI's options.\n\n"
-      .. "|cffffffffTo use EllesmereUI's:|r PickupGroup Options > Use Blizzard's group list instead." },
-    { function() return ns.QuickList and ns.QuickList.Clash() end, "quickConflict", "quick list", "PickupGroup: quick list is off",
-      ". It and PickupGroup both put quick-list buttons beside Blizzard's listing form, so PickupGroup's quick list is off while it's on.\n\n"
-      .. "|cffffffffTo use PickupGroup's:|r turn off LFG Quick Create in atrocityEssentials' options. PickupGroup's comes back by itself.\n\n"
-      .. "|cffffffffTo keep atrocityEssentials':|r nothing to do." },
+    { function() return ns.Notes.Conflict() end, "noteConflict", "notes under Blizzard's window",
+      "EllesmereUI's Persistent Signup Note", "sign-up notes",
+      function(on) EUISet("persistSignupNote", on) end },
+    -- Already on Blizzard's list: nothing overlaps.
+    { function() return not ns.db.useBlizzard and ns.FinderClash() or nil end, "finderConflict", "group finder overlap",
+      "EllesmereUI's Group Finder", "group list",
+      function(on) local gf = type(EllesmereUIDB) == "table" and EllesmereUIDB.groupFinder; if type(gf) == "table" then gf.enabled = on end end },
+    { function() return ns.QuickList and ns.QuickList.Clash() end, "quickConflict", "quick list",
+      "atrocityEssentials' LFG Quick Create", "quick list",
+      function(on)
+          local ae = _G.atrocityEssentials
+          if type(ae) ~= "table" or not ae.GetModule then return end
+          local ok, qc = pcall(ae.GetModule, ae, "LFGQuickCreate", true)
+          if ok and type(qc) == "table" and type(qc.db) == "table" then qc.db.QuickCreate = on end
+      end },
 }
+-- asking = the prompt opens with the Group Finder (until Later).
+local function Standing()
+    local list = {}
+    for _, c in ipairs(CLASHES) do if c[1]() then list[#list + 1] = c end end
+    return list
+end
+
+function BuildPrompt(parent)
+    local v = CreateFrame("Frame", nil, parent)
+    v.title = v:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
+    v.title:SetPoint("TOPLEFT")
+    v.title:SetPoint("RIGHT")
+    v.title:SetJustifyH("LEFT")
+    v.title:SetWordWrap(true)
+    v.note = Label(v, "")
+    v.note:SetPoint("TOPLEFT", v.title, "BOTTOMLEFT", 0, -6)
+    v.note:SetPoint("RIGHT")
+    v.note:SetJustifyH("LEFT")
+    v.note:SetWordWrap(true)
+    v.note:SetTextColor(Kit.Palette.soft[1], Kit.Palette.soft[2], Kit.Palette.soft[3])
+    v.rows = {}
+    for i, c in ipairs(CLASHES) do
+        local cb = Kit.Check(v, c[4], function(on)
+            c[6](on)
+            ns.clashHold[c[2]] = (not on) and (c.why or (c[4] .. " is on")) or nil  -- ours stays off until the reload
+            ns.Log.Emit("setting", { key = c[4] .. " from next reload", on = on })
+        end)
+        Kit.Tip(cb, c[4], "Ticked: on. Untick to turn it off from your next reload; PickupGroup's " .. c[5] .. " come back then.")
+        v.rows[i] = cb
+    end
+    -- Footer band: the actions, the main one first from the right.
+    local foot = CreateFrame("Frame", nil, parent)
+    foot:SetPoint("BOTTOMLEFT", 1, 1)
+    foot:SetPoint("BOTTOMRIGHT", -1, 1)
+    foot:SetHeight(36)
+    Kit.Fill(foot, { 1, 1, 1, 0.035 })
+    local frule = foot:CreateTexture(nil, "OVERLAY")
+    frule:SetColorTexture(0, 0, 0, 1)
+    frule:SetHeight(1)
+    frule:SetPoint("TOPLEFT")
+    frule:SetPoint("TOPRIGHT")
+    local reload = CreateFrame("Button", nil, foot)
+    reload:SetSize(84, 20)
+    reload:SetPoint("RIGHT", -PAD, 0)
+    Kit.Button(reload)
+    reload:SetText("Reload now")
+    reload:SetScript("OnClick", function() ns.Log.Emit("setting", { key = "clash: reload", on = true }); C_UI.Reload() end)
+    local later = CreateFrame("Button", nil, foot)
+    later:SetSize(60, 20)
+    later:SetPoint("RIGHT", reload, "LEFT", -8, 0)
+    Kit.Button(later)
+    later:SetText("Later")
+    later:SetScript("OnClick", function()
+        asking = nil
+        ns.Log.Emit("setting", { key = "clash: later", on = false })
+        Sidecar.Show("filter")
+    end)
+    v.foot = foot
+    v:SetScript("OnShow", function() foot:Show() end)
+    v:SetScript("OnHide", function() foot:Hide() end)
+    v:Hide()
+    return v
+end
+
+function PaintPrompt()
+    local v, list = prompt, Standing()
+    local shown, names = {}, {}
+    for _, c in ipairs(list) do shown[c] = true; names[#names + 1] = c[4] end
+    v.title:SetText(#list == 1 and ("Turn off " .. list[1][4] .. "?") or "Turn off the overlapping features?")
+    local parts = {}
+    for _, c in ipairs(list) do parts[#parts + 1] = c[4] .. " does the job of PickupGroup's " .. c[5] .. "." end
+    v.note:SetText(table.concat(parts, " ") .. " While " .. (#list == 1 and "it's" or "they're")
+        .. " on, PickupGroup's part is off. Untick to turn " .. (#list == 1 and "it" or "them") .. " off from your next reload.")
+    local y, n = -(v.title:GetStringHeight() + 6 + v.note:GetStringHeight() + 12), 0
+    for i, c in ipairs(CLASHES) do
+        local cb = v.rows[i]
+        cb:SetShown(shown[c] or ns.clashHold[c[2]] ~= nil)
+        if cb:IsShown() then
+            cb:ClearAllPoints()
+            cb:SetPoint("TOPLEFT", 0, y)
+            cb:Set(ns.clashHold[c[2]] == nil)
+            y, n = y - 24, n + 1
+        end
+    end
+end
 
 -- atLoad (login / reload): every clash still on is said again. Otherwise
--- only one that just started (an option switched on mid-session). Several
--- at once share one window.
+-- only one that just started (an option switched on mid-session). One chat
+-- line; the prompt waits in the sidecar.
 function Sidecar.CheckConflict(atLoad)
     local parts = {}
     for _, c in ipairs(CLASHES) do
         local why, key, logKey = c[1](), c[2], c[3]
+        c.why = why or c.why
         if why and (atLoad or ns.db[key] ~= why) then
             if ns.db[key] ~= why then ns.Log.Emit("setting", { key = logKey .. " (" .. why .. ")", on = false }) end
             ns.db[key] = why
             parts[#parts + 1] = c
-            c.why = why
         elseif not why and ns.db[key] then
             ns.db[key] = nil
             ns.Log.Emit("setting", { key = logKey .. " (clash gone)", on = true })
         end
     end
-    if #parts == 1 then return Alert(parts[1][4], parts[1].why .. parts[1][5]) end
     if #parts == 0 then return end
-    -- Several: one window, each under its own heading.
-    local text = {}
-    for i, c in ipairs(parts) do
-        text[i] = "|cffffb84d" .. c[4]:gsub("^PickupGroup: ", "") .. "|r\n" .. c.why .. c[5]
-    end
-    Alert("PickupGroup: addon clashes", table.concat(text, "\n\n"))
+    asking = true
+    local names = {}
+    for i, c in ipairs(parts) do names[i] = c[4] end
+    ns.Print(table.concat(names, " and ") .. (#parts == 1 and " overlaps" or " overlap")
+        .. " PickupGroup, so PickupGroup's part is off. Open the Group Finder to choose.")
+    if frame and frame:IsShown() then Sidecar.Show("clash") end
 end
+
+-- The prompt opens with the Group Finder while a clash is waiting for a choice.
+EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
+    PVEFrame:HookScript("OnShow", function()
+        if asking and #Standing() > 0 then Sidecar.Open(nil, "clash") end
+    end)
+end)
+
 -- Mid-session: another addon's option switched on (or off) without a reload.
 -- Checked every 2 s (a few table reads); a change re-runs the check, which
 -- alerts on a new clash, and the quick list steps aside or comes back.
@@ -808,7 +869,7 @@ ns.On("PLAYER_LOGIN", function()
         if now == last then return end
         local first = last == nil
         last = now
-        if not first then Sidecar.CheckConflict(); ns.QuickList.Update() end
+        if not first then Sidecar.CheckConflict(); ns.QuickList.Update(); ns.Pane.Update() end
     end)
 end)
 

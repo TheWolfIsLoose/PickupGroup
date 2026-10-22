@@ -28,6 +28,7 @@ local panel, rows = nil, {}
 
 -- Another addon's quick-list buttons on the same form: a sentence, or nil.
 function QuickList.Clash()
+    if ns.clashHold.quickConflict then return ns.clashHold.quickConflict end
     local ae = _G.atrocityEssentials
     if type(ae) ~= "table" or not ae.GetModule then return nil end
     local ok, qc = pcall(ae.GetModule, ae, "LFGQuickCreate", true)
@@ -115,7 +116,7 @@ local function List(row)
     ns.Log.Emit("lead", { action = ok and "quick-listed" or "quick list refused",
         name = ("%s +%d (%s key, activity %d, %s; offered %s)"):format(row.code, row.level, row.who, row.activity,
             PlaystyleName(ps), QuickList.Activity(row.dungeon, row.level) and QuickList.seen or "?") })
-    if not ok then print("|cff98ff98Pickup|rGroup: the game refused that listing.") end
+    if not ok then print("|cffffffffPickup|r|cffb3b3b3Group|r: the game refused that listing.") end
 end
 
 local function Row(i)
@@ -188,29 +189,24 @@ local function Build(ec)
     panel:EnableMouse(true)
     Kit.Fill(panel, { 0.06, 0.06, 0.06, 1 })
     Kit.Border(panel)
-    -- Header: title (hint tooltip on it) over a black line, as the sidecar's.
-    local head = CreateFrame("Frame", nil, panel)
-    head:SetPoint("TOPLEFT")
-    head:SetPoint("TOPRIGHT")
-    head:SetHeight(26)
-    head:EnableMouse(true)
-    local title = Kit.Text(head, "LEFT", "PickupGroupFont")
-    title:SetPoint("LEFT", PAD, 0)
+    -- Header: icon, name and version, as the sidecar's. Under it the
+    -- title (hint tooltip on it) and, on the right, the playstyle a click
+    -- lists with (changes with Blizzard's form).
+    Kit.Header(panel)
+    local tipZone = CreateFrame("Frame", nil, panel)
+    tipZone:SetPoint("TOPLEFT", PAD, -27)
+    tipZone:SetSize(80, 20)
+    local title = Kit.Text(tipZone, "LEFT", "PickupGroupFont")
+    title:SetPoint("LEFT")
     title:SetText("Quick list")
-    Kit.Tip(head, "Quick list", "One click lists that dungeon's key in your party as Mythic+ at its level."
+    Kit.Tip(tipZone, "Quick list", "One click lists that dungeon's key in your party as Mythic+ at its level."
         .. " Party members' keys show when they run an addon that shares them (BigWigs and others).", "ANCHOR_TOP")
-    local rule = panel:CreateTexture(nil, "OVERLAY")
-    rule:SetColorTexture(0, 0, 0, 1)
-    rule:SetHeight(1)
-    rule:SetPoint("TOPLEFT", 0, -26)
-    rule:SetPoint("TOPRIGHT", 0, -26)
-    -- Status: the playstyle a click lists with (changes with Blizzard's form).
-    local label = Kit.Text(panel, "LEFT")
-    label:SetPoint("TOPLEFT", PAD, -34)
+    panel.style = Kit.Text(panel, "RIGHT")
+    panel.style:SetPoint("RIGHT", panel, "TOPRIGHT", -PAD, -37)
+    local label = Kit.Text(panel, "RIGHT")
+    label:SetPoint("RIGHT", panel.style, "LEFT", -6, 0)
     label:SetText("Lists as")
     label:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
-    panel.style = Kit.Text(panel, "LEFT")
-    panel.style:SetPoint("LEFT", label, "RIGHT", 6, 0)
     -- How-to, standing (player's call, 2026-10-17: the steps are precise and
     -- one of them is trusting the click, so they stay in view).
     panel.howto = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
@@ -226,8 +222,8 @@ local function Build(ec)
         .. "3. Click that dungeon here.\n\n"
         .. "It lists this row's dungeon as Mythic+, even though Blizzard's form shows another. "
         .. "Listings show the key level only in the title.")
-    -- Reminder (amber, a reason that changes): which level to type, with a
-    -- mint outline over Blizzard's title box (our frame; the box isn't touched).
+    -- Reminder (yellow, a reason that changes): which level to type, with a
+    -- white outline over Blizzard's title box (our frame; the box isn't touched).
     panel.note = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
     panel.note:SetPoint("TOPLEFT", panel.howto, "BOTTOMLEFT", 0, -10)  -- right under the steps
     panel.note:SetPoint("RIGHT", -PAD, 0)
@@ -238,21 +234,13 @@ local function Build(ec)
     local outline = CreateFrame("Frame", nil, panel)
     outline:SetPoint("TOPLEFT", ec.Name, "TOPLEFT", -3, 3)
     outline:SetPoint("BOTTOMRIGHT", ec.Name, "BOTTOMRIGHT", 3, -3)
-    Kit.Border(outline, Kit.Palette.brand)
+    Kit.Border(outline, Kit.Palette.on)
     outline:Hide()
     -- Once the title names the level, the reminder goes (checked while shown).
     outline:SetScript("OnUpdate", function(self)
         if panel.pending and TitleHas(panel.pending) then self:Hide(); panel.note:Hide() end
     end)
     panel.outline = outline
-    -- Name and version, bottom right, as on the sidecar.
-    local version = ns.Version()
-    local versionLabel = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    versionLabel:SetPoint("RIGHT", panel, "BOTTOMRIGHT", -PAD, PAD + 11)
-    versionLabel:SetText(((version:match("%-alpha") or version:match("%-beta") or version:match("^dev")) and "|cffffb84d" or "|cff8c8c8c") .. version .. "|r")
-    local nameLabel = panel:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-    nameLabel:SetPoint("RIGHT", versionLabel, "LEFT", -6, 1)
-    nameLabel:SetText("|cff98FF98Pickup|rGroup")
 end
 
 -- The panel, once built (Raider.IO's anchor follows it).

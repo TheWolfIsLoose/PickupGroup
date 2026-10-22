@@ -5,10 +5,10 @@
     (search text is typed there). Blizzard's frames are never hidden,
     moved or written; the pane just covers them.
 
-      top bar   filter summary . hidden . count . setup . options; a mint line across the top
+      top bar   filter summary . hidden . count . setup . options; a white line across the top
                 shrinks over the search cooldown (Blizzard's refresh searches)
       headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
-      rows      sign-ups pinned first (mint edge), then results; wheel scrolls
+      rows      sign-ups pinned first (white edge), then results; wheel scrolls
 
     Action button: Apply (click: sign up at once; shift-click: Blizzard's sign-up
     dialog, for a note) / time left (hover: Cancel) / Reapply (click twice: at once;
@@ -42,18 +42,18 @@ local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
 -- The leader's seat: a light ring one pixel outside its black ring, so the
 -- black keeps it apart from every spec icon (gold blended into Holy Paladin).
 local LEADER_RING = { 0.7, 0.7, 0.7, 1 }  -- dimmed from 0.9 (player): a label, not a "selected" state
-local MINT = Kit.Palette.brand
+local ON, INFO = Kit.Palette.on, Kit.Palette.info
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
 
 -- How a sign-up ended, as its button shows it for OUTCOME_TTL seconds.
 local OUTCOME_TTL = 5
-local AMBER, GREY, WHITE = { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }, { 1, 1, 1 }
+local AMBER, GREY, WHITE = { 1, 0.847, 0.29 }, { 0.55, 0.55, 0.55 }, { 1, 1, 1 }
 local OUTCOME = {
     declined = { "Declined", AMBER }, declined_full = { "Filled", GREY },
     declined_delisted = { "Delisted", GREY }, cancelled = { "Withdrawn", GREY },
     timedout = { "Expired", GREY }, invitedeclined = { "Passed", GREY },
-    failed = { "Failed", AMBER }, inviteaccepted = { "Joined", MINT },
+    failed = { "Failed", AMBER }, inviteaccepted = { "Joined", ON },
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
@@ -173,25 +173,25 @@ local function OnAction(btn)
 end
 
 -- A row's state for its tooltip line and cues, or nil. New groups get a
--- mint name; the left edge is kept for sign-up outcomes (Pane.Edge).
+-- blue name (info); the left edge is kept for sign-up outcomes (Pane.Edge).
 function Pane.State(row, isPinned)
     if row.status == "declined" or ns.Cleanup.WasDeclined(row.leader) then
         return { color = AMBER, declined = true, text = "Declined you this session" }
     end
     if not isPinned and fresh[row.id] then
-        return { color = MINT, new = true, text = "New to your list since the last search" }
+        return { color = INFO, new = true, text = "New to your list since the last search" }
     end
 end
 
--- The left edge: your sign-up and how it went. Waiting / invited mint,
--- declined or failed amber (also a leader who declined you elsewhere this
+-- The left edge: your sign-up and how it went. Waiting / invited white,
+-- declined or failed yellow (also a leader who declined you elsewhere this
 -- session), other endings (filled, delisted, withdrawn, expired) grey.
 local DOWN = { declined = true, failed = true }
 function Pane.Edge(row, isPinned)
     if row.outcome then return row.outcome.color end
     if DOWN[row.status] or ns.Cleanup.WasDeclined(row.leader) then return AMBER end
     if OVER[row.status] then return GREY end
-    if isPinned then return MINT end
+    if isPinned then return ON end
 end
 
 -- ---------------------------------------------------------------------------
@@ -203,7 +203,7 @@ local function RowTooltip(frame)
     local GREY_T = 0.55
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.name or "?", 1, 1, 1)
-    if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.72, 0.3, true) end
+    if row.hidden then GameTooltip:AddLine("Hidden by clean-up: " .. row.hidden, 1, 0.847, 0.29, true) end
     local state = Pane.State(row, row.status == "applied" or row.status == "invited")
     if state then GameTooltip:AddLine(state.text, state.color[1], state.color[2], state.color[3]) end
     GameTooltip:AddDoubleLine(row.activity .. (row.difficulty and (" (" .. row.difficulty .. ")") or ""), Clock(row.age),
@@ -254,10 +254,10 @@ local function RowTooltip(frame)
             listed[boss] = true
             local dead = row.killed[boss]
             GameTooltip:AddDoubleLine("  " .. boss, dead and "Dead" or "Alive", 0.85, 0.85, 0.85,
-                dead and 1 or MINT[1], dead and 0.72 or MINT[2], dead and 0.3 or MINT[3])
+                dead and 1 or ON[1], dead and 0.847 or ON[2], dead and 0.29 or ON[3])
         end
         for boss in pairs(row.killed) do  -- a name the journal spells differently
-            if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.72, 0.3) end
+            if not listed[boss] then GameTooltip:AddDoubleLine("  " .. boss, "Dead", 0.85, 0.85, 0.85, 1, 0.847, 0.29) end
         end
     else
         local score = row.score or 0
@@ -269,7 +269,7 @@ local function RowTooltip(frame)
         for _, s in ipairs(row.specs) do
             if s.icon then icons[#icons + 1] = ("|T%s:20:20:0:0:64:64:5:59:5:59|t"):format(s.icon) end
         end
-        -- The leader's best run in this dungeon (amber when not in time).
+        -- The leader's best run in this dungeon (yellow when not in time).
         local b = row.leaderBest
         local bc = not b and GREY or (b.timed and WHITE or AMBER)
         GameTooltip:AddDoubleLine("Leader's best here", b and ("+" .. b.level .. (b.timed and " timed" or " not timed")) or "none",
@@ -372,7 +372,7 @@ local function BuildRow(i)
     r.stripe:SetAllPoints()
     r.hover = r:CreateTexture(nil, "BACKGROUND", nil, -6)
     r.hover:SetAllPoints()
-    r.hover:SetColorTexture(MINT[1], MINT[2], MINT[3], 0.07)
+    r.hover:SetColorTexture(ON[1], ON[2], ON[3], 0.07)
     r.hover:Hide()
     r.edge = r:CreateTexture(nil, "OVERLAY")
     r.edge:SetPoint("TOPLEFT")
@@ -428,7 +428,7 @@ local function BuildRow(i)
         m:Hide()
         r[key] = m
     end
-    -- Shimmer: one soft mint band sweeps across a new group's row (once,
+    -- Shimmer: one soft white band sweeps across a new group's row (once,
     -- two seconds). Clipped to the row; two gradient halves make the band.
     local clip = CreateFrame("Frame", nil, r)
     clip:SetAllPoints()
@@ -441,7 +441,7 @@ local function BuildRow(i)
         t:SetColorTexture(1, 1, 1, 1)
         t:SetSize(SHIMMER_W / 2, ROW_H)
         t:SetPoint(half == 1 and "LEFT" or "RIGHT")
-        local none, peak = CreateColor(MINT[1], MINT[2], MINT[3], 0), CreateColor(MINT[1], MINT[2], MINT[3], 0.22)
+        local none, peak = CreateColor(ON[1], ON[2], ON[3], 0), CreateColor(ON[1], ON[2], ON[3], 0.15)
         t:SetGradient("HORIZONTAL", half == 1 and none or peak, half == 1 and peak or none)
     end
     band:Hide()
@@ -497,7 +497,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if r.row and r.row.id ~= row.id then r.StopShimmer() end  -- the frame now shows another group
     r.row, r.act.row = row, row
     r:Show()
-    -- New to the list: a mint name. The edge: sign-up outcomes. The
+    -- New to the list: a blue name. The edge: sign-up outcomes. The
     -- tooltip says both in words (WCAG 1.4.1).
     local state = Pane.State(row, isPinned)
     local edge = Pane.Edge(row, isPinned)
@@ -512,7 +512,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         ink = row.friends > 0 and FRIEND or row.guild > 0 and GuildColor() or ink
     end
     -- New only colours a plain name (friend / guild colours win).
-    if state and state.new and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = MINT end
+    if state and state.new and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = INFO end
     if not ns.db.nameColors then
         if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
         if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
@@ -568,7 +568,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
 
     local act, label, enabled = r.act, "Apply", true
     act.full = full
-    local ink = isPinned and MINT or WHITE
+    local ink = WHITE
     if row.outcome then
         label, enabled, ink = row.outcome.label, false, row.outcome.color
     elseif row.status == "applied" then
@@ -598,7 +598,7 @@ function Pane.Render()
     local hiddenCount
     pinned, results, hiddenCount = Groups.List(showHidden)
     if showHidden and hiddenCount == 0 then showHidden = false; pinned, results, hiddenCount = Groups.List(false) end
-    hiddenButton.text:SetText(showHidden and "|cffffb84dshowing hidden|r" or (hiddenCount > 0 and (hiddenCount .. " hidden") or ""))
+    hiddenButton.text:SetText(showHidden and "|cffffd84ashowing hidden|r" or (hiddenCount > 0 and (hiddenCount .. " hidden") or ""))
     hiddenButton.text:SetTextColor(0.55, 0.55, 0.55)
     hiddenButton:SetWidth(math.max(1, hiddenButton.text:GetStringWidth()))
     hiddenButton:SetShown(showHidden or hiddenCount > 0)
@@ -707,7 +707,7 @@ local function BuildBars()
     rule:SetPoint("BOTTOMRIGHT")
 
     -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
-    local list = Kit.HeaderIcon(bar, { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }, "Options",
+    local list = Kit.HeaderIcon(bar, Kit.MENU, "Settings & Activity",
         function() ns.Sidecar.Open(nil, "options") end)
     list:SetPoint("RIGHT", -2, 0)
 
@@ -741,7 +741,7 @@ local function BuildBars()
     summary:SetTextColor(0.74, 0.74, 0.74)
     sb:SetScript("OnClick", function() ns.Sidecar.Open() end)
     sb:SetScript("OnEnter", function(self)
-        summary:SetTextColor(MINT[1], MINT[2], MINT[3])
+        summary:SetTextColor(ON[1], ON[2], ON[3])
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText("Filter: " .. summary:GetText())
         if ns.Hints() then GameTooltip:AddLine("Click to set it up.", 0.74, 0.74, 0.74) end
@@ -835,11 +835,11 @@ local function Build()
     pane:EnableMouse(true)
     Kit.Fill(pane, { 0.031, 0.031, 0.031, 1 })  -- opaque: nothing of Blizzard's list shows through
     Kit.Border(pane)
-    -- Search cooldown: a 1px mint line across the top that shrinks to
+    -- Search cooldown: a 1px white line across the top that shrinks to
     -- nothing while the client won't take another search (Blizzard's
     -- refresh does the searching).
     local line = pane:CreateTexture(nil, "OVERLAY", nil, 7)
-    line:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+    line:SetColorTexture(ON[1], ON[2], ON[3], 1)
     line:SetHeight(1)
     line:SetPoint("TOPLEFT")
     cooldown = CreateFrame("Frame", nil, pane)
@@ -876,7 +876,7 @@ local function Build()
     backButton:SetFrameLevel(panel:GetFrameLevel() + 50)
     Kit.Button(backButton)
     backButton:SetNormalFontObject("PickupGroupFontSmall")
-    backButton:SetText("|cff98ff98Pickup|rGroup")
+    backButton:SetText("|cffffffffPickup|r|cffb3b3b3Group|r")
     backButton:SetScript("OnClick", function()
         ns.db.useBlizzard = false
         ns.Log.Emit("setting", { key = "useBlizzard", on = false })
@@ -892,8 +892,10 @@ function Pane.Update()
     if not Panel() then return end
     if not pane then Build() end
     local eligible = Eligible()
-    pane:SetShown(eligible and not ns.db.useBlizzard)
-    backButton:SetShown(eligible and ns.db.useBlizzard == true)
+    -- Another group finder on this panel: our list steps aside while it's on.
+    local clash = ns.FinderClash() ~= nil
+    pane:SetShown(eligible and not ns.db.useBlizzard and not clash)
+    backButton:SetShown(eligible and ns.db.useBlizzard == true and not clash)
     -- The category name's frame is wider than its text: sit just after the text.
     local name = panel.CategoryName
     if backButton:IsShown() then

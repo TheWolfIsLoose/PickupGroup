@@ -12,7 +12,7 @@
                 applicant who wrote one (shown, never read: the game protects it)
 
     Cues point at what an applicant adds, never at who they are: no class or
-    spec filter (player, Decided). A mint edge on the row's left = fills an
+    spec filter (player, Decided). A blue edge on the row's left = fills an
     open seat (from 3 in the group); "Lust" / "Rez" = brings what the group lacks; dimmed = over
     the seats for that role, a realm region the keys filter has off, or
     blacklisted (the tooltip says which). Nothing is hidden.
@@ -24,7 +24,7 @@ local Leader = {}
 ns.Leader = Leader
 
 local Kit, Groups = ns.Kit, ns.Groups
-local MINT, AMBER, GREY = Kit.Palette.brand, { 1, 0.72, 0.3 }, { 0.55, 0.55, 0.55 }
+local ON, INFO, AMBER, GREY = Kit.Palette.on, Kit.Palette.info, Kit.Palette.warn, { 0.55, 0.55, 0.55 }
 local ROW_H, NOTE_H, BAR_H, HEAD_H, PAD, GAP = 24, 16, 26, 20, 6, 6
 local INSET = 1
 local W_ICON, W_ILVL, W_SCORE, W_KEY, W_ADDS, W_INV, W_X = 17, 26, 30, 30, 40, 44, 18
@@ -165,7 +165,7 @@ local function Group(apps, kind)
     return left, count(ns.Filters.LUST) > 0, count(ns.Filters.BREZ), size, classes
 end
 
--- The mint "fills a seat" edge waits until the group has this many (player):
+-- The blue "fills a seat" edge waits until the group has this many (player):
 -- with one or two seated, comp is wide open and the cue is just noise.
 local RING_FROM = 3
 
@@ -238,9 +238,9 @@ local function Tooltip(line)
     if #m.addList > 0 then
         local names = {}
         for i, a in ipairs(m.addList) do names[i] = BUFF_NAME[a] end
-        GameTooltip:AddLine("Adds " .. table.concat(names, ", "), MINT[1], MINT[2], MINT[3])
+        GameTooltip:AddLine("Adds " .. table.concat(names, ", "), INFO[1], INFO[2], INFO[3])
     end
-    if m.fills then GameTooltip:AddLine("Fills an open " .. (_G[m.role] or "seat"):lower() .. " seat", MINT[1], MINT[2], MINT[3]) end
+    if m.fills then GameTooltip:AddLine("Fills an open " .. (_G[m.role] or "seat"):lower() .. " seat", INFO[1], INFO[2], INFO[3]) end
     if m.leaver then
         GameTooltip:AddLine("|A:" .. Kit.LEAVER_ATLAS .. ":12:12|a Has left groups early lately", AMBER[1], AMBER[2], AMBER[3])
     end
@@ -261,14 +261,14 @@ local function Line(i)
     l.new = l:CreateTexture(nil, "OVERLAY")
     l.new:SetSize(3, 3)
     l.new:SetPoint("LEFT", 3, 0)  -- clear of the 2px edge, clear of the icon
-    -- Fills an open seat (from RING_FROM in the group): a mint edge on the
+    -- Fills an open seat (from RING_FROM in the group): a blue edge on the
     -- row's left, clear of the spec icon (player: a ring on the icon cluttered it).
     l.edge = l:CreateTexture(nil, "OVERLAY")
-    l.edge:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+    l.edge:SetColorTexture(INFO[1], INFO[2], INFO[3], 1)
     l.edge:SetPoint("TOPLEFT")
     l.edge:SetPoint("BOTTOMLEFT")
     l.edge:SetWidth(2)
-    l.new:SetColorTexture(MINT[1], MINT[2], MINT[3], 1)
+    l.new:SetColorTexture(INFO[1], INFO[2], INFO[3], 1)
     l.tile = Kit.Tile(l, W_ICON)
     l.tile:SetPoint("LEFT", PAD, 0)
     l.icon = l.tile.icon
@@ -308,7 +308,7 @@ local function Line(i)
     l.adds = Text(l, "LEFT")
     l.adds:SetWidth(W_ADDS)
     l.adds:SetPoint("RIGHT", l.inv, "LEFT", -GAP, 0)
-    l.adds:SetTextColor(MINT[1], MINT[2], MINT[3])
+    l.adds:SetTextColor(INFO[1], INFO[2], INFO[3])
     l.key = Text(l, "RIGHT")
     l.key:SetWidth(W_KEY)
     l.key:SetPoint("RIGHT", l.adds, "LEFT", -GAP, 0)
@@ -367,7 +367,7 @@ local function PaintMember(l, a, m, first, index, raid)
         local kc = m.prog and { 1, 1, 1 } or GREY
         l.key:SetTextColor(kc[1], kc[2], kc[3])
     else
-        -- Best run here: white when timed; amber with a trailing x when not,
+        -- Best run here: white when timed; yellow with a trailing x when not,
         -- so it isn't colour alone (WCAG 1.4.1; the tooltip says which).
         l.key:SetText(m.keyLevel == 0 and "-" or ("+" .. m.keyLevel .. (m.timed and "" or "\195\151")))
         local kc = m.keyLevel == 0 and GREY or (m.timed and { 1, 1, 1 } or AMBER)
@@ -510,22 +510,8 @@ local function Build()
     needText:SetPoint("TOPLEFT", PAD + 2, -8)
     needText:SetTextColor(0.74, 0.74, 0.74)
     -- Refresh (the game's own applicant refresh), drawn in our style.
-    local refresh = CreateFrame("Button", nil, pane)
-    refresh:SetSize(18, 18)
-    refresh:SetPoint("TOPRIGHT", -PAD, -4)
-    local icon = refresh:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints()
-    icon:SetTexture("Interface\\Buttons\\UI-RefreshButton")
-    icon:SetDesaturated(true)
-    local rest = Kit.Palette.glyphRest
-    icon:SetVertexColor(rest[1], rest[2], rest[3])
-    refresh:SetScript("OnClick", function() C_LFGList.RefreshApplicants() end)
-    refresh:SetScript("OnEnter", function(self)
-        icon:SetVertexColor(MINT[1], MINT[2], MINT[3])
-        if not ns.Hints() then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(REFRESH or "Refresh"); GameTooltip:Show()
-    end)
-    refresh:SetScript("OnLeave", function() icon:SetVertexColor(rest[1], rest[2], rest[3]); GameTooltip:Hide() end)
+    local refresh = Kit.HeaderIcon(pane, Kit.REFRESH, REFRESH or "Refresh", function() C_LFGList.RefreshApplicants() end)
+    refresh:SetPoint("TOPRIGHT", -PAD + 3, -1)
     -- Filter setup for leading (the sidecar's Leading filter for this kind).
     local setup = Kit.HeaderIcon(pane, Kit.SLIDERS, "Set up who gets dimmed", function()
         local _, _, kind = Listing()
