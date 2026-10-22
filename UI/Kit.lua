@@ -135,19 +135,37 @@ function Kit.Tip(ctrl, title, body, anchor)
     ctrl:HookScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
--- Destructive action: the first click turns the label to "Sure?" for 3 s,
--- the second runs fn. No confirm dialogs.
+local Ring  -- (below)
+-- Destructive action: the first click turns the label to "Sure?" in red
+-- (bad) with a red ring, flashing (three 1 s pulses, then it lapses back);
+-- the second click runs fn. No confirm dialogs.
 function Kit.Confirm(btn, label, fn)
     btn:SetText(label)
+    local fs = btn:GetFontString()
+    local flash = fs:CreateAnimationGroup()
+    local a = flash:CreateAnimation("Alpha")
+    a:SetFromAlpha(1); a:SetToAlpha(0.35); a:SetDuration(0.5); a:SetSmoothing("IN_OUT")
+    local b = flash:CreateAnimation("Alpha")
+    b:SetFromAlpha(0.35); b:SetToAlpha(1); b:SetDuration(0.5); b:SetStartDelay(0.5); b:SetSmoothing("IN_OUT")
+    flash:SetLooping("REPEAT")
+    local loops = 0
+    flash:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
+    local function disarm(self)
+        self.armed = nil; flash:Stop(); fs:SetAlpha(1)
+        self:SetText(label); Ring(self, Palette.ringRest)
+    end
     btn:SetScript("OnClick", function(self)
-        if self.armed then self.armed = nil; self:SetText(label); return fn() end
-        self.armed = true; self:SetText("Sure?")
-        C_Timer.After(3, function() self.armed = nil; self:SetText(label) end)
+        if self.armed then disarm(self); return fn() end
+        self.armed = (self.armed or 0) + 1
+        local token = self.armed
+        self:SetText("|cffff6666Sure?|r"); Ring(self, Palette.bad)
+        loops = 0; flash:Play()
+        C_Timer.After(3, function() if self.armed == token then disarm(self) end end)
     end)
 end
 
 -- Ring colour for an input: white while typing, light grey under the mouse, else grey.
-local function Ring(frame, c)
+function Ring(frame, c)
     for _, t in ipairs(frame._border) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
 end
 

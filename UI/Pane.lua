@@ -581,6 +581,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         label, enabled = "Leader", false
     elseif OVER[row.status] then
         label = (armed == row.id) and "Sure?" or "Reapply"
+        if armed == row.id then ink = Kit.Palette.bad end  -- the two-click guard reads red
     elseif full and ns.db.swap and row.fits then
         label = "Swap"
     elseif not row.fits or full then
