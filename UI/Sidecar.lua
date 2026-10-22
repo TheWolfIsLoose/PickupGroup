@@ -178,7 +178,7 @@ local function PaintRaid(f)
                 .. " at each group's difficulty. Groups that have killed more of what you've killed"
                 .. " come first; groups behind you (maybe skipping ahead) still show, lower down."
                 .. " Bosses you've killed are dimmed with a lock, at the highest difficulty selected"
-                .. " that you're saved to (shown after the raid's name).")
+                .. " that you're saved to.")
             bossLines[n] = l
         end
         l:ClearAllPoints()
@@ -210,11 +210,9 @@ local function PaintRaid(f)
         h.text:SetPoint("LEFT", 18, 0)
         h.text:Show()
         local lockOn = editing.lockout ~= nil and editing.lockout[raid.name] == true
-        local lockDiff, mine
-        if lockOn then lockDiff, mine = Filters.ShownLockout(raid.name, editing.diffs) end
+        local mine = lockOn and select(2, Filters.ShownLockout(raid.name, editing.diffs))
         h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
-            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or "")
-            .. (lockOn and ("  (" .. (lockDiff or "no lockout") .. ")") or ""))
+            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or ""))
         local grey = shown and 0.7 or 0.4
         h.text:SetTextColor(grey, grey, grey)
         h.want.raid = raid.name
