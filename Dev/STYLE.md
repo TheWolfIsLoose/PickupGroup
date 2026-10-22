@@ -1,7 +1,7 @@
 # PickupGroup — UI style notes
 
 Suite-wide rules (colour tokens, controls, accessibility, words, chat) live in
-the "Suite style guide" doc in the WoW Addons project. Tokens are in
+`Dev/SUITE-STYLE.md`. Tokens are in
 `Kit.Palette` (`soft`, `muted`, `warn`, `bad`, `brand`, rings and fills).
 
 PickupGroup specifics:
