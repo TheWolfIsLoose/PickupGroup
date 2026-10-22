@@ -17,6 +17,8 @@ cheap.
 
 ## Next session: start here
 
+**Next focused session: show My lockout on the boss lines (player, 2026-10-21, Decided).** Clicking My lockout changes nothing you can see in the sidecar (only the top-bar summary text), so it reads as a dead button. Do NOT tick the boss checkboxes: a tick means "must be alive" and ticks are ANDed, which is the pre-1.0.6 model that kept 0/8 groups and dropped 7/8 groups on their last boss. Instead, while My lockout is on for a raid, leave the checkboxes alone and mark the boss lines: bosses this character killed this week are dimmed with a small drawn lock mark; the rest stay full strength (loot left). Optional: one line under the raid heading, "Loot left: <bosses>". Kills are per difficulty, so follow the raid's selected difficulty (reuse `MyKills` in `Filters.lua`; with several or no difficulties selected, pick a rule, e.g. the highest selected). Self-check alongside `Dev/test_lockout.lua`; in-game round on a part-locked character.
+
 **v1.1.0 released 2026-10-20** (stable; everything below from v1.1.0-beta1 and the 2026-10-19 additions; notes in `Dev/HISTORY.md`).
 
 **v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
