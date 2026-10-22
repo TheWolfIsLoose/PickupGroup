@@ -8,7 +8,8 @@ My lockout made visible (player, 2026-10-21: clicking it changed nothing in the 
 
 - With My lockout on, bosses this character killed this week are dimmed with a drawn lock after the name; the boss checkboxes are untouched (ticking them again would bring back the pre-1.0.6 ANDed "must be alive" model that hid skip groups). Kills follow the highest selected difficulty the character is saved to (`Filters.ShownLockout`, self-check in `Dev/test_lockout.lua`). The sidecar repaints on `UPDATE_INSTANCE_INFO`.
 - Copy: boss list line "Untick a raid to hide it. Ticked bosses must be alive."; boss and raid boxes get one-line tooltips (`Kit.Tip` body may now be a function); My lockout's tooltip trimmed to what it hides and what still shows.
-- Suggested CHANGELOG lines: "My lockout now dims the bosses you've killed this week, with a lock." / "Clearer tooltips on the raid filter's boss boxes and My lockout."
+- One-boss raids (e.g. Kith'ix, Tidebound Grotto) take one line: no fold, no boss box (the raid box covers it); My lockout's lock sits after the raid's name. Old boss ticks there are dropped on paint and ignored by `Filters.Pass`.
+- Suggested CHANGELOG lines: "My lockout now dims the bosses you've killed this week, with a lock." / "Clearer tooltips on the raid filter's boss boxes and My lockout." / "One-boss raids take a single line in the raid filter."
 
 ## v1.1.0 (2026-10-20; beta v1.1.0-beta1 published 2026-10-17)
 

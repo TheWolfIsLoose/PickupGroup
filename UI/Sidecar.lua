@@ -201,8 +201,10 @@ local function PaintRaid(f)
         for _ in pairs(rules or {}) do set = set + 1 end
         if open[raid.name] == nil then open[raid.name] = set > 0 or raid == biggest end
         local h = Line()
+        local single = #raid.bosses == 1  -- one boss: the raid box is the boss box
+        if single and editing.bosses then editing.bosses[raid.name] = nil end  -- drop old ticks (summary count)
         local shown = not (editing.raidsOff and editing.raidsOff[raid.name])
-        h.raid, h.headRaid = raid.name, raid.name
+        h.raid, h.headRaid = (not single) and raid.name or nil, raid.name
         h.check:SetLabel("")
         h.check:SetPoint("LEFT")
         h.trunk:Hide(); h.branch:Hide()
@@ -212,15 +214,18 @@ local function PaintRaid(f)
         h.text:Show()
         local lockOn = editing.lockout ~= nil and editing.lockout[raid.name] == true
         local mine = lockOn and select(2, Filters.ShownLockout(raid.name, editing.diffs))
-        h.text:SetText((open[raid.name] and "- " or "+ ") .. raid.name
-            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or ""))
+        h.text:SetText(single and raid.name or ((open[raid.name] and "- " or "+ ") .. raid.name
+            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or "")))
         local grey = shown and 0.7 or 0.4
         h.text:SetTextColor(grey, grey, grey)
         h.want.raid = raid.name
         h.want:Paint(lockOn)
-        h.lock:Hide()
+        -- A one-boss raid shows its lock after the raid's name instead.
+        h.lock:ClearAllPoints()
+        h.lock:SetPoint("LEFT", h.text, "LEFT", math.min(h.text:GetStringWidth(), h.text:GetWidth()) + 3, 0)
+        h.lock:SetShown(single and mine and mine[raid.bosses[1]] == true or false)
         h.want:Show()
-        local list = open[raid.name] and raid.bosses or {}
+        local list = (open[raid.name] and not single) and raid.bosses or {}
         for i, boss in ipairs(list) do
             local l = Line()
             l.trunk:SetPoint("BOTTOM", l, i == #list and "LEFT" or "BOTTOMLEFT", 6, 0)
@@ -231,6 +236,8 @@ local function PaintRaid(f)
             l.bossRaid, l.boss = raid.name, boss
             l.check:SetLabel(boss)
             l.check:SetPoint("LEFT", 18, 0)  -- under its raid's name, not its checkbox
+            l.lock:ClearAllPoints()
+            l.lock:SetPoint("LEFT", l.check, "RIGHT", 0, 0)
             l.check:Set(rules and rules[boss])
             l.check:Show()
             local killed = mine and mine[boss]

@@ -297,7 +297,10 @@ function Filters.Pass(row)
         if f.diffs and not f.diffs[row.difficulty] then return false end
         if f.raidsOff and f.raidsOff[row.activity] then return false end
         -- Raids aren't cleared in order: each ticked boss must be alive.
-        for boss, on in pairs(f.bosses and f.bosses[row.activity] or {}) do
+        -- One-boss raids have no boss box (the raid box covers it), so old
+        -- ticks there are ignored.
+        local rules = #(row.bosses or {}) ~= 1 and f.bosses and f.bosses[row.activity]
+        for boss, on in pairs(rules or {}) do
             if on and row.killed and row.killed[boss] then return false end
         end
         local caught, left = Filters.Lockout(row)
