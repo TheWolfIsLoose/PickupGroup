@@ -2,6 +2,12 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## Next (on `dev`, not released)
+
+- A sign-up the game refuses at once ("failed") was logged without leader or dungeon: the listing had closed before the status event. `Start` now reads the closed listing (`Groups.Read(id, true)`), falling back to the row remembered when Apply was clicked (`ns.applying`). Confirms passively on the next refusal.
+- CurseForge description: quick list line.
+- Suggested CHANGELOG: "Fixed: sign-ups the game refuses straight away now show their leader and dungeon in your history."
+
 ## v1.2.0 (2026-10-22)
 
 ### Suite style pass
