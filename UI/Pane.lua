@@ -129,6 +129,7 @@ local function NotLeader() return IsInGroup() and not UnitIsGroupLeader("player"
 
 local function Apply(row)
     local r = Groups.MyRoles()
+    ns.applying[row.id] = row
     C_LFGList.ApplyToGroup(row.id, r.TANK, r.HEALER, r.DAMAGER)
     ns.Log.Emit("apply", { code = row.code, leader = row.leader })
 end

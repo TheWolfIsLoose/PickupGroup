@@ -107,8 +107,12 @@ end
 -- Seed before any sign-up event can count twice.
 ns.On("PLAYER_LOGIN", function() Applications.Lifetime() end)
 
+ns.applying = {}  -- id -> the row as it was when Apply was clicked (listings can vanish first)
+
 local function Start(id)
-    local row = ns.Groups.Read(id)
+    -- keepDelisted: a sign-up the game refuses at once can arrive after its
+    -- listing closed, and the record still wants its leader and dungeon.
+    local row = ns.Groups.Read(id, true) or ns.applying[id]
     local info = C_LFGList.GetSearchResultInfo(id)
     local e = {
         ts = time(), result = "pending", roles = RoleText(),

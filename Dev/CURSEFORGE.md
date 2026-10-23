@@ -16,6 +16,7 @@ Open Premade Groups and PickupGroup is already there: one compact list that show
 - **One-click sign-ups.** Click **Apply** to sign up at once. Shift-click to pick one of up to five saved notes first. Your sign-ups stay pinned at the top, with the time each has left, and survive a `/reload`. Hover a group for every member's name and the leader's best run in that dungeon.
 - **Friends first.** Groups with a friend or guildmate in them go to the top of the list, marked.
 - **Clean-up built in.** Hides listings that have been up for hours, adverts, carry offers and leaders you've blacklisted (and, if you like, groups that declined you). Right-click any row to whisper, report, blacklist or hide its leader.
+- **Quick list.** Beside Blizzard's listing window, one click lists your key as Mythic+ with your last playstyle. For a party member's key, type its level in the title first; it reminds you.
 - **Leading a group.** Applicants show spec, item level, score and their best run in your key, with anyone below your bar dimmed (never hidden). Raid leaders set a target comp and see who rounds it out.
 - **Plays nice with your other addons.** If another addon already does one of PickupGroup's jobs (sign-up notes, the group list, the quick list), PickupGroup steps aside instead of doubling up, and asks in its side panel whether you'd rather turn the other one off. No pop-ups.
 - **Ready when you are.** A chime when your dungeon group fills, and a teleport button for the dungeon once the party is complete.
