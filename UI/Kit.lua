@@ -56,12 +56,13 @@ Kit.Palette = {
     -- Text and status tokens (suite style guide): soft 0.74 for tooltip bodies
     -- and secondary text, muted 0.55 (8C8C8C) for labels, headings and "off",
     -- warn yellow FFD84A, bad red FF6666, info blue 5AA9FF (new / worth a
-    -- look). All 4.5:1+ on the panel.
+    -- look), good green 4ADE80 (yours, in progress). All 4.5:1+ on the panel.
     soft      = { 0.74, 0.74, 0.74, 1 },
     muted     = { 0.55, 0.55, 0.55, 1 },
     warn      = { 1, 0.847, 0.29, 1 },
     bad       = { 1, 0.4, 0.4, 1 },
     info      = { 0.353, 0.663, 1, 1 },
+    good      = { 0.29, 0.871, 0.502, 1 },     -- green 4ADE80: yours and in progress (sign-ups waiting / invited, joined)
 }
 local Palette = Kit.Palette
 

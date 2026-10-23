@@ -42,7 +42,7 @@ local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
 -- The leader's seat: a light ring one pixel outside its black ring, so the
 -- black keeps it apart from every spec icon (gold blended into Holy Paladin).
 local LEADER_RING = { 0.7, 0.7, 0.7, 1 }  -- dimmed from 0.9 (player): a label, not a "selected" state
-local ON, INFO = Kit.Palette.on, Kit.Palette.info
+local ON, INFO, GOOD = Kit.Palette.on, Kit.Palette.info, Kit.Palette.good
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
 
@@ -53,7 +53,7 @@ local OUTCOME = {
     declined = { "Declined", AMBER }, declined_full = { "Filled", GREY },
     declined_delisted = { "Delisted", GREY }, cancelled = { "Withdrawn", GREY },
     timedout = { "Expired", GREY }, invitedeclined = { "Passed", GREY },
-    failed = { "Failed", AMBER }, inviteaccepted = { "Joined", ON },
+    failed = { "Failed", AMBER }, inviteaccepted = { "Joined", GOOD },
 }
 local recent, cache = {}, {}  -- ended sign-ups on show; last pinned row per ID
 
@@ -185,7 +185,7 @@ function Pane.State(row, isPinned)
     end
 end
 
--- The left edge: your sign-up and how it went. Waiting / invited white,
+-- The left edge: your sign-up and how it went. Waiting / invited green,
 -- declined or failed yellow (also a leader who declined you elsewhere this
 -- session), other endings (filled, delisted, withdrawn, expired) grey.
 local DOWN = { declined = true, failed = true }
@@ -193,7 +193,7 @@ function Pane.Edge(row, isPinned)
     if row.outcome then return row.outcome.color end
     if DOWN[row.status] or ns.Cleanup.WasDeclined(row.leader) then return AMBER end
     if OVER[row.status] then return GREY end
-    if isPinned then return ON end
+    if isPinned then return GOOD end
 end
 
 -- ---------------------------------------------------------------------------
@@ -486,6 +486,11 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     end
     -- New only colours a plain name (friend / guild colours win).
     if state and state.new and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = INFO end
+    -- A sign-up still in play (waiting or invited): name and dungeon in green, as its edge.
+    local live = isPinned and not row.outcome and not DOWN[row.status] and not OVER[row.status]
+        and not ns.Cleanup.WasDeclined(row.leader)
+    if live and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = GOOD end
+    r.inst:SetTextColor(unpack(live and GOOD or { 0.85, 0.85, 0.85 }))
     if not ns.db.nameColors then
         if row.friends > 0 then r.friendMark.tint(FRIEND); marks[#marks + 1] = r.friendMark end
         if row.guild > 0 then r.guildMark.tint(GuildColor()); marks[#marks + 1] = r.guildMark end
