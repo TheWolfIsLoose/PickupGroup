@@ -20,8 +20,8 @@ cheap.
 **2026-10-22: v1.2.0 released** (suite style pass: monochrome palette, header with name and version, Settings & Activity icon, clash prompt in the sidecar, red flashing Sure?; plus the My lockout work queued as v1.1.1). Notes in `Dev/HISTORY.md`. `main` = `dev`.
 
 Open, in rough priority:
-1. **Group tooltip placement (the v1.2 GUI overhaul, parked 2026-10-19).** The tooltip opens to the row's right and covers the sidecar and the score panel. Ideas: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Not wanted: moving the score panel to ride beside the tooltip. Nothing decided. (A listing carries no key level, so no filter by the key's own level.)
-2. **Raid chime (Open, player's call):** raid listings carry no target size, so chime the leader (and assistants?) when the raid reaches the leader view's target comp total.
+1. **Group tooltip placement (the v1.2 GUI overhaul, parked 2026-10-19; the player has more ideas that need real concepting, 2026-10-22).** The tooltip opens to the row's right and covers the sidecar and the score panel. Ideas: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Not wanted: moving the score panel to ride beside the tooltip. Nothing decided. (A listing carries no key level, so no filter by the key's own level.)
+2. ~~Raid chime~~: dropped (player, 2026-10-22: no merit).
 3. **On `dev` (2026-10-22, confirms passively):** a sign-up the game refuses at once keeps its leader and dungeon (`Groups.Read(id, true)`, else the row remembered at Apply in `ns.applying`). Check the next "failed" entry in the log.
 4. **Organic checks:** Bailed (vote to abandon) not yet seen.
 5. **Later:** a read-only member view of a forming group (what it still needs, who's applying; today PickupGroup steps aside while `C_LFGList.HasActiveEntryInfo()`); choosing the fill chime from SharedMedia; see Later below.
