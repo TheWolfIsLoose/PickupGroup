@@ -17,6 +17,8 @@ cheap.
 
 ## Next session: start here
 
+**Parked 2026-10-22 ~23:45 ET:** on `dev` and installed (dev e595f68), test round set: motion (sign-up rows shimmer on a status change, new applicants shimmer when leading, "Shimmer what's new" option), the failed sign-up record fix, the CurseForge quick list line. Read the DevChecklist ticks and log first.
+
 **2026-10-22: v1.2.0 released** (suite style pass: monochrome palette, header with name and version, Settings & Activity icon, clash prompt in the sidecar, red flashing Sure?; plus the My lockout work queued as v1.1.1). Notes in `Dev/HISTORY.md`. `main` = `dev`.
 
 Open, in rough priority:
