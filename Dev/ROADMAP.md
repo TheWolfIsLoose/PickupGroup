@@ -17,78 +17,17 @@ cheap.
 
 ## Next session: start here
 
-**v1.1.1 queued on `dev` for the 2026-10-27 scheduled release (2026-10-22):** My lockout marks (killed bosses dimmed with a drawn lock) and trimmed one-line copy for the boss boxes and My lockout; tested in game; notes in `Dev/HISTORY.md`. Player's saved raid filter still has old must-be-alive ticks on VA bosses 4-8 (pre-1.0.6 leftovers); their call whether to clear them. Next for PickupGroup: the suite-level style guide and palette pass (project doc `style-guide-review.md`), then the v1.2 GUI overhaul.
+**2026-10-23: v1.2.1 released** (green sign-ups, motion, failed sign-up record fix).
 
-**v1.1.0 released 2026-10-20** (stable; everything below from v1.1.0-beta1 and the 2026-10-19 additions; notes in `Dev/HISTORY.md`).
+**2026-10-22: v1.2.0 released** (suite style pass: monochrome palette, header with name and version, Settings & Activity icon, clash prompt in the sidecar, red flashing Sure?; plus the My lockout work queued as v1.1.1). Notes in `Dev/HISTORY.md`. `main` = `dev`.
 
-**v1.1.0-beta1 published 2026-10-17; stable v1.1.0 ships with the Tuesday 2026-10-20 scheduled release** (raid difficulty / per-raid filter, furthest-along sort, one-switch clean-up, quick list (needs its in-game listing test before Tuesday); notes in `Dev/HISTORY.md`). Tested in game 2026-10-17.
-
-**Added to v1.1.0 (player, 2026-10-19), on `dev`:** playstyle filter, "Leader timed it at my level", leader's best run and member names in the group tooltip, "Hide groups that declined me" (tested in game), then the leaver mark, row states as a coloured name plus matching left edge (replaces the new dot) and every raid member in the raid tooltip, by role (in-game round set) (notes in `Dev/HISTORY.md`).
-
-**v1.2: GUI overhaul (parked, player 2026-10-19).** Talk through PickupGroup's overall GUI approach before building more UI. The player wants things in predictable places. The group tooltip is part of it: today it opens to the row's right and covers the sidecar and the score panel beside it. Its placement and size (big raid member lists) wait for this pass. Not wanted: moving the score panel to ride beside the tooltip. Ideas on the table: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Nothing decided. A listing carries no key level, so a filter by the key's own level isn't possible; the dungeon buttons already show the player's best key.
-
-**2026-10-14: v1.0.8 hotfix released** (raid rows errored on 12.1.5's removed `EJ_GetCurrentInstance`; notes in `Dev/HISTORY.md`).
-
-**Context (player, 2026-10-05): the member's view of a forming group.** When the player is in a listed group but isn't the leader, Blizzard shows the listing header (key, dungeon, filled role icons) over the applicant list, grayed out under "Your group is currently forming." Members see each applicant's name (class color), role, item level and rating, but can't act on them. PickupGroup steps aside here today (`Eligible()` is false while `C_LFGList.HasActiveEntryInfo()`), and the leader view only shows for the leader. Possible later: a read-only member view (what the group still needs, who's applying), no actions.
-
-**v1.0.0 released 2026-10-04.** Still open after 1.0:
-- CurseForge: paste `Dev/CURSEFORGE.md`, upload `.assets/logo.png` and the six gallery shots (screenshots are in the repo, 2026-10-04).
-- Organic checks: Bailed (vote to abandon). Fill chime and teleport passed in a real key (player, 2026-10-05; +18 MR timed, logged as joined then timed, the other sign-up as Moved on).
-- Small fix for a later patch: a sign-up the game refuses at once ("failed") is logged without leader or dungeon (2026-10-05 00:17).
-- StockClerk's WCAG + ponytail session; WoW: Forever compatibility check for all three addons.
-
-**Fill chime (player, 2026-10-04): 0.9.0-alpha11 on dev.** A sign-up's
-dungeon party reaching 5/5 plays The Cyclist (bundled, no SharedMedia
-hook); Options toggle, on by default. **Later:** choosing the sound from
-SharedMedia (a novel feature, not now).
-
-**Raid chime (Open):** a joiner has no "full" to hear: raid listings carry
-no target size and leaders stay listed past it. The one real signal is
-the leader's own target comp (raid leader view): chime the leader (and
-assistants?) when the raid's size reaches the target total. Player's call.
-
-**Leader mark (player, 2026-10-04, settled):** searching, the leader's seat
-gets a 0.7 grey ring one pixel outside its black ring (crown and gold tried:
-gold blended into warm spec icons); the tooltip's leader line has Blizzard's
-crown and the class colour. Released in **v0.8.1** (2026-10-04).
-
-**v0.8.0 (stable) released 2026-10-04** with everything below.
-
-**2026-10-04 (round 20, player): all pass** (leading filters dim by score /
-ilvl / realm, short needs line, sidecar closes per side, role spacing, the
-"more below" chevron in both lists). Left: the teleport party check
-(organic). dev at 0.7.1-alpha6 is release-ready when the player calls it.
-
-**2026-10-04 (round 19, player): all non-friend items pass**: raid leader
-view works (Prog 4/8 H from Raider.IO, Skyfury / Lust / Rez / Brand adds),
-targets save, sidecar fits after the 24px spacing. Calls: role buttons back
-to 17px apart (24 was too far); leading gets its own filter (below); every
-friend / guild feature moves to the Friends bundle (below). alpha5 builds
-these; round 20.
-
-**State, 2026-10-03 night: 0.7.1-alpha3 on dev, installed.** Since v0.7.0:
-- alpha1: group tooltip names friends / guildmates (GetSearchResultFriends).
-- alpha2: teleport button hides while its spell is on cooldown.
-- alpha3: **raid leader view** (first cut), the **ponytail sweep**, the
-  **WCAG 2.2 pass** and this roadmap clean-up (the 1.0 bundle; the player
-  asked for it ahead of a 1.0 call). DevChecklist round 19 is installed.
-
-**Next session, in order:**
-1. Read the saved log + DevChecklist ticks (stage `PickupGroup.lua` and
-   `DevChecklist.lua` from SavedVariables; never ask for a paste).
-2. Round 19 results: raid leader view (needs a raid listing with
-   applicants), the WCAG changes (layout of the sidecar's Options after
-   24px spacing), and round 18's carried items (friend names in the
-   tooltip, teleport on cooldown, the friend who couldn't see the
-   player's listing).
-3. Raid leader view, second cut from the player's feedback. Open: whether
-   the raid "fills a seat" edge from half the target comp is right; whether
-   raids want a region dim (the raid filter has regions only once the
-   player sets them); Raider.IO's raid name match (trace "no Raider.IO
-   match for" if names differ).
-4. v1.0.0 items below.
-
----
+Open, in rough priority:
+1. **Group tooltip placement (the v1.2 GUI overhaul, parked 2026-10-19; the player has more ideas that need real concepting, 2026-10-22).** The tooltip opens to the row's right and covers the sidecar and the score panel. Ideas: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Not wanted: moving the score panel to ride beside the tooltip. Nothing decided. (A listing carries no key level, so no filter by the key's own level.)
+2. ~~Raid chime~~: dropped (player, 2026-10-22: no merit).
+3. **On `dev` (2026-10-22, confirms passively):** a sign-up the game refuses at once keeps its leader and dungeon (`Groups.Read(id, true)`, else the row remembered at Apply in `ns.applying`). Check the next "failed" entry in the log.
+4. **Organic checks:** Bailed (vote to abandon) not yet seen.
+5. **Later:** a read-only member view of a forming group (what it still needs, who's applying; today PickupGroup steps aside while `C_LFGList.HasActiveEntryInfo()`); choosing the fill chime from SharedMedia; see Later below.
+6. **Housekeeping:** retake the CurseForge gallery shots (they show the old mint look); paste the updated `Dev/CURSEFORGE.md` (quick list line added 2026-10-22).
 
 ## What PickupGroup is
 
@@ -135,7 +74,7 @@ PickupGroup is an original design and an original codebase.
   blacklist), each with its reason in the tooltip.
 - **Application log**: the saved record of every sign-up and how it
   ended (Options > Sign-up history).
-- **Row states**: mint name = new to your list since the last search (a filter change marks only newly listed groups). Left edge = sign-up outcome: mint waiting / invited, amber declined / failed (or that leader declined you this session), grey other endings. Leaver mark on members who left groups early lately (search and leader view).
+- **Row states**: blue name = new to your list since the last search (a filter change marks only newly listed groups). Left edge = sign-up outcome: white waiting / invited, yellow declined / failed (or that leader declined you this session), grey other endings. Leaver mark on members who left groups early lately (search and leader view).
 - **Leader view**: our frame over Blizzard's applicant list while the
   player leads a key or raid listing.
 - **Target comp**: the raid leader's wanted tanks / healers / damage.
@@ -147,7 +86,7 @@ PickupGroup is an original design and an original codebase.
 **Searching (Decided):**
 - Pane over Blizzard's results on Premade Groups > Dungeons and Raids -
   current; Blizzard's search row (search text, refresh, Filter button)
-  stays visible above it. A 1px mint line across the top shrinks over the
+  stays visible above it. A 1px white line across the top shrinks over the
   ~3 s search cooldown.
 - One filter per content type. Keys: dungeons, room for my role
   (party-aware), has Bloodlust, has battle rez, no other of my class,
@@ -178,7 +117,7 @@ behaviour). Nothing is hidden; non-fits are dimmed with the reason in the
 tooltip.
 - Keys: needs bar (seats, Bloodlust, battle rez), rows per member (spec,
   name, ilvl, score, best run in the listed dungeon), "Lust" / "Rez" adds,
-  mint row edge = fills an open seat from 3 in the group.
+  blue row edge = fills an open seat from 3 in the group.
 - Raids (first cut, 0.7.1-alpha3): target comp per character (presets 10 /
   20 / 25 / 30 or typed T / H / D); needs bar against it (seats, Bloodlust,
   up to 2 battle rez); Prog column = the applicant's best Raider.IO
@@ -249,14 +188,16 @@ season); an open sign-up at /reload is re-attached by leader + activity.
 **Testing (player's preference):** the player tests in game, `/reload`s
 and says "done"; Claude reads the log and checklist ticks from the saved
 variables, never asks for a paste. Screenshots for layout. Small alphas,
-installed and verified each time. The tester (Tyler / Tripoloski) plays
+installed and verified each time. The tester plays
 casually: his reports are leads; spike issues ourselves.
 
 **In-game test list:** `Dev/DevChecklist/` is a dev-only addon installed
 as `Interface\AddOns\DevChecklist` (never shipped). Each round, rewrite
-`Checklist.lua` (round name; items { area, what to do / expect, what to
-send }) grouped by area, and install it. Ticks are saved per item text in
-`WTF\Account\SAVAGEFEARLESS\SavedVariables\DevChecklist.lua`.
+`Rounds/PickupGroup.lua` (one round file per addon, so rounds never
+overwrite each other; round name; items { area, what to do / expect, what
+to send }) grouped by area, and install it. Clear a round only once it's
+all ticked. Ticks are saved per item text in
+`WTF\Account\<account>\SavedVariables\DevChecklist.lua`.
 
 **Session setup:**
 - Repo: `TheWolfIsLoose/PickupGroup` (public). Work on `dev`; merge to
@@ -265,7 +206,7 @@ send }) grouped by area, and install it. Ticks are saved per item text in
   player's `_retail_` folder through the device bridge; a new file in the
   TOC needs a game restart. Stage each build under a fresh folder
   (`/mnt/user-data/outputs/pg-<version>/`) and compare checksums after.
-- Logs: `WTF\Account\SAVAGEFEARLESS\SavedVariables\PickupGroup.lua`.
+- Logs: `WTF\Account\<account>\SavedVariables\PickupGroup.lua`.
 - Check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua`.
   No package manager has Lua here: `git clone --depth 1 -b v5.1
   https://github.com/lua/lua`, then `gcc -O2 -DLUA_USE_POSIX -o

@@ -56,12 +56,13 @@ Kit.Palette = {
     -- Text and status tokens (suite style guide): soft 0.74 for tooltip bodies
     -- and secondary text, muted 0.55 (8C8C8C) for labels, headings and "off",
     -- warn yellow FFD84A, bad red FF6666, info blue 5AA9FF (new / worth a
-    -- look). All 4.5:1+ on the panel.
+    -- look), good green 4ADE80 (yours, in progress). All 4.5:1+ on the panel.
     soft      = { 0.74, 0.74, 0.74, 1 },
     muted     = { 0.55, 0.55, 0.55, 1 },
     warn      = { 1, 0.847, 0.29, 1 },
     bad       = { 1, 0.4, 0.4, 1 },
     info      = { 0.353, 0.663, 1, 1 },
+    good      = { 0.29, 0.871, 0.502, 1 },     -- green 4ADE80: yours and in progress (sign-ups waiting / invited, joined)
 }
 local Palette = Kit.Palette
 
@@ -246,6 +247,40 @@ function Kit.Pulse(region, low, half)
     g:SetScript("OnPlay", function() loops = 0 end)
     g:SetScript("OnLoop", function(self) loops = loops + 1; if loops >= 3 then self:Stop() end end)
     return g
+end
+
+-- Shimmer: one soft white band sweeps across a row once (two seconds),
+-- clipped to it; two gradient halves make the band. Adds r.Shimmer() and
+-- r.StopShimmer(). The suite's "this row is news" motion.
+function Kit.Shimmer(r, h, w)
+    local clip = CreateFrame("Frame", nil, r)
+    clip:SetAllPoints()
+    clip:SetClipsChildren(true)
+    local band = CreateFrame("Frame", nil, clip)
+    band:SetSize(w, h)
+    band:SetPoint("RIGHT", clip, "LEFT")
+    local none, peak = CreateColor(1, 1, 1, 0), CreateColor(1, 1, 1, 0.15)
+    for half = 1, 2 do
+        local t = band:CreateTexture(nil, "ARTWORK")
+        t:SetColorTexture(1, 1, 1, 1)
+        t:SetSize(w / 2, h)
+        t:SetPoint(half == 1 and "LEFT" or "RIGHT")
+        t:SetGradient("HORIZONTAL", half == 1 and none or peak, half == 1 and peak or none)
+    end
+    band:Hide()
+    local sweep = band:CreateAnimationGroup()
+    sweep.move = sweep:CreateAnimation("Translation")
+    sweep.move:SetDuration(2)
+    sweep.move:SetSmoothing("IN_OUT")
+    sweep:SetScript("OnPlay", function() band:Show() end)
+    sweep:SetScript("OnFinished", function() band:Hide() end)
+    sweep:SetScript("OnStop", function() band:Hide() end)
+    function r.Shimmer()
+        sweep:Stop()
+        sweep.move:SetOffset(r:GetWidth() + w, 0)
+        sweep:Play()
+    end
+    function r.StopShimmer() sweep:Stop() end
 end
 
 -- A 26px (or h) faint band with a black rule on its inner edge, at the top

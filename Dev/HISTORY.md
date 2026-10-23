@@ -2,6 +2,13 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
+## v1.2.1 (2026-10-23)
+
+- A sign-up the game refuses at once ("failed") was logged without leader or dungeon: the listing had closed before the status event. `Start` now reads the closed listing (`Groups.Read(id, true)`), falling back to the row remembered when Apply was clicked (`ns.applying`). Confirms passively on the next refusal.
+- CurseForge description: quick list line.
+- Motion (suite rule: motion marks what just changed): `Kit.Shimmer` shared by the pane and the leader view; a pinned sign-up shimmers once when its status / outcome changes (`seenState`), a new applicant (`isNew`) shimmers once in the leader view (`shoneApp`); the option is now "Alert: Shimmer what's new" (`db.noShimmer`).
+- Live sign-ups (waiting / invited) read green: name (unless friend / guild colours), dungeon code and edge; Joined outcome green. New palette token `good` 4ADE80 (11:1).
+
 ## v1.2.0 (2026-10-22)
 
 ### Suite style pass
@@ -158,7 +165,7 @@ All 0.7.1 alphas below (rounds 17-20 pass; the teleport party check after alpha4
 - alpha2: teleport button hides while its spell is on cooldown (C_Spell.GetSpellCooldown > 2 s; replaces hide-on-cast, which reset on zone / group changes). Key run with the Group Finder open: secret-listing guard held (600+ skipped, no errors).
 - alpha6 (player, 2026-10-04): no scroll bars in our lists: Kit.More, a "more below" chevron at the bottom centre that pulses 3 x 1.5 s then holds (WCAG 2.2.2: stops within 5 s), in the pane and the leader view (replaces the leader's thumb track; rows widen to the edge). Log and history windows keep Blizzard's scroll bars (long text you drag through).
 - alpha5 (round 19 calls, 2026-10-04): leading filters (lead_keys / lead_raid: regions, score / ilvl floor; dims only) in the sidecar from a slider icon in the leader top bar; Sidecar.Close(leading) so the pane and leader view each close only their side; needs line plurals ("4 healers") and short form (T / H / D, Lust, rez) when it doesn't fit, wider (to the applicant count); role buttons back to 17px; teleport trace reads "none" when no dungeon; Kit.SLIDERS shared. Friend / guild features moved to an organic-testing bundle (ROADMAP).
-- alpha4 (tester bug, 2026-10-03): Tyler joined a party not through a sign-up; its leader's key listing (VSA 19) came down when it filled, so Teleport fell back to his last joined sign-up (AOF) from earlier. LastJoined now needs that sign-up's leader still in the party (UnitInParty); the party's own listing is remembered after it delists until the group breaks up; trace "party dungeon ... (source)".
+- alpha4 (tester bug, 2026-10-03): The tester joined a party not through a sign-up; its leader's key listing (VSA 19) came down when it filled, so Teleport fell back to his last joined sign-up (AOF) from earlier. LastJoined now needs that sign-up's leader still in the party (UnitInParty); the party's own listing is remembered after it delists until the group breaks up; trace "party dungeon ... (source)".
 - alpha3 (one build, 2026-10-03):
   - Raid leader view (UI/Leader.lua): Listing() returns keys / raid (maxNumPlayers > 5); target comp bar (Kit.Toggle presets 10/20/25/30, T/H/D boxes; ns.CharDB().raidTarget, default 2/4/14); Roster() reads the raid; brez wanted up to 2; raid buff adds table (BUFF); Prog column from RaiderIO.GetProfile(name).raidProfile.progress (best difficulty with kills in the listed raid, cached per name; trace when Raider.IO names the raid differently); Score column hidden for raids; header columns chained so widths change per kind; raid "fills a seat" edge from half the target comp.
   - Ponytail sweep: leader probe and /pug applicants, /pug tp, db.probe / db.note leftovers, the Apply-click tester diagnostics, two dev traces in the notes strip, fallback anchors for SearchBox / BackButton, never-nil guards in Filters, Groups' Application() wrapper; LogPopup + History share one Window builder (-155 / +31 lines).
@@ -744,7 +751,7 @@ buttons went through, nothing blocked (an invitee joined). Fixed in alpha3:
 "lead" log kind was missing (entries dropped as "unknown kind"); a duo's
 second member is indented and joined by a line; Blizzard's scroll bar is
 covered by our own track + thumb.
-**Tester reports (Tripoloski's saved file, 0.6.1):** (1) applying to the
+**Tester reports (the tester's saved file, 0.6.1):** (1) applying to the
 player's group showed no friend cue (his nameColors is on, so it'd be a blue
 name) and it didn't sort to the top: alpha3 sorts friends, then guild, first
 (as Blizzard); the cue itself is unexplained, so alpha3 traces each Apply
@@ -969,7 +976,7 @@ send: SS, log, ... }) and install it; a `/reload` picks it up. Group the
 items by area (dungeon view, raid view, notes / sign-ups, options, party,
 ...): player, 2026-10-01; keep each area's items together in the list. It shows at
 login while anything is unticked; `/dc` toggles it. Ticks are saved per
-item text in `WTF\Account\SAVAGEFEARLESS\SavedVariables\DevChecklist.lua`:
+item text in `WTF\Account\<account>\SavedVariables\DevChecklist.lua`:
 read them with the log.
 
 Testing method (player's preference): the player tests in game,
@@ -1097,7 +1104,7 @@ Session setup (keeps usage down):
   for 0.1.1 and 0.2.0-alpha2). After a commit, re-stage the installed
   files and compare sizes or checksums with the repo.
 - Logs: after a `/reload`, read
-  `WTF\Account\SAVAGEFEARLESS\SavedVariables\PickupGroup.lua`.
+  `WTF\Account\<account>\SavedVariables\PickupGroup.lua`.
 - Check before every build: `lua5.1 Dev/check.lua *.lua UI/*.lua` (syntax, plus a
   local used above its definition: it passed syntax and broke in game once).
   No package manager reaches Lua here: `git clone --depth 1 -b v5.1
