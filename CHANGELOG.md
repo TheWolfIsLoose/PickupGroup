@@ -1,9 +1,5 @@
-## v1.2.0
+## v1.2.1
 
-- New look: a quieter, monochrome style shared across our addons. Color now only flags what needs attention: yellow for warnings, red for problems, blue for groups new to your list.
-- The side panel shows the name and version at the top; settings open from the three-bar icon; the Filter and Notes tabs and Reset sit right under it, so every control is in one place.
-- When another addon does the same job (sign-up notes, the group list, the quick list), PickupGroup steps aside and asks in its side panel whether to turn the other one off. No more pop-up window.
-- Reset, Clear and Reapply ask "Sure?" in red, flashing, before they act.
-- My lockout now dims the bosses you've killed this week, with a lock.
-- Clearer tooltips on the raid filter's boss boxes and My lockout.
-- One-boss raids take a single line in the raid filter.
+- Your sign-ups read green (name, dungeon and edge) while they're waiting or invited, so they stand apart from the list.
+- A sign-up row shimmers once when its status changes (invited, declined, filled, joined), and a new applicant shimmers once when you lead. The shimmer option in Settings & Activity covers all of it.
+- Fixed: sign-ups the game refuses straight away now show their leader and dungeon in your history.

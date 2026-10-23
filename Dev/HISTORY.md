@@ -2,11 +2,12 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## Next (on `dev`, not released)
+## v1.2.1 (2026-10-23)
 
 - A sign-up the game refuses at once ("failed") was logged without leader or dungeon: the listing had closed before the status event. `Start` now reads the closed listing (`Groups.Read(id, true)`), falling back to the row remembered when Apply was clicked (`ns.applying`). Confirms passively on the next refusal.
 - CurseForge description: quick list line.
-- Suggested CHANGELOG: "Fixed: sign-ups the game refuses straight away now show their leader and dungeon in your history."
+- Motion (suite rule: motion marks what just changed): `Kit.Shimmer` shared by the pane and the leader view; a pinned sign-up shimmers once when its status / outcome changes (`seenState`), a new applicant (`isNew`) shimmers once in the leader view (`shoneApp`); the option is now "Alert: Shimmer what's new" (`db.noShimmer`).
+- Live sign-ups (waiting / invited) read green: name (unless friend / guild colours), dungeon code and edge; Joined outcome green. New palette token `good` 4ADE80 (11:1).
 
 ## v1.2.0 (2026-10-22)
 
