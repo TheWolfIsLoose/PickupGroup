@@ -256,6 +256,7 @@ end
 local function Line(i)
     if lines[i] then return lines[i] end
     local l = CreateFrame("Button", nil, pane)
+    Kit.Shimmer(l, ROW_H, 90)
     l.stripe = l:CreateTexture(nil, "BACKGROUND", nil, -7)
     l.stripe:SetAllPoints()
     l.new = l:CreateTexture(nil, "OVERLAY")
@@ -342,6 +343,7 @@ local function Columns(raid, adds, key, score)
     score:SetWidth(raid and 1 or W_SCORE)
 end
 
+local shoneApp = {}  -- applicant IDs that already shimmered
 local function PaintMember(l, a, m, first, index, raid)
     l.member, l.app = m, a
     Columns(raid, l.adds, l.key, l.score)
@@ -350,6 +352,11 @@ local function PaintMember(l, a, m, first, index, raid)
     l.note:Hide()
     for _, f in ipairs({ l.tile, l.name, l.ilvl, l.key, l.adds }) do f:Show() end
     l.new:SetShown(first and a.isNew == true)
+    -- A new applicant shimmers once (the game flags new ones until the leader looks).
+    if first and a.isNew == true and not shoneApp[a.applicantID] then
+        shoneApp[a.applicantID] = true
+        if not ns.db.noShimmer then l.Shimmer() end
+    end
     l.tile:ClearAllPoints()
     l.tile:SetPoint("LEFT", first and (PAD + 1) or (PAD + 13), 0)
     l.linkV:SetShown(not first); l.linkH:SetShown(not first)

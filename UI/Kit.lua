@@ -248,6 +248,40 @@ function Kit.Pulse(region, low, half)
     return g
 end
 
+-- Shimmer: one soft white band sweeps across a row once (two seconds),
+-- clipped to it; two gradient halves make the band. Adds r.Shimmer() and
+-- r.StopShimmer(). The suite's "this row is news" motion.
+function Kit.Shimmer(r, h, w)
+    local clip = CreateFrame("Frame", nil, r)
+    clip:SetAllPoints()
+    clip:SetClipsChildren(true)
+    local band = CreateFrame("Frame", nil, clip)
+    band:SetSize(w, h)
+    band:SetPoint("RIGHT", clip, "LEFT")
+    local none, peak = CreateColor(1, 1, 1, 0), CreateColor(1, 1, 1, 0.15)
+    for half = 1, 2 do
+        local t = band:CreateTexture(nil, "ARTWORK")
+        t:SetColorTexture(1, 1, 1, 1)
+        t:SetSize(w / 2, h)
+        t:SetPoint(half == 1 and "LEFT" or "RIGHT")
+        t:SetGradient("HORIZONTAL", half == 1 and none or peak, half == 1 and peak or none)
+    end
+    band:Hide()
+    local sweep = band:CreateAnimationGroup()
+    sweep.move = sweep:CreateAnimation("Translation")
+    sweep.move:SetDuration(2)
+    sweep.move:SetSmoothing("IN_OUT")
+    sweep:SetScript("OnPlay", function() band:Show() end)
+    sweep:SetScript("OnFinished", function() band:Hide() end)
+    sweep:SetScript("OnStop", function() band:Hide() end)
+    function r.Shimmer()
+        sweep:Stop()
+        sweep.move:SetOffset(r:GetWidth() + w, 0)
+        sweep:Play()
+    end
+    function r.StopShimmer() sweep:Stop() end
+end
+
 -- A 26px (or h) faint band with a black rule on its inner edge, at the top
 -- (header) or bottom (footer) of a frame.
 function Kit.Strip(frame, edge, h)

@@ -74,6 +74,7 @@ local resultsAt, prevAt                 -- when this / the previous search's res
 local searchSig, prevSig                                 -- filter as it was at this / the previous search
 local fresh = {}
 local shone = {}  -- result IDs that already shimmered this search
+local seenState = {}  -- sign-up ID -> its last status / outcome, to shimmer when it changes
 
 -- The filter, clean-up and hidden view as one comparable string.
 local function Sig(v)
@@ -429,36 +430,7 @@ local function BuildRow(i)
         m:Hide()
         r[key] = m
     end
-    -- Shimmer: one soft white band sweeps across a new group's row (once,
-    -- two seconds). Clipped to the row; two gradient halves make the band.
-    local clip = CreateFrame("Frame", nil, r)
-    clip:SetAllPoints()
-    clip:SetClipsChildren(true)
-    local band = CreateFrame("Frame", nil, clip)
-    band:SetSize(SHIMMER_W, ROW_H)
-    band:SetPoint("RIGHT", clip, "LEFT")
-    for half = 1, 2 do
-        local t = band:CreateTexture(nil, "ARTWORK")
-        t:SetColorTexture(1, 1, 1, 1)
-        t:SetSize(SHIMMER_W / 2, ROW_H)
-        t:SetPoint(half == 1 and "LEFT" or "RIGHT")
-        local none, peak = CreateColor(ON[1], ON[2], ON[3], 0), CreateColor(ON[1], ON[2], ON[3], 0.15)
-        t:SetGradient("HORIZONTAL", half == 1 and none or peak, half == 1 and peak or none)
-    end
-    band:Hide()
-    local sweep = band:CreateAnimationGroup()
-    sweep.move = sweep:CreateAnimation("Translation")
-    sweep.move:SetDuration(2)
-    sweep.move:SetSmoothing("IN_OUT")
-    sweep:SetScript("OnPlay", function() band:Show() end)
-    sweep:SetScript("OnFinished", function() band:Hide() end)
-    sweep:SetScript("OnStop", function() band:Hide() end)
-    r.Shimmer = function()
-        sweep:Stop()
-        sweep.move:SetOffset(r:GetWidth() + SHIMMER_W, 0)
-        sweep:Play()
-    end
-    r.StopShimmer = function() sweep:Stop() end
+    Kit.Shimmer(r, ROW_H, SHIMMER_W)  -- r.Shimmer() / r.StopShimmer()
     r.name = Text(r)
     r.name:SetPoint("LEFT", PAD, 0)
     r.name:SetPoint("RIGHT", r.diff, "LEFT", -GAP, 0)
@@ -639,6 +611,10 @@ function Pane.Render()
         slot = slot + 1
         if slot > fit then break end
         PaintRow(rows[slot] or BuildRow(slot), row, true, slot, full, raidView)
+        -- A sign-up whose state just changed (invited, declined, joined, filled...) shimmers once.
+        local st = row.outcome and row.outcome.label or row.status
+        if seenState[row.id] and seenState[row.id] ~= st and not ns.db.noShimmer then rows[slot].Shimmer() end
+        seenState[row.id] = st
     end
     -- A 1px line under the sign-ups separates them from the scrolling results.
     local nPinned = math.min(#pinned, fit)
