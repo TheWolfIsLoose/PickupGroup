@@ -17,7 +17,7 @@ cheap.
 
 ## Next session: start here
 
-**2026-10-23: v1.2.1 released** (green sign-ups, motion, failed sign-up record fix).
+**2026-10-23: v1.2.2 released** (new groups: white edge instead of a blue name). v1.2.1 the same day: green sign-ups, motion, failed sign-up record fix.
 
 **2026-10-22: v1.2.0 released** (suite style pass: monochrome palette, header with name and version, Settings & Activity icon, clash prompt in the sidecar, red flashing Sure?; plus the My lockout work queued as v1.1.1). Notes in `Dev/HISTORY.md`. `main` = `dev`.
 
@@ -74,7 +74,7 @@ PickupGroup is an original design and an original codebase.
   blacklist), each with its reason in the tooltip.
 - **Application log**: the saved record of every sign-up and how it
   ended (Options > Sign-up history).
-- **Row states**: blue name = new to your list since the last search (a filter change marks only newly listed groups). Left edge = sign-up outcome: white waiting / invited, yellow declined / failed (or that leader declined you this session), grey other endings. Leaver mark on members who left groups early lately (search and leader view).
+- **Row states**: white left edge (plus one shimmer) = new to your list since the last search (a filter change marks only newly listed groups); never a blue name, which reads as Blizzard's friend blue. Left edge on sign-ups = how it's going: green waiting / invited, yellow declined / failed (or that leader declined you this session), grey other endings. Leaver mark on members who left groups early lately (search and leader view).
 - **Leader view**: our frame over Blizzard's applicant list while the
   player leads a key or raid listing.
 - **Target comp**: the raid leader's wanted tanks / healers / damage.
