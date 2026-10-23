@@ -42,7 +42,7 @@ local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
 -- The leader's seat: a light ring one pixel outside its black ring, so the
 -- black keeps it apart from every spec icon (gold blended into Holy Paladin).
 local LEADER_RING = { 0.7, 0.7, 0.7, 1 }  -- dimmed from 0.9 (player): a label, not a "selected" state
-local ON, INFO, GOOD = Kit.Palette.on, Kit.Palette.info, Kit.Palette.good
+local ON, GOOD = Kit.Palette.on, Kit.Palette.good
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
 
@@ -175,13 +175,13 @@ local function OnAction(btn)
 end
 
 -- A row's state for its tooltip line and cues, or nil. New groups get a
--- blue name (info); the left edge is kept for sign-up outcomes (Pane.Edge).
+-- white left edge (Pane.Edge); sign-ups use the edge for how they're going.
 function Pane.State(row, isPinned)
     if row.status == "declined" or ns.Cleanup.WasDeclined(row.leader) then
         return { color = AMBER, declined = true, text = "Declined you this session" }
     end
     if not isPinned and fresh[row.id] then
-        return { color = INFO, new = true, text = "New to your list since the last search" }
+        return { color = ON, new = true, text = "New to your list since the last search" }
     end
 end
 
@@ -194,6 +194,9 @@ function Pane.Edge(row, isPinned)
     if DOWN[row.status] or ns.Cleanup.WasDeclined(row.leader) then return AMBER end
     if OVER[row.status] then return GREY end
     if isPinned then return GOOD end
+    -- New to your list: a white edge (and one shimmer). Not a blue name: Blizzard
+    -- colours a group with a friend in it blue, and the two would read alike.
+    if fresh[row.id] then return ON end
 end
 
 -- ---------------------------------------------------------------------------
@@ -470,7 +473,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if r.row and r.row.id ~= row.id then r.StopShimmer() end  -- the frame now shows another group
     r.row, r.act.row = row, row
     r:Show()
-    -- New to the list: a blue name. The edge: sign-up outcomes. The
+    -- New to the list: a white edge. Sign-ups: the edge shows how they're going. The
     -- tooltip says both in words (WCAG 1.4.1).
     local state = Pane.State(row, isPinned)
     local edge = Pane.Edge(row, isPinned)
@@ -485,7 +488,6 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         ink = row.friends > 0 and FRIEND or row.guild > 0 and GuildColor() or ink
     end
     -- New only colours a plain name (friend / guild colours win).
-    if state and state.new and ink[1] == 1 and ink[2] == 1 and ink[3] == 1 then ink = INFO end
     -- A sign-up still in play (waiting or invited): name and dungeon in green, as its edge.
     local live = isPinned and not row.outcome and not DOWN[row.status] and not OVER[row.status]
         and not ns.Cleanup.WasDeclined(row.leader)
