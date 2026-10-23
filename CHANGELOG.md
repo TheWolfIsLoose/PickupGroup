@@ -1,5 +1,3 @@
-## v1.2.1
+## v1.2.2
 
-- Your sign-ups read green (name, dungeon and edge) while they're waiting or invited, so they stand apart from the list.
-- A sign-up row shimmers once when its status changes (invited, declined, filled, joined), and a new applicant shimmers once when you lead. The shimmer option in Settings & Activity covers all of it.
-- Fixed: sign-ups the game refuses straight away now show their leader and dungeon in your history.
+- Groups new to your list get a white edge instead of a blue name, so they don't look like groups with a friend in them.

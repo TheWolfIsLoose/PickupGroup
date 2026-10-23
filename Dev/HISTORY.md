@@ -2,7 +2,7 @@
 
 Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
-## Next (on `dev`, not released)
+## v1.2.2 (2026-10-23)
 
 - New groups lose the blue name (it read like Blizzard's friend blue, which colours a group with a friend in it): they get a white left edge plus the existing one-time shimmer; the tooltip line stays. The edge order: outcome, declined (yellow), ended (gray), your live sign-up (green), new (white).
 - Suggested CHANGELOG: "Groups new to your list get a white edge instead of a blue name, so they don't look like groups with a friend in them."

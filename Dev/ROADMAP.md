@@ -17,7 +17,7 @@ cheap.
 
 ## Next session: start here
 
-**2026-10-23: v1.2.1 released** (green sign-ups, motion, failed sign-up record fix).
+**2026-10-23: v1.2.2 released** (new groups: white edge instead of a blue name). v1.2.1 the same day: green sign-ups, motion, failed sign-up record fix.
 
 **2026-10-22: v1.2.0 released** (suite style pass: monochrome palette, header with name and version, Settings & Activity icon, clash prompt in the sidecar, red flashing Sure?; plus the My lockout work queued as v1.1.1). Notes in `Dev/HISTORY.md`. `main` = `dev`.
 
