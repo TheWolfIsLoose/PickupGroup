@@ -17,17 +17,15 @@ cheap.
 
 ## Next session: start here
 
-**2026-10-23: v1.2.2 released** (new groups: white edge instead of a blue name). v1.2.1 the same day: green sign-ups, motion, failed sign-up record fix.
-
-**2026-10-22: v1.2.0 released** (suite style pass: monochrome palette, header with name and version, Settings & Activity icon, clash prompt in the sidecar, red flashing Sure?; plus the My lockout work queued as v1.1.1). Notes in `Dev/HISTORY.md`. `main` = `dev`.
+**2026-10-23: v1.2.2 released** (new groups get a white left edge instead of a blue name). v1.2.1 the same day (green sign-ups, motion, failed sign-up record fix); v1.2.0 2026-10-22 (suite style pass). Notes in `Dev/HISTORY.md`. Nothing unreleased on `dev` (only test round files).
 
 Open, in rough priority:
-1. **Group tooltip placement (the v1.2 GUI overhaul, parked 2026-10-19; the player has more ideas that need real concepting, 2026-10-22).** The tooltip opens to the row's right and covers the sidecar and the score panel. Ideas: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Not wanted: moving the score panel to ride beside the tooltip. Nothing decided. (A listing carries no key level, so no filter by the key's own level.)
-2. ~~Raid chime~~: dropped (player, 2026-10-22: no merit).
-3. **On `dev` (2026-10-22, confirms passively):** a sign-up the game refuses at once keeps its leader and dungeon (`Groups.Read(id, true)`, else the row remembered at Apply in `ns.applying`). Check the next "failed" entry in the log.
-4. **Organic checks:** Bailed (vote to abandon) not yet seen.
-5. **Later:** a read-only member view of a forming group (what it still needs, who's applying; today PickupGroup steps aside while `C_LFGList.HasActiveEntryInfo()`); choosing the fill chime from SharedMedia; see Later below.
-6. **Housekeeping:** retake the CurseForge gallery shots (they show the old mint look); paste the updated `Dev/CURSEFORGE.md` (quick list line added 2026-10-22).
+1. **Group tooltip placement (the GUI overhaul, parked 2026-10-19; the player has more ideas that need real concepting).** The tooltip opens to the row's right and covers the sidecar and the score panel. Ideas: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Not wanted: moving the score panel to ride beside the tooltip. Nothing decided. (A listing carries no key level, so no filter by the key's own level.)
+2. **Confirm passively:** a sign-up the game refuses at once keeps its leader and dungeon (shipped v1.2.1; check the next "failed" entry in the log). Bailed (vote to abandon) not yet seen.
+3. **Later:** a read-only member view of a forming group (what it still needs, who's applying; today PickupGroup steps aside while `C_LFGList.HasActiveEntryInfo()`); choosing the fill chime from SharedMedia; see Later below.
+4. **Housekeeping:** retake the CurseForge gallery shots (they show the old mint look); paste the updated `Dev/CURSEFORGE.md`.
+
+Dropped 2026-10-22: the raid chime (no merit).
 
 ## What PickupGroup is
 
