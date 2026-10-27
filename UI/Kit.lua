@@ -199,9 +199,19 @@ function Kit.Button(btn)
 end
 
 -- Drawn icon: flat bars, crisp and tinted as one.
--- bars = { { w, h, y, angle, x }, ... } centred on the frame. Returns tint(color).
+-- bars = { { w, h, y, angle, x }, ... } centred on the frame, or a texture
+-- path (a white drawing, shown 16 px). Returns tint(color).
 function Kit.Glyph(frame, bars)
     local tex = {}
+    if type(bars) == "string" then
+        local t = frame:CreateTexture(nil, "OVERLAY", nil, 7)
+        t:SetSize(16, 16)
+        t:SetPoint("CENTER")
+        t:SetTexture(bars)
+        local function tint(c) t:SetVertexColor(c[1], c[2], c[3], c[4] or 1) end
+        tint(Palette.glyphRest)
+        return tint
+    end
     for i, b in ipairs(bars) do
         local t = frame:CreateTexture(nil, "OVERLAY", nil, 7)
         t:SetSize(b[1], b[2])
@@ -215,22 +225,9 @@ function Kit.Glyph(frame, bars)
 end
 
 Kit.CLOSE = { { 12, 2, 0, math.pi / 4 }, { 12, 2, 0, -math.pi / 4 } }
--- Refresh: a circular arrow, an open ring of short bars with a head at its end.
-Kit.REFRESH = {}
-for i = 0, 9 do
-    local t = math.rad(120 + i * 30)  -- 120 round to 390 (30) degrees: open at the top right
-    Kit.REFRESH[#Kit.REFRESH + 1] = { 3.4, 2, 5 * math.sin(t), t + math.pi / 2, 5 * math.cos(t) }
-end
-do  -- the head: two bars meeting at a point just past the 30 degree end, pointing along the ring
-    local t = math.rad(390)
-    local tx, ty = -math.sin(t), math.cos(t)                      -- direction of travel
-    local px, py = 5 * math.cos(t) + 0.5 * tx, 5 * math.sin(t) + 0.5 * ty  -- the point
-    for _, s in ipairs({ 1, -1 }) do
-        local a = math.atan2(-ty, -tx) + s * math.rad(45)           -- back from the point
-        local dx, dy = math.cos(a), math.sin(a)
-        Kit.REFRESH[#Kit.REFRESH + 1] = { 4, 2, py + dy * 1.6, a, px + dx * 1.6 }
-    end
-end
+-- Refresh: our own drawn circular arrow (Media/Refresh.tga, white, tinted like
+-- the bars); rotated bars couldn't draw a smooth ring.
+Kit.REFRESH = "Interface\\AddOns\\PickupGroup\\Media\\Refresh"
 Kit.MENU = { { 12, 2, 4 }, { 12, 2, 0 }, { 12, 2, -4 } }  -- Settings & Activity
 Kit.SLIDERS = { { 12, 2, 4 }, { 4, 6, 4, nil, -2 }, { 12, 2, -4 }, { 4, 6, -4, nil, 3 } }  -- filter setup
 
