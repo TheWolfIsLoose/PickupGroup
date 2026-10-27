@@ -1,11 +1,11 @@
 -- PickupGroup's test round. Only rewritten while working on PickupGroup; emptied once all ticked.
 DevChecklist_Rounds = DevChecklist_Rounds or {}
 DevChecklist_Rounds["PickupGroup"] = {
-    round = "motion",
+    round = "session stats",
     items = {
         { "search pane", "Groups new since your last search: a white left edge (and one shimmer on a short list), name stays white; a group with a friend in it still shows the friend mark / blue name, so the two no longer look alike.", "screenshot" },
         { "search pane", "Your sign-ups (pinned at the top) read green: name, dungeon and the left edge, until they end (declined goes yellow, filled / delisted gray, joined stays green).", "screenshot" },
-        { "search pane", "Header reads dev 02cc69c. Sign up to a group: when it changes (invited, declined, filled, delisted), its pinned row shimmers once.", "say yes / no" },
-        { "settings", "Settings & Activity: the shimmer option reads Alert: Shimmer what's new; turning it off stops the shimmers. Then /reload so I can read the log.", "say yes / no" },
+        { "sign-up history", "Header reads dev ee431a3. Sign-up history: the stats now open with This session: N sign-ups, N nos, N got in, then Today. Sign up to a group or two; the session count goes up with Today.", "screenshot" },
+        { "sign-up history", "/reload and reopen it: This session keeps its count (only a fresh login restarts it). /pug stats starts with the same line. Then /reload so I can read the log.", "say yes / no" },
     },
 }
