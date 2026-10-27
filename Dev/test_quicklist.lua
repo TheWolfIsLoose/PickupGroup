@@ -25,4 +25,14 @@ check("+12 picks its own activity", 912, Q.Activity("Altar of Fangs", 12))
 check("+15 picks its own activity", 915, Q.Activity("Altar of Fangs", 15))
 check("no level match falls back to a Mythic+ one, never plain Mythic", 912, Q.Activity("Altar of Fangs", 20))
 check("unknown dungeon", nil, Q.Activity("Nowhere", 12))
-check("own key shows", 10, Q.Keys()[501].level)
+check("own key shows", 10, Q.Keys()[501][1].level)
+-- Two keys for one dungeon: both listable, highest first.
+local lks = {}
+LibStub = function() return { Register = function(_, fn) lks.fn = fn end } end
+ns.On = function(ev, fn) if ev == "PLAYER_LOGIN" then lks.login = fn end end
+f("PickupGroup", ns); Q = ns.QuickList
+lks.login(); lks.fn(20, 501, nil, "Mitt", "PARTY")
+local k = Q.Keys()[501]
+check("two keys, one dungeon", 2, #k)
+check("highest first", 20, k[1].level)
+check("lower one kept", 10, k[2].level)
