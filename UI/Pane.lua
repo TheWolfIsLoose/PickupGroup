@@ -552,7 +552,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if row.outcome then
         label, enabled, ink = row.outcome.label, false, row.outcome.color
     elseif row.status == "applied" then
-        label = Clock(row.remaining)
+        label = Clock(row.expires and row.expires - GetTime() or row.remaining)
     elseif row.status == "invited" then
         label = "Invited"
     elseif row.status == "inviteaccepted" then
@@ -788,13 +788,13 @@ local function BuildBars()
     name:SetPoint("LEFT", PAD + 5, 0)
 end
 
--- Sign-ups count down their time left.
+-- Sign-ups count down their time left, from the deadline (Groups.Read).
 local function Tick()
     if not (pane and pane:IsShown()) then return end
     for _, r in ipairs(rows) do
         local row = r:IsShown() and r.row
-        if row and row.status == "applied" and row.remaining then
-            row.remaining = row.remaining - 1
+        if row and row.status == "applied" and row.expires then
+            row.remaining = row.expires - GetTime()
             r.act:SetText(Clock(row.remaining))
         end
     end
@@ -869,7 +869,7 @@ local function Build()
     end)
     backButton:Hide()
 
-    C_Timer.NewTicker(1, Tick)
+    C_Timer.NewTicker(0.25, Tick)  -- quarter seconds: a 1 s tick drifting past a second boundary skips a number
 end
 
 local wasShown

@@ -16,6 +16,7 @@
 local _, ns = ...
 
 local Groups = {}
+local expires = {}  -- search result ID -> GetTime() a sign-up runs out
 ns.Groups = Groups
 
 -- This season's raids: the Adventure Guide's newest tier (its world boss
@@ -334,6 +335,14 @@ function Groups.Read(id, keepDelisted)
         end
     end
     row.status, row.pending, row.remaining = select(2, C_LFGList.GetApplicationInfo(id))
+    -- The game's time left is a snapshot that only moves now and then: keep
+    -- the earliest deadline it has implied, and count down from that.
+    if row.status == "applied" and row.remaining then
+        expires[id] = math.min(expires[id] or math.huge, GetTime() + row.remaining)
+        row.expires, row.remaining = expires[id], expires[id] - GetTime()
+    else
+        expires[id] = nil
+    end
     if row.status == "none" then
         -- WoW forgets an ended sign-up once a search re-issues the listing.
         row.status = ns.Applications and ns.Applications.LastEnding(info.leaderName, activityID) or nil
