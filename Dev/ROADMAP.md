@@ -17,7 +17,7 @@ cheap.
 
 ## Next session: start here
 
-**2026-10-23: v1.2.2 released** (new groups get a white left edge instead of a blue name). v1.2.1 the same day (green sign-ups, motion, failed sign-up record fix); v1.2.0 2026-10-22 (suite style pass). Notes in `Dev/HISTORY.md`. On `dev`, unreleased: sign-up history and `/pug stats` lead with a "This session" tally (since this character logged in; a /reload keeps it going).
+**2026-10-23: v1.2.2 released** (new groups get a white left edge instead of a blue name). v1.2.1 the same day (green sign-ups, motion, failed sign-up record fix); v1.2.0 2026-10-22 (suite style pass). Notes in `Dev/HISTORY.md`. On `dev`, unreleased: sign-up history and `/pug stats` lead with a "This session" tally (since this character logged in; a /reload keeps it going); leader refresh icon redrawn; quick list shows a row per key when party keys share a dungeon.
 
 Open, in rough priority:
 1. **Group tooltip placement (the GUI overhaul, parked 2026-10-19; the player has more ideas that need real concepting).** The tooltip opens to the row's right and covers the sidecar and the score panel. Ideas: open it to the Group Finder's left (over the category buttons), a modifier key to expand member lists, our own detail panel in a fixed spot. Not wanted: moving the score panel to ride beside the tooltip. Nothing decided. (A listing carries no key level, so no filter by the key's own level.)
