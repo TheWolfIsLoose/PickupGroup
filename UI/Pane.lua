@@ -517,8 +517,11 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if dc then r.diff:SetTextColor(dc[1], dc[2], dc[3]) end
     r:SetAlpha(OVER[row.status] and 0.5 or 1)
 
+    -- The raid view's comp column only fits role counts, so a dungeon sign-up
+    -- pinned there shows counts too (its five tiles ran over the button).
+    local useCounts = row.isRaid or raidView
     for t, tile in ipairs(r.tiles) do
-        local s = row.tiles and row.tiles[t]
+        local s = (not useCounts and row.tiles and row.tiles[t]) or nil
         tile:SetShown(s ~= nil)
         if s then
             tile.icon:SetShown(s.filled and s.icon ~= nil)
@@ -534,9 +537,9 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         end
     end
     for _, c in ipairs(r.counts) do
-        c.icon:SetShown(row.isRaid)
-        c.n:SetShown(row.isRaid)
-        if row.isRaid then c.n:SetText(row.counts[c.role]) end
+        c.icon:SetShown(useCounts)
+        c.n:SetShown(useCounts)
+        if useCounts then c.n:SetText(row.counts[c.role]) end
     end
 
     if not row.isRaid then
