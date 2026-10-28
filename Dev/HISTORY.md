@@ -6,6 +6,14 @@ Detailed notes per version, newest first. Dev-only (`Dev/` never ships).
 
 Nothing yet.
 
+## v1.2.3 (2026-10-27)
+
+- Session stats: `PLAYER_ENTERING_WORLD` with isInitialLogin stamps `chars[..].session = time()` (a /reload keeps it; missing = stamped then). `Records` tallies sign-ups with `ts >= session` beside Today; the history window and `/pug stats` lead with "This session: N sign-ups, N nos, N got in." Per character; All characters still shows this character's session. No separate Session scope (window, rates, export stay character / all). `Dev/test_history.lua` covers it.
+- Quick list: `QuickList.Keys()` now returns mapID -> every party key, highest first; Paint draws a row per key (dungeons without a key keep their "no key" row). No scrolling: a party all holding one dungeon's key pushes the how-to down (ponytail note in code). `Dev/test_quicklist.lua` covers two keys in one dungeon.
+- Sign-up countdown: the game's time left (`GetApplicationInfo`) is a coarse snapshot; the old 1 s tick decremented it and each re-render reset it, so timers stalled then jumped 2 s. `Groups.Read` keeps per result ID the earliest deadline implied (`GetTime() + remaining`, min), cleared when the status leaves applied; the pane shows `expires - GetTime()` on a 0.25 s ticker.
+- Raid view: pinned dungeon sign-ups drew five spec tiles in the raid view's 68 px comp column, over the button. Every row now carries `counts`; in the raid view all rows show role counts. Raid sign-ups in the dungeon view already fit.
+- Leader view refresh icon: the ring of rotated bars looked jagged; now `Media/Refresh.tga`, our own drawing (script `Dev/draw_refresh.py`, 64 px shown at 16 px), tinted like the bar glyphs (`Kit.Glyph` takes a texture path).
+
 ## v1.2.2 (2026-10-23)
 
 - New groups lose the blue name (it read like Blizzard's friend blue, which colours a group with a friend in it): they get a white left edge plus the existing one-time shimmer; the tooltip line stays. The edge order: outcome, declined (yellow), ended (gray), your live sign-up (green), new (white).

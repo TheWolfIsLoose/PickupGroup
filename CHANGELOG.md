@@ -1,3 +1,7 @@
-## v1.2.2
+## v1.2.3
 
-- Groups new to your list get a white edge instead of a blue name, so they don't look like groups with a friend in them.
+- Sign-up history and `/pug stats` open with this session's tally (since you logged in; a reload keeps it).
+- Quick list: when two party keys share a dungeon, each gets its own row, so you can list the lower one.
+- Sign-up timers count down smoothly instead of stalling and jumping.
+- Dungeon sign-ups shown in the raid list no longer overlap their button.
+- The leader view's refresh icon is redrawn.

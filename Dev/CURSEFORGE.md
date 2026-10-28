@@ -20,7 +20,7 @@ Open Premade Groups and PickupGroup is already there: one compact list that show
 - **Leading a group.** Applicants show spec, item level, score and their best run in your key, with anyone below your bar dimmed (never hidden). Raid leaders set a target comp and see who rounds it out.
 - **Plays nice with your other addons.** If another addon already does one of PickupGroup's jobs (sign-up notes, the group list, the quick list), PickupGroup steps aside instead of doubling up, and asks in its side panel whether you'd rather turn the other one off. No pop-ups.
 - **Ready when you are.** A chime when your dungeon group fills, and a teleport button for the dungeon once the party is complete.
-- **A record of every rejection.** Sign-up history counts every time you've been turned away, your fastest "no" and your longest dry spell. `/pug stats` puts it in chat, for bragging rights.
+- **A record of every rejection.** Sign-up history counts every time you've been turned away, this session's tally, your fastest "no" and your longest dry spell. `/pug stats` puts it in chat, for bragging rights.
 
 ![Hovering a group](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/group-tooltip.png) ![Raids](https://raw.githubusercontent.com/TheWolfIsLoose/PickupGroup/main/.assets/screenshots/raids.png)
 
