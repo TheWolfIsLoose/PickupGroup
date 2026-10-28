@@ -6,7 +6,7 @@
     Row: { id, name (protected string: display only), leader, score,
            activity (full name), code (short), difficulty, isRaid,
            tiles (dungeons: 5 x { icon? , role, mine, leader? }), leaderClass,
-           counts (raids: { TANK, HEALER, DAMAGER }), down, total,
+           counts ({ TANK, HEALER, DAMAGER }), down, total,
            age, fits, status, pending, remaining, playstyle,
            specs (dungeons: { spec, class, file, icon, name?, leader, leaver }),
            leaderBest (dungeons: { level, timed } = the leader's best run
@@ -16,6 +16,7 @@
 local _, ns = ...
 
 local Groups = {}
+local expires = {}  -- search result ID -> GetTime() a sign-up runs out
 ns.Groups = Groups
 
 -- This season's raids: the Adventure Guide's newest tier (its world boss
@@ -334,13 +335,22 @@ function Groups.Read(id, keepDelisted)
         end
     end
     row.status, row.pending, row.remaining = select(2, C_LFGList.GetApplicationInfo(id))
+    -- The game's time left is a snapshot that only moves now and then: keep
+    -- the earliest deadline it has implied, and count down from that.
+    if row.status == "applied" and row.remaining then
+        expires[id] = math.min(expires[id] or math.huge, GetTime() + row.remaining)
+        row.expires, row.remaining = expires[id], expires[id] - GetTime()
+    else
+        expires[id] = nil
+    end
     if row.status == "none" then
         -- WoW forgets an ended sign-up once a search re-issues the listing.
         row.status = ns.Applications and ns.Applications.LastEnding(info.leaderName, activityID) or nil
     end
 
+    -- Role counts for every group: a dungeon sign-up pinned in the raid view shows them too.
+    row.counts = { TANK = counts.TANK or 0, HEALER = counts.HEALER or 0, DAMAGER = counts.DAMAGER or 0 }
     if isRaid then
-        row.counts = { TANK = counts.TANK or 0, HEALER = counts.HEALER or 0, DAMAGER = counts.DAMAGER or 0 }
         local killed = C_LFGList.GetSearchResultEncounterInfo(id)
         row.down, row.total = killed and #killed or 0, TotalBosses(activity.mapID)
         row.bosses = bossNames[activity.mapID] or {}  -- journal order, for the tooltip

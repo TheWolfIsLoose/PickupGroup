@@ -48,7 +48,7 @@ and filter keep working underneath; PickupGroup just shows you more, faster.
 - **Ready when you are.** A chime when your dungeon group fills, and a
   teleport button for the dungeon once the party is complete.
 - **A record of every rejection.** Sign-up history counts every time
-  you've been turned away, your fastest "no" and your longest dry spell.
+  you've been turned away, this session's tally, your fastest "no" and your longest dry spell.
   `/pug stats` puts it in chat, for bragging rights.
 
 <p align="center">

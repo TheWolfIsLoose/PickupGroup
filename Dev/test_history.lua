@@ -8,7 +8,7 @@ local apps = {
     { ts = now - 90, ended = now - 48, result = "movedon" },      -- withdrawn by the game at the join
     { ts = now - 40, result = "pending" },
 }
-local db = { chars = { ["Me-Realm"] = { apps = apps } } }
+local db = { chars = { ["Me-Realm"] = { apps = apps, session = now - 100 } } }
 local ns = { db = db, Kit = { Palette = { brand = { 0, 1, 0 } } } }
 local handlers = {}
 function ns.On(ev, fn) handlers[ev] = fn end
@@ -29,7 +29,7 @@ assert(t.applied == 6 and t.declined == 2 and t.timed == 1 and t.joined == 1 and
 
 local line = ns.History.StatsLine()
 print(line)
-assert(line:find("Today: 6 sign%-ups, 3 nos, 1 got in%."), "today")
+assert(line:find("This session: 3 sign%-ups, 0 nos, 1 got in%. Today: 6 sign%-ups, 3 nos, 1 got in%."), "today")
 assert(line:find("Fastest no: 3 s %(they didn't read the note%)"), "fastest")
 assert(line:find("Longest dry spell: 3 sign%-ups"), "dry spell")
 -- 1 got in (the timed key) of 4 answered (2 declined, 1 filled); 1 of 1 keys timed.

@@ -517,8 +517,11 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if dc then r.diff:SetTextColor(dc[1], dc[2], dc[3]) end
     r:SetAlpha(OVER[row.status] and 0.5 or 1)
 
+    -- The raid view's comp column only fits role counts, so a dungeon sign-up
+    -- pinned there shows counts too (its five tiles ran over the button).
+    local useCounts = row.isRaid or raidView
     for t, tile in ipairs(r.tiles) do
-        local s = row.tiles and row.tiles[t]
+        local s = (not useCounts and row.tiles and row.tiles[t]) or nil
         tile:SetShown(s ~= nil)
         if s then
             tile.icon:SetShown(s.filled and s.icon ~= nil)
@@ -534,9 +537,9 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
         end
     end
     for _, c in ipairs(r.counts) do
-        c.icon:SetShown(row.isRaid)
-        c.n:SetShown(row.isRaid)
-        if row.isRaid then c.n:SetText(row.counts[c.role]) end
+        c.icon:SetShown(useCounts)
+        c.n:SetShown(useCounts)
+        if useCounts then c.n:SetText(row.counts[c.role]) end
     end
 
     if not row.isRaid then
@@ -552,7 +555,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     if row.outcome then
         label, enabled, ink = row.outcome.label, false, row.outcome.color
     elseif row.status == "applied" then
-        label = Clock(row.remaining)
+        label = Clock(row.expires and row.expires - GetTime() or row.remaining)
     elseif row.status == "invited" then
         label = "Invited"
     elseif row.status == "inviteaccepted" then
@@ -788,13 +791,13 @@ local function BuildBars()
     name:SetPoint("LEFT", PAD + 5, 0)
 end
 
--- Sign-ups count down their time left.
+-- Sign-ups count down their time left, from the deadline (Groups.Read).
 local function Tick()
     if not (pane and pane:IsShown()) then return end
     for _, r in ipairs(rows) do
         local row = r:IsShown() and r.row
-        if row and row.status == "applied" and row.remaining then
-            row.remaining = row.remaining - 1
+        if row and row.status == "applied" and row.expires then
+            row.remaining = row.expires - GetTime()
             r.act:SetText(Clock(row.remaining))
         end
     end
@@ -869,7 +872,7 @@ local function Build()
     end)
     backButton:Hide()
 
-    C_Timer.NewTicker(1, Tick)
+    C_Timer.NewTicker(0.25, Tick)  -- quarter seconds: a 1 s tick drifting past a second boundary skips a number
 end
 
 local wasShown

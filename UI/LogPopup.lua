@@ -194,30 +194,44 @@ local function RatesLine(t)
         keys > 0 and Pct(t.timed or 0, keys):gsub("%)$", " keys timed)") or Pct(0, 0))
 end
 
--- Today, the fastest no, and the longest run of sign-ups that never got in.
+-- This session: since this character logged in (a /reload keeps it going).
+ns.On("PLAYER_ENTERING_WORLD", function(login)
+    local c = ns.CharDB()
+    if login or not c.session then c.session = time() end
+end)
+
+local function Tally() return { n = 0, no = 0, got = 0 } end
+local function Add(t, r)
+    t.n = t.n + 1
+    if NO[r] then t.no = t.no + 1 end
+    if GOT[r] then t.got = t.got + 1 end
+end
+local function TallyText(label, t)
+    return ("%s: %d sign-up%s, %d no%s, %d got in."):format(label, t.n, t.n == 1 and "" or "s",
+        t.no, t.no == 1 and "" or "s", t.got)
+end
+
+-- This session, today, the fastest no, and the longest run of sign-ups that never got in.
 local function Records(list)
-    local today, todayN, todayNo, todayIn = date("%x"), 0, 0, 0
+    local today, session = date("%x"), ns.CharDB().session or time()
+    local sess, day = Tally(), Tally()
     local fastest, run, dry = nil, 0, 0
     for i = #list, 1, -1 do  -- oldest first
         local e = list[i].e
         local r = e.result
         local got = GOT[r]
-        if e.ts and date("%x", e.ts) == today then
-            todayN = todayN + 1
-            if NO[r] then todayNo = todayNo + 1 end
-            if got then todayIn = todayIn + 1 end
-        end
+        if e.ts and e.ts >= session then Add(sess, r) end
+        if e.ts and date("%x", e.ts) == today then Add(day, r) end
         if NO[r] and e.ts and e.ended and e.ended >= e.ts then
             fastest = math.min(fastest or math.huge, e.ended - e.ts)
         end
         if got then run = 0 elseif r ~= "pending" and r ~= "movedon" then run = run + 1; dry = math.max(dry, run) end
     end
-    return { n = todayN, no = todayNo, got = todayIn, fastest = fastest, dry = dry }
+    return { session = sess, today = day, fastest = fastest, dry = dry }
 end
 
 local function RecordsLine(rec)
-    local parts = { ("Today: %d sign-up%s, %d no%s, %d got in."):format(rec.n, rec.n == 1 and "" or "s",
-        rec.no, rec.no == 1 and "" or "s", rec.got) }
+    local parts = { TallyText("This session", rec.session), TallyText("Today", rec.today) }
     if rec.fastest then
         parts[#parts + 1] = "Fastest no: " .. Ago(rec.fastest) .. (rec.fastest <= 10 and " (they didn't read the note)." or ".")
     end

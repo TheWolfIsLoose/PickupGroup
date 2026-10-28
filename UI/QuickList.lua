@@ -1,7 +1,8 @@
 --[[
     PickupGroup - UI/QuickList.lua
     Quick list: beside Blizzard's listing form (Dungeons), one row per
-    season dungeon showing the party's key there. A click lists that key at
+    season dungeon showing the party's key there (a row per key when
+    several share a dungeon, highest first). A click lists that key at
     once as Mythic+ at its level, with the playstyle last picked on
     Blizzard's form.
 
@@ -44,18 +45,21 @@ local function Playstyle()
 end
 local function PlaystyleName(ps) return _G["GROUP_FINDER_GENERAL_PLAYSTYLE" .. ps] or "?" end
 
--- challenge map ID -> { level, who }: the highest key in the party for each dungeon.
+-- challenge map ID -> { { level, who }, ... }: every key in the party for
+-- each dungeon, highest first.
 function QuickList.Keys()
     local out = {}
     local function Note(level, mapID, who)
-        if (level or 0) > 0 and (mapID or 0) > 0 and (not out[mapID] or level > out[mapID].level) then
-            out[mapID] = { level = level, who = who }
+        if (level or 0) > 0 and (mapID or 0) > 0 then
+            out[mapID] = out[mapID] or {}
+            table.insert(out[mapID], { level = level, who = who })
         end
     end
     Note(C_MythicPlus.GetOwnedKeystoneLevel(), C_MythicPlus.GetOwnedKeystoneChallengeMapID(), UnitName("player"))
     for who, k in pairs(party) do
         if UnitInParty(who) then Note(k.level, k.mapID, who) end
     end
+    for _, list in pairs(out) do table.sort(list, function(a, b) return a.level > b.level end) end
     return out
 end
 
@@ -150,28 +154,34 @@ end
 
 local function Paint()
     local keys = QuickList.Keys()
-    local y = -52
-    for i, d in ipairs(ns.Filters.Dungeons()) do
-        local r, k = Row(i), keys[d.mapID]
-        r:ClearAllPoints()
-        r:SetPoint("TOPLEFT", PAD, y)
-        r:SetPoint("RIGHT", -PAD, 0)
-        r.dungeon, r.code = d.name, d.code
-        r.name:SetText(d.name)
-        r.level, r.who = k and k.level, k and k.who
-        r.activity = k and QuickList.Activity(d.name, k.level) or nil
-        -- The holder in their class colour (Blizzard's colours pass through).
-        local cls = k and select(2, UnitClass(k.who))
-        local hex = cls and RAID_CLASS_COLORS[cls] and RAID_CLASS_COLORS[cls]:GenerateHexColor()
-        r.key:SetText(k and ("|cffffffff+%d|r %s"):format(k.level, hex and ("|c" .. hex .. k.who .. "|r") or k.who) or "no key")
-        r.key:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
-        r:SetEnabled(r.activity ~= nil)
-        r.name:SetTextColor(r.activity and 1 or 0.55, r.activity and 1 or 0.55, r.activity and 1 or 0.55)
-        r:Show()
-        y = y - ROW_H
+    local y, i = -52, 0
+    -- ponytail: no scrolling; 8 dungeons plus a few shared ones fit, a party all
+    -- holding one dungeon's key pushes the how-to off the bottom.
+    for _, d in ipairs(ns.Filters.Dungeons()) do
+        for _, k in ipairs(keys[d.mapID] or { false }) do
+            i = i + 1
+            local r = Row(i)
+            k = k or nil
+            r:ClearAllPoints()
+            r:SetPoint("TOPLEFT", PAD, y)
+            r:SetPoint("RIGHT", -PAD, 0)
+            r.dungeon, r.code = d.name, d.code
+            r.name:SetText(d.name)
+            r.level, r.who = k and k.level, k and k.who
+            r.activity = k and QuickList.Activity(d.name, k.level) or nil
+            -- The holder in their class colour (Blizzard's colours pass through).
+            local cls = k and select(2, UnitClass(k.who))
+            local hex = cls and RAID_CLASS_COLORS[cls] and RAID_CLASS_COLORS[cls]:GenerateHexColor()
+            r.key:SetText(k and ("|cffffffff+%d|r %s"):format(k.level, hex and ("|c" .. hex .. k.who .. "|r") or k.who) or "no key")
+            r.key:SetTextColor(Kit.Palette.muted[1], Kit.Palette.muted[2], Kit.Palette.muted[3])
+            r:SetEnabled(r.activity ~= nil)
+            r.name:SetTextColor(r.activity and 1 or 0.55, r.activity and 1 or 0.55, r.activity and 1 or 0.55)
+            r:Show()
+            y = y - ROW_H
+        end
     end
-    for i = #ns.Filters.Dungeons() + 1, #rows do rows[i]:Hide() end
-    local last = rows[#ns.Filters.Dungeons()]
+    for j = i + 1, #rows do rows[j]:Hide() end
+    local last = rows[i]
     if last then panel.howto:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -14) end
     panel.style:SetText(PlaystyleName(Playstyle()))
 end
