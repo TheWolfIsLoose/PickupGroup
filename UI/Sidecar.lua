@@ -1,7 +1,7 @@
 --[[
     PickupGroup - UI/Sidecar.lua
     The filter panel: 170px, docked on the Group Finder's right edge while
-    Dungeons & Raids is open, in AES's look (one look with or without AES).
+    Dungeons & Raids is open, in the look shared with atrocityEssentials.
     Edits apply as they are made (no Save step). What it shows follows the
     Group Finder:
       quick   on opening, and anywhere our list isn't: this week's affixes,
@@ -12,8 +12,7 @@
       raid    Raids: difficulty, realm, My Lockout, raid ticks with fold
               headers (one open at a time) and their bosses
       lead    leading a listing: who gets dimmed in the leader view
-    plus, from the pane's menu (standalone): settings and notes, and the
-    clash prompt. With AES loaded, settings and notes open AES's tabs instead.
+    plus, from the pane's menu: settings and notes, and the clash prompt.
 --]]
 
 local _, ns = ...
@@ -76,9 +75,8 @@ local function Button(parent, text, w, onClick, h)
     return b
 end
 
--- Settings and notes open in AES's settings window with AES, else here.
+-- Settings and notes open in the panel; history in its own window.
 function ns.OpenView(which)
-    if ns.AESMode and ns.AESMode.on then return ns.AESMode.Open(which) end
     if which == "history" then return ns.History.Toggle() end
     Sidecar.Open(nil, which)
 end
@@ -833,6 +831,7 @@ end
 
 -- Shown with Dungeons & Raids, except on Blizzard's listing form (the quick list docks there).
 local function Wanted()
+    if ns.SteppedAside() then return false end
     if not (PVEFrame and PVEFrame:IsShown() and GroupFinderFrame and GroupFinderFrame:IsVisible()) then return false end
     local ec = LFGListFrame and LFGListFrame.EntryCreation
     return not (ec and ec:IsVisible())
@@ -956,9 +955,9 @@ local CLASHES = {
           local ok, qc = pcall(ae.GetModule, ae, "LFGQuickCreate", true)
           if ok and type(qc) == "table" and type(qc.db) == "table" then qc.db.QuickCreate = on end
       end },
-    { function() return ns.AESMode and ns.AESMode.PanelClash() end, "aesPanelConflict", "aes group finder panel",
+    { function() return ns.AES.PanelClash() end, "aesPanelConflict", "aes group finder panel",
       "atrocityEssentials' Group Finder Panel", "filter panel",
-      function(on) if ns.AESMode then ns.AESMode.SetPanel(on) end end },
+      function(on) ns.AES.SetPanel(on) end },
 }
 -- asking = the prompt opens with the Group Finder (until Later).
 local function Standing()
@@ -1076,7 +1075,7 @@ ns.On("PLAYER_LOGIN", function()
     C_Timer.NewTicker(2, function()
         -- (Each returns nothing when there's no clash, so "or".)
         local now = (ns.Notes.Conflict() or "") .. "|" .. (ns.FinderClash() or "") .. "|" .. (ns.QuickList.Clash() or "")
-            .. "|" .. (ns.AESMode and ns.AESMode.PanelClash() or "")
+            .. "|" .. (ns.AES.PanelClash() or "") .. "|" .. tostring(ns.SteppedAside())
         if now == last then return end
         local first = last == nil
         last = now

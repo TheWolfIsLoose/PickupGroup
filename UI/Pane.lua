@@ -961,7 +961,7 @@ end
 function Pane.Update()
     if not Panel() then return end
     if not pane then Build() end
-    local eligible = Eligible()
+    local eligible = Eligible() and not ns.SteppedAside()
     -- Another group finder on this panel: our list steps aside while it's on.
     local clash = ns.FinderClash() ~= nil
     pane:SetShown(eligible and not ns.db.useBlizzard and not clash)
@@ -1107,7 +1107,7 @@ local entered
 local function UpdateTeleport()
     if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
     -- AES's LFG Reminder offers the teleport itself: ours stays out of the way.
-    if ns.AESMode and ns.AESMode.ReminderOn() then if teleport then teleport:Hide() end return end
+    if ns.AES.ReminderOn() or ns.SteppedAside() then if teleport then teleport:Hide() end return end
     if not IsInGroup() then entered = nil end
     local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5 and PartyDungeon()
     if dungeon and IsInInstance() then entered = dungeon end

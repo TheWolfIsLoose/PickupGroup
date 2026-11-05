@@ -1,11 +1,9 @@
 --[[
     PickupGroup - UI/Kit.lua
     The look, shared by every window: fonts, palette and the style helpers.
-    One look with or without atrocityEssentials (AES): its visual language
-    (flat #0e0e0e controls, 1px black edges, a grey hover wash, the accent
-    as a 35% fill for "engaged"), drawn by our own helpers. With AES loaded,
-    AES/Adapter.lua swaps in its accent (brand blue) and its font; without
-    it the accent is white. No Blizzard templates.
+    atrocityEssentials' visual language (flat #0e0e0e controls, 1px black
+    edges, a grey hover wash, the accent as a 35% fill for "engaged"), drawn
+    by our own helpers, with a white accent. No Blizzard templates.
 --]]
 
 local _, ns = ...
@@ -34,13 +32,11 @@ end
 
 -- Switch to Expressway once other addons have registered their media; every
 -- window's build calls this first. Font strings follow their font object.
--- With AES loaded its own font wins (Kit.FaceOverride, set by the adapter).
 function Kit.ApplyFontFace()
     if Kit.fontsApplied then return end
     Kit.fontsApplied = true
-    local face = Kit.FaceOverride and Kit.FaceOverride()
     local lsm = LibStub and LibStub("LibSharedMedia-3.0", true)
-    face = face or (lsm and lsm:Fetch("font", "Expressway", true))
+    local face = lsm and lsm:Fetch("font", "Expressway", true)
     if face then
         for _, f in pairs(FONTS) do f.fo:SetFont(face, f.size, "") end
     end
@@ -58,7 +54,7 @@ Kit.Palette = {
     pressFill = { 0.851, 0.851, 0.851, 0.22 },
     border    = { 0, 0, 0, 1 },
     on        = { 1, 1, 1, 1 },                -- white text
-    accent    = { 1, 1, 1, 1 },                -- engaged, headings: white alone, AES's brand with AES
+    accent    = { 1, 1, 1, 1 },                -- engaged, headings
     selectA   = 0.35,                          -- accent fill behind an engaged toggle (AES selectedA)
     fillA     = 0.8,                           -- a ticked box
     glyphRest = { 0.85, 0.85, 0.85, 1 },
@@ -360,16 +356,14 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     return btn
 end
 
--- Role art on a texture: AES's own role icons with AES (Kit.ROLE_ART, set by
--- the adapter), else Blizzard's small role atlas.
+-- Role art on a texture: Blizzard's small role atlas.
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 Kit.ROLE_ATLAS = ROLE_ATLAS
 function Kit.RoleIcon(tex, role)
-    local art = Kit.ROLE_ART and Kit.ROLE_ART[role]
-    if art then tex:SetTexture(art); tex:SetTexCoord(0, 1, 0, 1) else tex:SetAtlas(ROLE_ATLAS[role]) end
+    tex:SetAtlas(ROLE_ATLAS[role])
 end
 
--- The accent (white alone, AES's brand with AES), read when a frame is painted.
+-- The accent, read when a frame is painted.
 function Kit.Accent() return Palette.accent end
 
 -- Toggle button (AES's "engaged" look): white text both ways; on = an accent
@@ -467,15 +461,10 @@ function Kit.Rule(parent)
     return t
 end
 
--- AES's arrow (its own art when AES is loaded, else a drawn chevron), pointing
--- down; tex:SetRotation turns it. Kit.ARROW_ART is set by the adapter.
+-- A drawn chevron pointing down; tex:SetRotation turns it.
 function Kit.Arrow(parent, size)
     local t = parent:CreateTexture(nil, "OVERLAY")
     t:SetSize(size or 10, size or 10)
-    if Kit.ARROW_ART then
-        t:SetTexture(Kit.ARROW_ART)
-        return t
-    end
     t:SetTexture("Interface\\Buttons\\WHITE8x8")
     t:SetTexCoord(0, 1, 0, 1)
     -- Drawn: two bars in a V (pointing down at 0), turned with the same

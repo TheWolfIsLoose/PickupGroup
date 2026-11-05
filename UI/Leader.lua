@@ -96,7 +96,7 @@ local function Progress(name, raid)
 end
 
 local function Eligible()
-    if not (viewer and viewer:IsShown()) or ns.db.useBlizzard then return false end
+    if not (viewer and viewer:IsShown()) or ns.db.useBlizzard or ns.SteppedAside() then return false end
     if IsInGroup() and not UnitIsGroupLeader("player") then return false end  -- only the leader acts
     return Listing() ~= nil
 end

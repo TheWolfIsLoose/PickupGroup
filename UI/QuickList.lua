@@ -261,7 +261,7 @@ function QuickList.Update()
     local ec = LFGListFrame and LFGListFrame.EntryCreation
     if not ec then return end
     local on = ec:IsShown() and ec.selectedCategory == DUNGEONS and not LFGListEntryCreation_IsEditMode(ec)
-        and not QuickList.Clash()
+        and not QuickList.Clash() and not ns.SteppedAside()
     if not on then
         if panel and panel:IsShown() then panel:Hide(); panel.note:Hide(); panel.outline:Hide(); ns.Sidecar.MoveRaiderIO() end
         return

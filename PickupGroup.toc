@@ -17,10 +17,10 @@ Applications.lua
 Filters.lua
 Cleanup.lua
 Week.lua
+AES.lua
 UI\Kit.lua
 UI\LogPopup.lua
 UI\Pane.lua
 UI\Sidecar.lua
 UI\Leader.lua
 UI\QuickList.lua
-AES\Adapter.lua
