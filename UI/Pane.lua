@@ -594,6 +594,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     act:GetFontString():SetTextColor(ink[1], ink[2], ink[3], (enabled or row.outcome) and 1 or 0.4)
 end
 
+local PaintHeads  -- (below, with the headings)
 function Pane.Render()
     if not (pane and pane:IsShown()) then return end
     ns.Filters.Sync()  -- before Blizzard's search on a category change, too
@@ -851,7 +852,7 @@ local function BuildBars()
 end
 
 -- The sort in use: its heading in the accent, an arrow after it (down = high first).
-local function PaintHeads(raidView)
+function PaintHeads(raidView)
     local by, desc = Groups.Sort(raidView and "raid" or "keys")
     local a = Kit.Accent()
     for _, h in ipairs(pane.heads or {}) do

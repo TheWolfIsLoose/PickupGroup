@@ -363,7 +363,7 @@ local function BuildKeys()
         Flag(v, "No Other", "noMyClass", { "No Other " .. className, "Hides groups that already have a " .. className .. "." }, nil, { "classicon-" .. class:lower() }),
         Flag(v, "Battle Rez", "brez", { "Battle Rez", "Keeps groups that have one, or will: you or your party bring it, or a seat still open after you join can take a battle rez class." }),
         Flag(v, "Bloodlust", "lust", { "Bloodlust", "Keeps groups that have it, or will: you or your party bring it, or a seat still open after you join can take a Bloodlust class." }),
-        Flag(v, "\226\137\165 My Score", "atLeastMine", { "At Least My Score", "Keeps groups whose leader's Mythic+ score is at least yours." }),
+        Flag(v, "My Score+", "atLeastMine", { "At Least My Score", "Keeps groups whose leader's Mythic+ score is at least yours." }),
         Flag(v, "Leader Timed", "leaderMyLevel", { "Leader Timed", "Keeps groups whose leader has timed this dungeon at your best timed key there (the number on its button) or higher. Dungeons you haven't timed aren't judged." }),
     }
     for i, b in ipairs(grid) do
