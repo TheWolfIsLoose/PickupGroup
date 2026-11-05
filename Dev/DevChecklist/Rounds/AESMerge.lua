@@ -1,11 +1,8 @@
 DevChecklist_Rounds = DevChecklist_Rounds or {}
 DevChecklist_Rounds["AES Group Finder"] = {
-    round = "leader view one layer + no Searching text",
+    round = "leader refresh icon",
     items = {
-        { "leading", "List a group: applicant view sits on one dark layer, no Blizzard headings or rows behind.", "screenshot" },
-        { "leading", "Applicants still click (Invite, decline) and hover normally.", "yes / no" },
-        { "search", "Refresh several times, the first one too: the list stays up, never blank.", "yes / no" },
-        { "search", "Refresh a search with groups showing: no Blizzard 'Searching...' over our rows.", "yes / no" },
-        { "search", "First search on opening Dungeons: 'Searching...' still shows until groups arrive. Then /reload.", "yes / no" },
+        { "leading", "List a group: one refresh icon top right of the applicant view, ours only.", "screenshot" },
+        { "leading", "Click it: applicants refresh. Then /reload.", "yes / no" },
     },
 }
