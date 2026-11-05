@@ -30,9 +30,11 @@ local function Window(name, w, h, title)
     tinsert(UISpecialFrames, name)
     Kit.Fill(f, Kit.Palette.panelBg)
     Kit.Border(f)
-    local t = f:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    local t = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
     t:SetPoint("TOPLEFT", 12, -10)
     t:SetText(title)
+    local a = Kit.Accent()
+    t:SetTextColor(a[1], a[2], a[3])
     Kit.HeaderIcon(f, Kit.CLOSE, "Close", function() f:Hide() end):SetPoint("TOPRIGHT", -4, -4)
     return f
 end
@@ -296,8 +298,57 @@ function History.Export()
     return table.concat(lines, "\n")
 end
 
+-- The history's numbers for this character or every one: the window and
+-- AES's Sign-Up History tab both draw from these.
+function History.Summary(all)
+    local was = allChars
+    allChars = all and true or false
+    local list, no = Entries(), LifetimeDeclines()
+    local out = {
+        list = list, big = BreakUpLargeNumbers(no),
+        label = (no == 1 and "time" or "times") .. " turned away since " .. date("%b %d, %Y", Since()),
+        quip = Quip(no),
+        records = #list > 0 and RecordsLine(Records(list)) or "Nothing here yet. Go get rejected; it builds character.",
+        rates = RatesLine(Counts()),
+    }
+    allChars = was
+    return out
+end
+
+-- One sign-up as table cells: when, character, where, leader, how it ended, its colour.
+function History.Cells(x)
+    local e = x.e
+    local look = LOOK[e.result or "pending"] or { e.result or "?", GREY }
+    local where = (e.code or e.activity or "?") .. (e.difficulty and (" " .. e.difficulty) or "")
+        .. (e.level and (" +" .. e.level) or "")
+    return date("%m/%d/%y %H:%M", e.ts or 0), x.who or "", where, e.leader or "?", look[1], look[2]
+end
+History.COLS = COLS
+
+function History.Reset(all)
+    local mine = UnitName("player") .. "-" .. GetRealmName()
+    for key, c in pairs(ns.db.chars or {}) do
+        if all or key == mine then ns.Applications.Reset(c) end
+    end
+end
+
+function History.ExportFor(all)
+    local was = allChars
+    allChars = all and true or false
+    local text = History.Export()
+    allChars = was
+    return text
+end
+
+function History.ShowExport(all)
+    exportWin = exportWin or CopyWindow("PickupGroupExport", "Sign-up history export",
+        "Everything is selected: press Ctrl+C and paste it into a spreadsheet.")
+    exportWin:Show()
+    exportWin.Fill(History.ExportFor(all))
+end
+
 local function BuildHistory()
-    local f = Window("PickupGroupHistory", 500, 492, "Sign-up history")
+    local f = Window("PickupGroupHistory", 500, 492, "Sign-Up History")
     local who = Kit.Check(f, "All characters", function(on) allChars = on; f.Fill() end)
     who:SetPoint("TOPRIGHT", -30, -10)
     -- The headline: lifetime declines, big, with a quip.
@@ -315,13 +366,7 @@ local function BuildHistory()
     reset:SetPoint("TOPRIGHT", -12, -34)
     Kit.Button(reset)
     reset:SetNormalFontObject("PickupGroupFontSmall")
-    Kit.Confirm(reset, "Reset", function()
-        local mine = UnitName("player") .. "-" .. GetRealmName()
-        for key, c in pairs(ns.db.chars or {}) do
-            if allChars or key == mine then ns.Applications.Reset(c) end
-        end
-        f.Fill()
-    end)
+    Kit.Confirm(reset, "Reset", function() History.Reset(allChars); f.Fill() end)
     Kit.Tip(reset, "Reset", "Wipes this character's sign-ups and counts (every character's with All characters ticked) and starts counting again. Click twice. A clean slate; the groups won't remember either.")
     -- Export what's in view (this character, or every one with All characters).
     local export = CreateFrame("Button", nil, f)
@@ -330,12 +375,7 @@ local function BuildHistory()
     Kit.Button(export)
     export:SetNormalFontObject("PickupGroupFontSmall")
     export:SetText("Export")
-    export:SetScript("OnClick", function()
-        exportWin = exportWin or CopyWindow("PickupGroupExport", "Sign-up history export",
-            "Everything is selected: press Ctrl+C and paste it into a spreadsheet.")
-        exportWin:Show()
-        exportWin.Fill(History.Export())
-    end)
+    export:SetScript("OnClick", function() History.ShowExport(allChars) end)
     Kit.Tip(export, "Export", "This character's sign-ups and lifetime counts as spreadsheet text (every character's with All characters ticked). Your rejections, now in spreadsheet form.")
     -- Records and rates wrap as they like; the table follows them down.
     f.records = f:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
@@ -359,22 +399,31 @@ local function BuildHistory()
         x = x + c[2]
     end
 
-    local scroll = CreateFrame("ScrollFrame", "PickupGroupHistoryScroll", f, "UIPanelScrollFrameTemplate")
+    -- The wheel scrolls; a chevron says there's more below (no scroll bar).
+    local scroll = CreateFrame("ScrollFrame", nil, f)
     scroll:SetPoint("TOPLEFT", f.rates, "BOTTOMLEFT", -4, -26)
-    scroll:SetPoint("BOTTOMRIGHT", -28, 10)
+    scroll:SetPoint("BOTTOMRIGHT", -12, 10)
     local body = CreateFrame("Frame", nil, scroll)
-    body:SetSize(460, 1)
+    body:SetSize(472, 1)
     scroll:SetScrollChild(body)
+    scroll.more = Kit.More(scroll)
+    local function Clamp(to)
+        local most = math.max(0, body:GetHeight() - scroll:GetHeight())
+        scroll:SetVerticalScroll(math.min(math.max(0, to), most))
+        scroll.more:Set(scroll:GetVerticalScroll() < most - 1)
+    end
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(_, d) Clamp(scroll:GetVerticalScroll() - d * ROW * 3) end)
     local rows = {}
 
     function f.Fill()
-        local list = Entries()
-        local no = LifetimeDeclines()
-        f.big:SetText(BreakUpLargeNumbers(no))
-        f.bigLabel:SetText((no == 1 and "time" or "times") .. " turned away since " .. date("%b %d, %Y", Since()))
-        f.quip:SetText(Quip(no))
-        f.records:SetText(#list > 0 and RecordsLine(Records(list)) or "Nothing here yet. Go get rejected; it builds character.")
-        f.rates:SetText(RatesLine(Counts()))
+        local sum = History.Summary(allChars)
+        local list = sum.list
+        f.big:SetText(sum.big)
+        f.bigLabel:SetText(sum.label)
+        f.quip:SetText(sum.quip)
+        f.records:SetText(sum.records)
+        f.rates:SetText(sum.rates)
         -- The Character column only when showing every character.
         local hideWho = not allChars
         f.heads[2]:SetShown(not hideWho)
@@ -401,22 +450,19 @@ local function BuildHistory()
                 end
                 rows[i] = r
             end
-            local e = list[i].e
-            local look = LOOK[e.result or "pending"] or { e.result or "?", GREY }
-            local where = (e.code or e.activity or "?") .. (e.difficulty and (" " .. e.difficulty) or "")
-                .. (e.level and (" +" .. e.level) or "")
-            r.cells[1]:SetText(date("%m/%d/%y %H:%M", e.ts or 0))
-            r.cells[2]:SetText(list[i].who or "")
+            local when, who, where, leader, ended, color = History.Cells(list[i])
+            r.cells[1]:SetText(when)
+            r.cells[2]:SetText(who)
             r.cells[2]:SetShown(not hideWho)
             r.cells[3]:SetText(where)
-            r.cells[4]:SetText(e.leader or "?")
-            r.cells[5]:SetText(look[1])
-            r.cells[5]:SetTextColor(look[2][1], look[2][2], look[2][3])
+            r.cells[4]:SetText(leader)
+            r.cells[5]:SetText(ended)
+            r.cells[5]:SetTextColor(color[1], color[2], color[3])
             r:Show()
         end
         for i = math.min(#list, SHOW) + 1, #rows do rows[i]:Hide() end
         body:SetHeight(math.max(1, math.min(#list, SHOW) * ROW))
-        scroll:SetVerticalScroll(0)
+        Clamp(0)
     end
     f:SetScript("OnShow", f.Fill)
     return f
