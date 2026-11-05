@@ -6,10 +6,12 @@
     its file rewritten; a round is emptied only once it's all ticked (or the
     player drops it). Ticks are saved per item text in DevChecklistDB.done.
     Shows at login while anything is unticked; /dc shows or hides it.
+    Click a round's header to fold or unfold it.
 --]]
 
 local W, PAD = 360, 10
 local frame
+local Layout
 
 -- Non-empty rounds, sorted by addon name.
 local function Rounds()
@@ -46,28 +48,58 @@ local function Build()
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", 2, 2)
 
+    frame:SetClampedToScreen(true)
+    Layout()
+end
+
+-- Click a round's header to fold it; folds are saved per addon. Unset: a
+-- round folds once everything in it is ticked.
+local function Folded(r, done, total)
+    local c = DevChecklistDB.collapsed[r.addon]
+    if c == nil then return done == total end
+    return c
+end
+
+-- ponytail: rebuilds the whole body on every fold (old widgets are hidden,
+-- not reused). Fine for a dev tool; pool rows if it ever gets slow.
+Layout = function()
+    if frame.body then frame.body:Hide() end
+    local body = CreateFrame("Frame", nil, frame)
+    body:SetAllPoints()
+    frame.body = body
     local y = -PAD - 22
     for _, r in ipairs(Rounds()) do
-        local rt = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        rt:SetPoint("TOPLEFT", PAD, y - 6)
-        rt:SetText(r.addon .. ": " .. (r.round or ""))
+        local done = 0
+        for _, item in ipairs(r.items) do if DevChecklistDB.done[item[2]] then done = done + 1 end end
+        local folded = Folded(r, done, #r.items)
+        local head = CreateFrame("Button", nil, body)
+        head:SetPoint("TOPLEFT", PAD, y - 2)
+        head:SetSize(W - 2 * PAD, 22)
+        local rt = head:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        rt:SetPoint("LEFT")
+        rt:SetText((folded and "+ " or "- ") .. r.addon .. ": " .. (r.round or "")
+            .. ("  |cffbdbdbd%d/%d|r"):format(done, #r.items))
+        head:SetScript("OnClick", function()
+            DevChecklistDB.collapsed[r.addon] = not folded
+            Layout()
+        end)
         y = y - 26
         local lastArea
-        for _, item in ipairs(r.items) do
+        for _, item in ipairs(folded and {} or r.items) do
             local area, text, provide = item[1], item[2], item[3]
             if area ~= lastArea then
-                local h = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                local h = body:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
                 h:SetPoint("TOPLEFT", PAD, y - 4)
                 h:SetText(area)
                 y = y - 20
                 lastArea = area
             end
-            local cb = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+            local cb = CreateFrame("CheckButton", nil, body, "UICheckButtonTemplate")
             cb:SetSize(24, 24)
             cb:SetPoint("TOPLEFT", PAD - 4, y + 4)
             cb:SetChecked(DevChecklistDB.done[text] == true)
             cb:SetScript("OnClick", function(self) DevChecklistDB.done[text] = self:GetChecked() or nil end)
-            local fs = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local fs = body:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             fs:SetPoint("TOPLEFT", PAD + 24, y)
             fs:SetWidth(W - 2 * PAD - 24)
             fs:SetJustifyH("LEFT")
@@ -89,6 +121,7 @@ f:RegisterEvent("PLAYER_LOGIN")
 f:SetScript("OnEvent", function()
     DevChecklistDB = DevChecklistDB or {}
     DevChecklistDB.done = DevChecklistDB.done or {}
+    DevChecklistDB.collapsed = DevChecklistDB.collapsed or {}
     for _, r in ipairs(Rounds()) do
         for _, item in ipairs(r.items) do
             if not DevChecklistDB.done[item[2]] then Toggle() return end

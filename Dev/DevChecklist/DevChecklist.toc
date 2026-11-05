@@ -8,5 +8,6 @@
 Rounds\PickupGroup.lua
 Rounds\StockClerk.lua
 Rounds\TalentKeeper.lua
+Rounds\AESMerge.lua
 Rounds\SharedMedia_Tones.lua
 DevChecklist.lua
