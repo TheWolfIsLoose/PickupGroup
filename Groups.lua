@@ -134,8 +134,10 @@ local function BaseName(full)
     return (full or "?"):gsub("%s*%(.-%)%s*$", "")
 end
 Groups.BaseName = BaseName
+-- Where the initials clash or differ from the community's code.
+local CODE = { ["Voidscar Arena"] = "VSA" }  -- "VA" is The Venomous Abyss
 local function Code(name)
-    return (name:gsub("^[Tt]he%s+", ""):gsub("(%S)%S*%s*", "%1"):upper())
+    return CODE[name] or (name:gsub("^[Tt]he%s+", ""):gsub("(%S)%S*%s*", "%1"):upper())
 end
 Groups.Code = Code
 
