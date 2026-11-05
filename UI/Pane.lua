@@ -5,9 +5,11 @@
     (search text is typed there). Blizzard's frames are never hidden,
     moved or written; the pane just covers them.
 
-      top bar   filter summary . hidden . count . setup . options; a white line across the top
-                shrinks over the search cooldown (Blizzard's refresh searches)
-      headers   Name | Dungeon/Raid | Comp | Score/Bosses | roles (apply as)
+      top bar   filter summary . hidden . count . menu (Sign-Up Notes, Settings,
+                Blizzard's List); a line in the accent across the top shrinks
+                over the search cooldown (Blizzard's refresh searches)
+      headers   Name | Key/Raid | Comp | Score | roles (apply as); click a
+                heading to sort by it (again: the other way round)
       rows      sign-ups pinned first (white edge), then results; wheel scrolls
 
     Action button: Apply (click: sign up at once; shift-click: Blizzard's sign-up
@@ -31,17 +33,19 @@ local W_DIFF = 16
 local SHIMMER_W, SHIMMER_MAX = 90, 20
 -- Raid view: no Bosses column (the count rides in the raid cell, dimmed),
 -- and the comp is three role counts (up to 30), so names get the room.
-local W_RAID_INST, W_RAID_COMP, COUNT_STEP = 42, 68, 22  -- 2 x 22 + 24 = W_RAID_COMP
+-- Damage counts reach 30: slots 22 / 24 / 28 (a 22px slot clipped "30").
+local W_RAID_INST, W_RAID_COMP = 42, 74
+local COUNT_X = { 0, 22, 46 }
 -- Difficulty letters in loot-quality colours: N uncommon green, H rare blue,
 -- M legendary orange (epic purple skipped: too dark to read here).
 local DIFF_COLOR = { N = { 0.12, 1, 0 }, H = { 0, 0.44, 0.87 }, M = { 1, 0.5, 0 }, LFR = { 0.7, 0.7, 0.7 } }
 local REFRESH_WAIT = 3  -- seconds between searches the client accepts (Phase 1)
-local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
+local ROLE_ATLAS = Kit.ROLE_ATLAS
 local ROLES = { "TANK", "HEALER", "DAMAGER" }
 local LEADER_ATLAS = "groupfinder-icon-leader"  -- the tooltip's leader line
--- The leader's seat: a light ring one pixel outside its black ring, so the
--- black keeps it apart from every spec icon (gold blended into Holy Paladin).
-local LEADER_RING = { 0.7, 0.7, 0.7, 1 }  -- dimmed from 0.9 (player): a label, not a "selected" state
+-- Comp tiles drawn the way AES draws its Group Finder rows: a class-coloured
+-- bar under each member's spec icon and the leader's crown above.
+local CLASS_BAR = 3
 local ON, GOOD = Kit.Palette.on, Kit.Palette.good
 local OVER = { declined = true, declined_full = true, declined_delisted = true, cancelled = true,
                timedout = true, invitedeclined = true, failed = true }
@@ -360,11 +364,19 @@ local function Tile(parent)
     f.role = f:CreateTexture(nil, "ARTWORK")
     f.role:SetSize(12, 12)
     f.role:SetPoint("CENTER")
-    f.lead = CreateFrame("Frame", nil, f)
-    f.lead:SetPoint("TOPLEFT", -1, 1)
-    f.lead:SetPoint("BOTTOMRIGHT", 1, -1)
-    Kit.Border(f.lead, LEADER_RING)
-    f.lead:Hide()
+    -- The member's class colour, a bar under the tile.
+    f.bar = parent:CreateTexture(nil, "ARTWORK")
+    f.bar:SetSize(TILE, CLASS_BAR)
+    f.bar:SetPoint("TOP", f, "BOTTOM", 0, -1)
+    -- The leader's crown, over the tile's top edge.
+    local over = CreateFrame("Frame", nil, f)
+    over:SetAllPoints()
+    over:SetFrameLevel(f:GetFrameLevel() + 4)
+    f.crown = over:CreateTexture(nil, "OVERLAY")
+    f.crown:SetAtlas(LEADER_ATLAS)
+    f.crown:SetSize(10, 8)
+    f.crown:SetPoint("CENTER", f, "TOP", 0, 1)
+    f.crown:Hide()
     return f
 end
 
@@ -402,7 +414,7 @@ local function BuildRow(i)
 
     r.comp = CreateFrame("Frame", nil, r)
     r.comp:SetSize(W_COMP, TILE)
-    r.comp:SetPoint("RIGHT", r.score, "LEFT", -GAP, 0)
+    r.comp:SetPoint("RIGHT", r.score, "LEFT", -GAP, 2)  -- up 2: the class bars hang below
     r.tiles = {}
     for t = 1, 5 do
         r.tiles[t] = Tile(r.comp)
@@ -411,9 +423,9 @@ local function BuildRow(i)
     r.counts = {}
     for c, role in ipairs(ROLES) do
         local icon = r.comp:CreateTexture(nil, "ARTWORK")
-        icon:SetSize(10, 10)
-        icon:SetPoint("LEFT", (c - 1) * COUNT_STEP, 0)
-        icon:SetAtlas(ROLE_ATLAS[role])
+        icon:SetSize(12, 12)
+        icon:SetPoint("LEFT", COUNT_X[c], 0)
+        Kit.RoleIcon(icon, role)
         local n = Text(r.comp)
         n:SetPoint("LEFT", icon, "RIGHT", 2, 0)
         r.counts[c] = { icon = icon, n = n, role = role }
@@ -510,7 +522,7 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     r.inst:SetText(row.isRaid and (row.code .. " |cff8c8c8c" .. (row.total and (row.down .. "/" .. row.total) or row.down) .. "|r") or row.code)
     r.score:SetShown(not raidView)
     r.comp:SetWidth(raidView and W_RAID_COMP or W_COMP)
-    r.comp:SetPoint("RIGHT", raidView and r.act or r.score, "LEFT", -GAP, 0)
+    r.comp:SetPoint("RIGHT", raidView and r.act or r.score, "LEFT", -GAP, raidView and 0 or 2)
     r.diff:SetWidth(raidView and W_DIFF or 1)
     local dc = DIFF_COLOR[row.difficulty or ""]
     r.diff:SetText(raidView and (row.difficulty or "") or "")
@@ -523,23 +535,30 @@ local function PaintRow(r, row, isPinned, index, full, raidView)
     for t, tile in ipairs(r.tiles) do
         local s = (not useCounts and row.tiles and row.tiles[t]) or nil
         tile:SetShown(s ~= nil)
+        if not s then tile.bar:Hide() end
         if s then
             tile.icon:SetShown(s.filled and s.icon ~= nil)
             if s.icon then tile.icon:SetTexture(s.icon) end
+            -- An empty seat: AES's role art, dimmed.
             tile.role:SetShown(not s.filled)
-            tile.role:SetAtlas(ROLE_ATLAS[s.role])
-            tile.role:SetDesaturated(true)
-            tile.role:SetVertexColor(0.55, 0.55, 0.55)
-            -- Black rings (an empty seat already reads as open); the leader's
-            -- seat also gets the light outer ring.
-            tile.lead:SetShown(s.leader == true)
+            Kit.RoleIcon(tile.role, s.role)
+            tile.role:SetAlpha(0.45)
+            local cc = s.filled and RAID_CLASS_COLORS[s.class or ""]
+            tile.bar:SetShown(cc ~= nil and cc ~= false)
+            if cc then tile.bar:SetColorTexture(cc.r, cc.g, cc.b, 1) end
+            tile.crown:SetShown(s.leader == true)
             tile.leaver:SetShown(s.filled == true and s.leaver == true)
         end
     end
     for _, c in ipairs(r.counts) do
         c.icon:SetShown(useCounts)
         c.n:SetShown(useCounts)
-        if useCounts then c.n:SetText(row.counts[c.role]) end
+        if useCounts then
+            local n = row.counts[c.role] or 0
+            c.n:SetText(n)
+            c.icon:SetAlpha(n > 0 and 1 or 0.35)
+            c.n:SetAlpha(n > 0 and 1 or 0.35)
+        end
     end
 
     if not row.isRaid then
@@ -653,13 +672,17 @@ function Pane.Render()
         pane.emptyHint:SetText(listed .. (listed == 1 and " group" or " groups") .. " listed for this search")
     end
     ns.Sidecar.RefreshBosses()
-    pane.instHead:SetText(raidView and "Raid" or "Dungeon")
+    pane.instHead:SetText(raidView and "Raid" or "Key")
+    pane.instHead.by = raidView and "raid" or "key"
     pane.scoreHead:SetShown(not raidView)
     pane.compHead:SetWidth(raidView and W_RAID_COMP or W_COMP)
     pane.compHead:SetPoint("RIGHT", pane.head, "RIGHT", raidView and pane.actRight or (pane.actRight - W_SCORE - GAP), 0)
     pane.instHead:SetWidth(raidView and W_RAID_INST or W_INST)
     pane.diffHead:SetWidth(raidView and W_DIFF or 1)
+    PaintHeads(raidView)
 end
+
+function Pane.Shown() return pane ~= nil and pane:IsShown() end
 
 -- A pending render collapses bursts of result updates.
 local queued = false
@@ -694,16 +717,30 @@ local function BuildBars()
     rule:SetPoint("BOTTOMLEFT")
     rule:SetPoint("BOTTOMRIGHT")
 
-    -- Blizzard's own list instead (the way back is a button on Blizzard's panel).
-    local list = Kit.HeaderIcon(bar, Kit.MENU, "Settings & Activity",
-        function() ns.Sidecar.Open(nil, "options") end)
-    list:SetPoint("RIGHT", -2, 0)
-
-    local setup = Kit.HeaderIcon(bar, Kit.SLIDERS, "Set up the filter", function() ns.Sidecar.Open() end)
-    setup:SetPoint("RIGHT", list, "LEFT", 0, 0)
+    -- The menu: Sign-Up Notes and Settings (in the panel alone, AES's
+    -- settings window with AES), and Blizzard's own list instead (the way
+    -- back is a button on Blizzard's panel).
+    local menu = CreateFrame("Button", nil, bar)
+    menu:SetSize(20, 20)
+    menu:SetPoint("RIGHT", -3, 0)
+    Kit.Button(menu)
+    Kit.Glyph(menu, { { 10, 1.5, 3.5 }, { 10, 1.5, 0 }, { 10, 1.5, -3.5 } })
+    menu:SetScript("OnClick", function(self)
+        MenuUtil.CreateContextMenu(self, function(_, root)
+            root:CreateButton("Sign-Up Notes", function() ns.OpenView("notes") end)
+            root:CreateButton("Settings", function() ns.OpenView("options") end)
+            root:CreateButton("Blizzard's List", function()
+                ns.db.useBlizzard = true
+                ns.Filters.RestoreBlizzard()
+                ns.Log.Emit("setting", { key = "useBlizzard", on = true })
+                Pane.Update()
+            end)
+        end)
+    end)
+    Kit.Tip(menu, "Menu", "Sign-up notes, settings, or Blizzard's own list.", "ANCHOR_BOTTOM")
 
     countText = Text(bar)
-    countText:SetPoint("RIGHT", setup, "LEFT", -8, 0)
+    countText:SetPoint("RIGHT", menu, "LEFT", -8, 0)
     countText:SetTextColor(0.55, 0.55, 0.55)
     -- How many rows clean-up hid; click to see only those (and back).
     hiddenButton = CreateFrame("Button", nil, bar)
@@ -716,7 +753,7 @@ local function BuildBars()
         return showHidden and "Showing what clean-up hid: click to go back" or "Hidden by clean-up: click to review"
     end, nil, "ANCHOR_BOTTOM")
 
-    -- What the filter does, in a line; click to set it up.
+    -- What the filter does, in a line (set in the panel beside the list).
     local sb = CreateFrame("Button", nil, bar)
     sb:SetPoint("LEFT", 8, 0)
     sb:SetPoint("RIGHT", hiddenButton, "LEFT", -8, 0)
@@ -727,12 +764,11 @@ local function BuildBars()
     summary:SetJustifyH("LEFT")
     summary:SetWordWrap(false)
     summary:SetTextColor(0.74, 0.74, 0.74)
-    sb:SetScript("OnClick", function() ns.Sidecar.Open() end)
+    sb:SetScript("OnClick", function() ns.Sidecar.Open() end)  -- back to the filters from a menu view
     sb:SetScript("OnEnter", function(self)
         summary:SetTextColor(ON[1], ON[2], ON[3])
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:SetText("Filter: " .. summary:GetText())
-        if ns.Hints() then GameTooltip:AddLine("Click to set it up.", 0.74, 0.74, 0.74) end
+        GameTooltip:SetText("Filter: " .. summary:GetText(), 1, 1, 1, 1, true)
         GameTooltip:Show()
     end)
     sb:SetScript("OnLeave", function() summary:SetTextColor(0.74, 0.74, 0.74); GameTooltip:Hide() end)
@@ -757,7 +793,7 @@ local function BuildBars()
         b.role = ROLES[i]
         b.icon = b:CreateTexture(nil, "ARTWORK")
         b.icon:SetAllPoints()
-        b.icon:SetAtlas(ROLE_ATLAS[b.role])
+        Kit.RoleIcon(b.icon, b.role)
         b:SetScript("OnClick", function(self)
             local leader, t, h, d = GetLFGRoles()
             local set = { TANK = t, HEALER = h, DAMAGER = d }
@@ -770,25 +806,70 @@ local function BuildBars()
         roleButtons[#roleButtons + 1] = b
     end
 
-    local function Head(label, width, justify)
-        local fs = Text(head, justify)
-        fs:SetTextColor(0.55, 0.55, 0.55)
-        fs:SetText(label)
-        if width then fs:SetWidth(width) end
-        return fs
+    -- Headings: click one to sort by it (Groups.Sort), again for the other
+    -- way round; the one in use is in the accent with an arrow. Name only labels
+    -- (group names can't be compared).
+    local function Head(label, width, justify, by)
+        local h = CreateFrame("Button", nil, head)
+        h:SetHeight(HEAD_H)
+        if width then h:SetWidth(width) end
+        h.text = Text(h, justify)
+        h.text:SetPoint("LEFT")
+        h.text:SetPoint("RIGHT")
+        h.text:SetTextColor(0.55, 0.55, 0.55)
+        h.text:SetText(label)
+        h.by = by
+        if by then
+            h.arrow = Kit.Arrow(h, 7)
+            h.arrow:Hide()
+            h:SetScript("OnClick", function(self)
+                Groups.Sort(ns.Filters.Kind(), self.by)
+                offset = 0
+                Pane.Render()
+            end)
+            Kit.Tip(h, "Sort by " .. label, "Click again for the other way round.", "ANCHOR_BOTTOM")
+        else
+            h:EnableMouse(false)
+        end
+        function h:SetText(t) self.text:SetText(t) end
+        pane.heads = pane.heads or {}
+        pane.heads[#pane.heads + 1] = h
+        return h
     end
     local actRight = -(PAD + W_ACT + GAP)
-    pane.scoreHead = Head("Score", W_SCORE, "RIGHT")
+    pane.scoreHead = Head("Score", W_SCORE, "RIGHT", "score")
     pane.scoreHead:SetPoint("RIGHT", actRight, 0)
     pane.head, pane.actRight = head, actRight
-    pane.compHead = Head("Comp", W_COMP)
+    pane.compHead = Head("Comp", W_COMP, nil, "comp")
     pane.compHead:SetPoint("RIGHT", pane.scoreHead, "LEFT", -GAP, 0)
-    pane.instHead = Head("Dungeon", W_INST)
+    pane.instHead = Head("Key", W_INST, nil, "key")
     pane.instHead:SetPoint("RIGHT", pane.compHead, "LEFT", -GAP, 0)
     pane.diffHead = Head("", W_DIFF)
     pane.diffHead:SetPoint("RIGHT", pane.instHead, "LEFT", 0, 0)
-    local name = Head("Name")
+    local name = Head("Name", 60)
     name:SetPoint("LEFT", PAD + 5, 0)
+end
+
+-- The sort in use: its heading in the accent, an arrow after it (down = high first).
+local function PaintHeads(raidView)
+    local by, desc = Groups.Sort(raidView and "raid" or "keys")
+    local a = Kit.Accent()
+    for _, h in ipairs(pane.heads or {}) do
+        local on = h.by ~= nil and h.by == by
+        local c = on and a or { 0.55, 0.55, 0.55 }
+        h.text:SetTextColor(c[1], c[2], c[3])
+        if h.arrow then
+            h.arrow:SetShown(on)
+            if on then
+                h.arrow:ClearAllPoints()
+                local w = math.min(h.text:GetStringWidth(), h:GetWidth())
+                local right = h.text:GetJustifyH() == "RIGHT"
+                h.arrow:SetPoint("LEFT", h, right and "RIGHT" or "LEFT", right and 1 or (w + 2), 0)
+                h.arrow:SetVertexColor(c[1], c[2], c[3])
+                h.arrow:SetRotation(desc and 0 or math.pi)
+            end
+        end
+    end
 end
 
 -- Sign-ups count down their time left, from the deadline (Groups.Read).
@@ -827,7 +908,8 @@ local function Build()
     -- nothing while the client won't take another search (Blizzard's
     -- refresh does the searching).
     local line = pane:CreateTexture(nil, "OVERLAY", nil, 7)
-    line:SetColorTexture(ON[1], ON[2], ON[3], 1)
+    local acc = Kit.Accent()
+    line:SetColorTexture(acc[1], acc[2], acc[3], 1)
     line:SetHeight(1)
     line:SetPoint("TOPLEFT")
     cooldown = CreateFrame("Frame", nil, pane)
@@ -875,7 +957,6 @@ local function Build()
     C_Timer.NewTicker(0.25, Tick)  -- quarter seconds: a 1 s tick drifting past a second boundary skips a number
 end
 
-local wasShown
 function Pane.Update()
     if not Panel() then return end
     if not pane then Build() end
@@ -890,13 +971,10 @@ function Pane.Update()
         backButton:ClearAllPoints()
         backButton:SetPoint("LEFT", name, "LEFT", name:GetStringWidth() + 10, 0)
     end
-    -- The sidecar belongs to the pane: it closes when the pane goes and
-    -- follows the category when it stays.
-    -- It opens by itself each time the pane appears (player: filters ready
-    -- without a click); closing it holds until the next time.
-    local appeared = pane:IsShown() and not wasShown
-    wasShown = pane:IsShown()
-    if pane:IsShown() then ns.Filters.Sync(); ns.Sidecar.Follow(ns.Filters.Active(), appeared) else ns.Sidecar.Close(false) end
+    -- The panel beside the Group Finder follows: the filter in view while
+    -- the pane is up, Quick Access otherwise.
+    if pane:IsShown() then ns.Filters.Sync() end
+    ns.Sidecar.Update()
 end
 
 -- ---------------------------------------------------------------------------
@@ -916,7 +994,7 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     fb:HookScript("OnEnter", function(self)
         if not (ns.Hints() and pane and pane:IsShown() and ns.Filters.Kind() == "keys") then return end
         if not GameTooltip:IsOwned(self) then GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(FILTER) end
-        GameTooltip:AddLine("Set by PickupGroup's filter: change it there (click the summary above the list).", 0.74, 0.74, 0.74, true)
+        GameTooltip:AddLine("Set by PickupGroup's filter: change it in PickupGroup's panel.", 0.74, 0.74, 0.74, true)
         GameTooltip:Show()
     end)
     fb:HookScript("OnLeave", function(self) if GameTooltip:IsOwned(self) then GameTooltip:Hide() end end)
@@ -1027,6 +1105,8 @@ end
 local entered
 local function UpdateTeleport()
     if InCombatLockdown() then return end  -- PLAYER_REGEN_ENABLED tries again
+    -- AES's LFG Reminder offers the teleport itself: ours stays out of the way.
+    if ns.AESMode and ns.AESMode.ReminderOn() then if teleport then teleport:Hide() end return end
     if not IsInGroup() then entered = nil end
     local dungeon = IsInGroup() and not IsInRaid() and GetNumGroupMembers() == 5 and PartyDungeon()
     if dungeon and IsInInstance() then entered = dungeon end
