@@ -577,6 +577,8 @@ local function PaintRaid(v)
         h.arrow:SetVertexColor(c[1], c[2], c[3])
         local mine = lockOn and select(2, Filters.ShownLockout(raid.name, editing.diffs))
         h.lock:SetShown(single and mine and mine[raid.bosses[1]] == true or false)
+        -- The name stops short of the lock (truncating), never under it.
+        h.name:SetPoint("RIGHT", h.fold, "RIGHT", h.lock:IsShown() and -12 or 0, 0)
         h:Show()
         y = y - LINE_H - 2
         for _, boss in ipairs(open and raid.bosses or {}) do
