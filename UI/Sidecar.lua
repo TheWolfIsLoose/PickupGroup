@@ -1,16 +1,19 @@
 --[[
     PickupGroup - UI/Sidecar.lua
-    The sidecar: a panel on the Group Finder's right edge for setting up a
-    filter. Edits apply as they are made (no Save step). It covers
-    Raider.IO's panel while open; that frame is never moved.
-
-    Filter tab: the one filter of the kind in view
-      keys  dungeons (this season), playstyle, room for my role, leader at
-            least my score, leader timed my level, has Bloodlust, has battle
-            rez, no other of my class, leader score floor, leader's realm
-      raid  leader's realm, bosses that must be alive, My lockout (loot left for me)
-    Notes tab: up to five sign-up notes, offered to copy under Blizzard's
-    sign-up dialog.
+    The filter panel: 170px, docked on the Group Finder's right edge while
+    Dungeons & Raids is open, in AES's look (one look with or without AES).
+    Edits apply as they are made (no Save step). What it shows follows the
+    Group Finder:
+      quick   on opening, and anywhere our list isn't: this week's affixes,
+              category searches, This Week (runs + vault, raid lockouts) and
+              Sign-Up History
+      keys    Dungeons: the dungeon grid (best run in each), the filters,
+              playstyle, leader's realm, Min Score; Reset, affixes, runs
+      raid    Raids: difficulty, realm, My Lockout, raid ticks with fold
+              headers (one open at a time) and their bosses
+      lead    leading a listing: who gets dimmed in the leader view
+    plus, from the pane's menu (standalone): settings and notes, and the
+    clash prompt. With AES loaded, settings and notes open AES's tabs instead.
 --]]
 
 local _, ns = ...
@@ -18,20 +21,16 @@ local _, ns = ...
 local Sidecar = {}
 ns.Sidecar = Sidecar
 
-local Kit, Filters = ns.Kit, ns.Filters
-local W, PAD = 220, 8
+local Kit, Filters, Week = ns.Kit, ns.Filters, ns.Week
+local W, PAD, BTN, GAP, COL = 170, 10, 26, 5, 4
+local INNER = W - 2 * PAD
 local ON = Kit.Palette.on
+local MUTED = Kit.Palette.muted
 
-local frame, editing
-local keysBox, raidBox
-local dungeonButtons, checks = {}, {}
-local scoreBox, bossBox
-local bossLines = {}
-local bossLabel
-local filterView, optionsView, notesView, view = nil, nil, nil, "filter"
-local headTabs, resetBtn = {}
+local frame, editing, override, mode
+local views = {}
 local prompt, asking, BuildPrompt, PaintPrompt  -- the clash prompt (defined with the clashes below)
-local open = {}  -- raid name -> heading unfolded (this session)
+local openRaid  -- the raid unfolded: a name, false (all folded by hand), nil (pick one)
 
 local function Changed()
     ns.Pane.Render()
@@ -40,301 +39,283 @@ end
 
 local function Leading(f) return f ~= nil and f.kind:find("^lead_") ~= nil end
 
-local function Label(parent, text)
-    local fs = parent:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    fs:SetTextColor(0.55, 0.55, 0.55)
+local function Label(parent, text, font)
+    local fs = parent:CreateFontString(nil, "OVERLAY", font or "PickupGroupFontSmall")
+    fs:SetTextColor(MUTED[1], MUTED[2], MUTED[3])
     fs:SetText(text)
     return fs
 end
 
-local Toggle = Kit.Toggle
+-- A view's title: 14px in the accent, centred (AES's "Quick Access" / "Filters").
+local function Title(v, text)
+    local t = v:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
+    t:SetPoint("TOP")
+    t:SetHeight(18)
+    local a = Kit.Accent()
+    t:SetTextColor(a[1], a[2], a[3])
+    t:SetText(text)
+    v.title = t
+    return -18 - GAP
+end
 
--- A row of on/off toggles over a set in the filter (f[key]): all on by
--- default (f[key] = nil), else the set of codes still on.
-local setButtons = {}
-local function SetRow(box, y, label, key, codes, names, tip)
-    local l = Label(box, label)
-    l:SetPoint("TOPLEFT", 0, y)
-    local cellW = (W - 2 * PAD - 3 * (#codes - 1)) / #codes
-    for i, code in ipairs(codes) do
-        local b = Toggle(box, names and names[code] or code, cellW, function(self)
-            if not editing[key] then
-                editing[key] = {}
-                for _, c in ipairs(codes) do editing[key][c] = true end
-            end
-            editing[key][self.code] = not editing[key][self.code] or nil
-            local all = true
-            for _, c in ipairs(codes) do if not editing[key][c] then all = false end end
-            if all then editing[key] = nil end
-            Sidecar.Paint(); Changed()
-        end)
-        b.key, b.code = key, code
-        b:SetPoint("TOPLEFT", (i - 1) * (cellW + 3), y - 16)
-        Kit.Tip(b, function(self) return names and names[self.code] or ns.Groups.REGION_NAME[self.code] end, tip)
-        setButtons[#setButtons + 1] = b
+-- Width of one of n buttons across the panel.
+local function Cell(n) return (INNER - (n - 1) * COL) / n end
+
+local function Place(b, v, y, i, n)
+    b:SetPoint("TOPLEFT", v, "TOPLEFT", (i - 1) * (Cell(n) + COL), y)
+end
+
+local function Button(parent, text, w, onClick, h)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetSize(w, h or BTN)
+    Kit.Button(b)
+    b:SetText(text)
+    local fs = b:GetFontString()
+    if fs then fs:SetWordWrap(false) end
+    if onClick then b:SetScript("OnClick", onClick) end
+    return b
+end
+
+-- Settings and notes open in AES's settings window with AES, else here.
+function ns.OpenView(which)
+    if ns.AESMode and ns.AESMode.on then return ns.AESMode.Open(which) end
+    if which == "history" then return ns.History.Toggle() end
+    Sidecar.Open(nil, which)
+end
+
+-- Text then role / class icons, centred on a button as one line.
+local function IconLabel(b, text, icons)
+    local holder = CreateFrame("Frame", nil, b)
+    holder:SetHeight(14)
+    local fs = holder:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    fs:SetPoint("LEFT")
+    fs:SetText(text or "")
+    local x = (text and text ~= "") and (fs:GetStringWidth() + 3) or 0
+    for i, icon in ipairs(icons) do
+        if icon == "/" then
+            local s = holder:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+            s:SetText("/")
+            s:SetTextColor(MUTED[1], MUTED[2], MUTED[3])
+            s:SetPoint("LEFT", x, 0)
+            x = x + s:GetStringWidth() + 2
+        else
+            local t = holder:CreateTexture(nil, "OVERLAY")
+            t:SetSize(12, 12)
+            t:SetPoint("LEFT", x, 0)
+            if ns.Kit.ROLE_ATLAS[icon] then Kit.RoleIcon(t, icon) else t:SetAtlas(icon) end
+            x = x + 12 + (i < #icons and 2 or 0)
+        end
     end
-    return y - 16 - 23
+    holder:SetWidth(math.max(1, x))
+    holder:SetPoint("CENTER")
+    return holder
+end
+
+-- A drawn lock (killed this week).
+local function Lock(parent, grey)
+    local l = CreateFrame("Frame", nil, parent)
+    l:SetSize(7, 9)
+    local c = grey and 0.44 or 1
+    local function Bit(w, h, x, y)
+        local t = l:CreateTexture(nil, "ARTWORK")
+        t:SetColorTexture(c, c, c, 1)
+        t:SetSize(w, h)
+        t:SetPoint("BOTTOMLEFT", x, y)
+    end
+    Bit(7, 5, 0, 0); Bit(1, 3, 1, 5); Bit(1, 3, 5, 5); Bit(5, 1, 1, 8)
+    return l
+end
+
+-- ---------------------------------------------------------------------------
+-- Toggles over the filter being edited
+-- ---------------------------------------------------------------------------
+local toggles = {}  -- every filter toggle: b:Sync() repaints it from `editing`
+
+-- A boolean in the filter (true / nil). others: keys this one turns off when it goes on.
+local function Flag(v, label, key, tip, others, icons)
+    local b = Kit.Toggle(v, icons and "" or label, 1, function(self)
+        editing[key] = not editing[key] or nil
+        if editing[key] then for _, k in ipairs(others or {}) do editing[k] = nil end end
+        Sidecar.Paint(); Changed()
+    end)
+    if icons then IconLabel(b, label, icons) end
+    function b:Sync() self:Paint(editing[key] == true) end
+    Kit.Tip(b, type(tip) == "table" and tip[1] or label, type(tip) == "table" and tip[2] or tip)
+    toggles[#toggles + 1] = b
+    return b
+end
+
+-- One code in a set (f[key]: nil = all on, else the set still on).
+local function SetMember(v, label, key, code, codes, tipTitle, tip)
+    local b = Kit.Toggle(v, label, 1, function()
+        if not editing[key] then
+            editing[key] = {}
+            for _, c in ipairs(codes) do editing[key][c] = true end
+        end
+        editing[key][code] = not editing[key][code] or nil
+        local all = true
+        for _, c in ipairs(codes) do if not editing[key][c] then all = false end end
+        if all then editing[key] = nil end
+        Sidecar.Paint(); Changed()
+    end)
+    function b:Sync() self:Paint(not editing[key] or editing[key][code] == true) end
+    Kit.Tip(b, tipTitle or label, tip)
+    toggles[#toggles + 1] = b
+    return b
+end
+
+-- A row of n toggles over a set, across the panel. Returns the next y.
+local function SetRow(v, y, key, codes, names, tip)
+    for i, code in ipairs(codes) do
+        local b = SetMember(v, names and names[code] or code, key, code, codes,
+            names and names[code] or ns.Groups.REGION_NAME[code], tip)
+        b:SetSize(Cell(#codes), BTN)
+        Place(b, v, y, i, #codes)
+    end
+    return y - BTN - GAP
 end
 
 -- Leader's realm region: four toggles (Americas only).
-local function RegionRow(box, y, label)
+local function RegionRow(v, y, whose)
     if not ns.Groups.SUBREGIONS then return y end
-    return SetRow(box, y, label or "Leader's realm", "regions", ns.Groups.REGIONS, nil,
-        "Groups whose leader plays on a realm in this region.")
+    return SetRow(v, y, "regions", ns.Groups.REGIONS, nil, "Groups whose " .. (whose or "leader") .. " plays on a realm in this region.")
 end
 
-local function PaintRegions(f)
-    for _, b in ipairs(setButtons) do b:Paint(not f[b.key] or f[b.key][b.code] == true) end
+local function SyncToggles(v)
+    for _, b in ipairs(toggles) do if b:GetParent() == v then b:Sync() end end
 end
 
-local function PaintKeys(f)
-    -- Each dungeon shows the player's best timed key there this season.
-    local best = {}
-    for _, d in ipairs(Filters.Dungeons()) do best[d.name] = d.best end
-    for _, b in ipairs(dungeonButtons) do
-        local on = not f.dungeons or f.dungeons[b.dungeon] == true
-        -- The key in white while the dungeon is on (grey with it when off);
-        -- an em dash where there's no timed key.
-        local key = "(" .. (best[b.dungeon] and ("+" .. best[b.dungeon]) or "\226\128\148") .. ")"
-        b:SetText(b.code .. " " .. (on and ("|cffffffff" .. key .. "|r") or key))
-        b:Paint(on)
+-- Reset (two clicks) for the filter in view.
+local function ResetButton(v, w)
+    local b = Button(v, "Reset", w)
+    Kit.Confirm(b, "Reset", function() Filters.Reset(editing); Sidecar.Paint(); Changed() end)
+    Kit.Tip(b, "Reset", "This filter back to how it starts. Click twice.")
+    return b
+end
+
+-- Sign-Up History (its own window alone, AES's tab with AES).
+local function HistoryButton(v, w)
+    local b = Button(v, "Sign-Up History", w, function() ns.OpenView("history") end)
+    return b
+end
+
+-- ---------------------------------------------------------------------------
+-- Quick Access (on opening)
+-- ---------------------------------------------------------------------------
+-- Blizzard's own path to a category's search, from the click (a search must
+-- come from one). The active-panel record is only written when it has to
+-- change: a write from addon code taints it for the session.
+local CATEGORIES = {
+    { "Mythic+", 2 },
+    { "Raids", 3, function() return Enum.LFGListFilter.Recommended end },
+    { "Delves", 121 }, { "Quest", 1 }, { "Custom", 6 },
+}
+local function QuickSearch(categoryID, filters)
+    if PVEFrame_ShowFrame and not (GroupFinderFrame and GroupFinderFrame:IsVisible()) then PVEFrame_ShowFrame("GroupFinderFrame") end
+    local lfg = LFGListFrame
+    if not lfg or not GroupFinderFrame then return end
+    local sp = lfg.SearchPanel
+    if not (sp and sp:IsVisible()) and GroupFinderFrame.selection ~= LFGListPVEStub then
+        local premade = (PVEFrame.ScenariosEnabled and PVEFrame:ScenariosEnabled() and GroupFinderFrame.groupButton4)
+            or GroupFinderFrame.groupButton3
+        if premade and GroupFinderFrameGroupButton_OnClick then GroupFinderFrameGroupButton_OnClick(premade) end
     end
-    for key, c in pairs(checks) do c:Set(f[key]) end
-    scoreBox:SetText((f.minScore or 0) > 0 and tostring(f.minScore) or "")
-    PaintRegions(f)
+    if not sp then return end
+    LFGListSearchPanel_Clear(sp)
+    LFGListSearchPanel_SetCategory(sp, categoryID, filters or 0, lfg.baseFilters or 0)
+    LFGListSearchPanel_DoSearch(sp)
+    if lfg.activePanel ~= sp then LFGListFrame_SetActivePanel(lfg, sp) end
+    ns.Log.Emit("filter", { action = "quick search", name = tostring(categoryID) })
 end
 
-local function PaintRaid(f)
-    PaintRegions(f)
-    bossLabel:SetText("Untick a raid to hide it. Ticked bosses must be alive.")
-    -- Pooled lines: a raid heading (fold, My lockout), then one checkbox
-    -- per boss.
-    local y, n = 0, 0
-    local function Line()
-        n = n + 1
-        local l = bossLines[n]
-        if not l then
-            l = CreateFrame("Button", nil, bossBox)
-            l:SetHeight(24)
-            l:SetScript("OnClick", function(self)
-                if self.raid then open[self.raid] = not open[self.raid]; PaintRaid(editing) end
-            end)
-            l.text = l:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-            l.text:SetPoint("LEFT")
-            l.text:SetPoint("RIGHT", -84, 0)
-            l.text:SetJustifyH("LEFT")
-            l.text:SetWordWrap(false)
-            l.check = Kit.Check(l, "", function(on)
-                if l.headRaid then  -- a raid's heading: show its groups or not
-                    editing.raidsOff = editing.raidsOff or {}
-                    editing.raidsOff[l.headRaid] = not on or nil
-                    open[l.headRaid] = on  -- hidden raids fold away
-                    if not next(editing.raidsOff) then editing.raidsOff = nil end
-                    Sidecar.Paint(); Changed()
-                    return
-                end
-                local rules = editing.bosses or {}
-                editing.bosses = rules
-                rules[l.bossRaid] = rules[l.bossRaid] or {}
-                rules[l.bossRaid][l.boss] = on or nil
-                Sidecar.Paint(); Changed()
-            end)
-            l.check:SetPoint("LEFT")
-            Kit.Tip(l.check, function() return l.headRaid or l.boss end, function()
-                if l.headRaid then return "Show this raid's groups." end
-                return "Only groups with this boss still alive."
-            end)
-            l.labelColor = { l.check.label:GetTextColor() }
-            -- Drawn lock after a boss's name: killed this week (My lockout on).
-            l.lock = CreateFrame("Frame", nil, l)
-            l.lock:SetSize(7, 9)
-            l.lock:SetPoint("LEFT", l.check, "RIGHT", 0, 0)
-            local function Bit(w, h, point, x, y)
-                local t = l.lock:CreateTexture(nil, "ARTWORK")
-                t:SetColorTexture(0.55, 0.55, 0.55, 1)
-                t:SetSize(w, h)
-                t:SetPoint(point, x, y)
+local function RunsButton(v, w)
+    local b = Button(v, "0 Runs", w, function() ns.OpenView("history") end)
+    b:HookScript("OnEnter", Week.RunsTooltip)
+    b:HookScript("OnLeave", GameTooltip_Hide)
+    function b:Sync() self:SetText(Week.RunsLabel()) end
+    return b
+end
+
+local function BuildQuick()
+    local v = CreateFrame("Frame", nil, frame)
+    -- This week's affixes, a row of five (only here: above +12 they no longer
+    -- rotate, so the dungeon view keeps them behind one icon).
+    v.affixes = {}
+    for i = 1, 5 do
+        local a = CreateFrame("Frame", nil, v)
+        a:SetSize(24, 24)
+        Kit.Fill(a, Kit.Palette.bgMedium)
+        Kit.Border(a)
+        a.icon = a:CreateTexture(nil, "ARTWORK")
+        a.icon:SetPoint("TOPLEFT", 1, -1)
+        a.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+        a.icon:SetTexCoord(0.075, 0.925, 0.075, 0.925)
+        a:EnableMouse(true)
+        a:SetScript("OnEnter", function(self)
+            if not self.affix then return end
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:SetText(self.affix.name, 1, 1, 1)
+            if self.affix.desc then GameTooltip:AddLine(self.affix.desc, 0.74, 0.74, 0.74, true) end
+            GameTooltip:Show()
+        end)
+        a:SetScript("OnLeave", GameTooltip_Hide)
+        v.affixes[i] = a
+    end
+    local y = -24 - 8
+    v.title = v:CreateFontString(nil, "OVERLAY", "PickupGroupFontLarge")
+    v.title:SetPoint("TOP", 0, y)
+    v.title:SetText("Quick Access")
+    y = y - 18 - GAP
+    for _, c in ipairs(CATEGORIES) do
+        local b = Button(v, c[1], INNER, function() QuickSearch(c[2], c[3] and c[3]()) end)
+        b:SetPoint("TOPLEFT", 0, y)
+        y = y - BTN - GAP
+    end
+    y = y - 6
+    v.week = v:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
+    v.week:SetPoint("TOP", 0, y)
+    v.week:SetText("This Week")
+    y = y - 16 - GAP
+    v.runs = RunsButton(v, Cell(2))
+    Place(v.runs, v, y, 1, 2)
+    local lock = Button(v, "Lockouts", Cell(2))
+    Place(lock, v, y, 2, 2)
+    lock:HookScript("OnEnter", Week.LockoutsTooltip)
+    lock:HookScript("OnLeave", GameTooltip_Hide)
+    y = y - BTN - GAP
+    HistoryButton(v, INNER):SetPoint("TOPLEFT", 0, y)
+    function v:Paint()
+        local a = Kit.Accent()
+        self.title:SetTextColor(a[1], a[2], a[3])
+        self.week:SetTextColor(a[1], a[2], a[3])
+        local list = Week.Affixes()
+        local n = math.min(#list, 5)
+        local total = n * 24 + math.max(0, n - 1) * 4
+        for i, f in ipairs(self.affixes) do
+            f.affix = list[i]
+            f:SetShown(i <= n)
+            if i <= n then
+                f.icon:SetTexture(list[i].icon)
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", self, "TOP", -total / 2 + (i - 1) * 28, 0)
             end
-            Bit(7, 5, "BOTTOMLEFT", 0, 0)  -- body
-            Bit(1, 3, "BOTTOMLEFT", 1, 5)  -- shackle sides and top
-            Bit(1, 3, "BOTTOMLEFT", 5, 5)
-            Bit(5, 1, "BOTTOMLEFT", 1, 8)
-            -- Tree lines from the raid's checkbox down to each boss's (bosses only).
-            l.trunk = l:CreateTexture(nil, "ARTWORK")
-            l.trunk:SetColorTexture(0.3, 0.3, 0.3, 1)
-            l.trunk:SetWidth(1)
-            l.trunk:SetPoint("TOP", l, "TOPLEFT", 6, 6)  -- up to the heading's box (centre of its 12px box)
-            l.branch = l:CreateTexture(nil, "ARTWORK")
-            l.branch:SetColorTexture(0.3, 0.3, 0.3, 1)
-            l.branch:SetSize(11, 1)
-            l.branch:SetPoint("LEFT", 6, 0)
-            -- My lockout: a live rule (Filters.Lockout), on or off per raid.
-            l.want = Toggle(l, "My lockout", 80, function(self)
-                editing.lockout = editing.lockout or {}
-                editing.lockout[self.raid] = not editing.lockout[self.raid] or nil
-                if not next(editing.lockout) then editing.lockout = nil end
-                ns.Log.Emit("filter", { action = "my lockout", name = self.raid .. (editing.lockout
-                    and editing.lockout[self.raid] and " on" or " off") })
-                Sidecar.Paint(); Changed()
-            end)
-            l.want:SetHeight(18)
-            l.want:SetPoint("RIGHT")
-            Kit.Tip(l.want, "My lockout", "Hides groups with no loot left for you. Groups behind you"
-                .. " still show (they may be skipping). Your kills are dimmed with a lock.")
-            bossLines[n] = l
         end
-        l:ClearAllPoints()
-        l:SetPoint("TOPLEFT", 0, y)
-        l:SetPoint("RIGHT")
-        l:Show()
-        y = y - 24
-        return l
+        self.runs:Sync()
     end
-    local raids = ns.Groups.Raids()
-    -- Open by default: raids with rules set, else the one with the most bosses.
-    local biggest
-    for _, raid in ipairs(raids) do
-        if not biggest or #raid.bosses > #biggest.bosses then biggest = raid end
-    end
-    for _, raid in ipairs(raids) do
-        local rules = editing.bosses and editing.bosses[raid.name]
-        local set = 0
-        for _ in pairs(rules or {}) do set = set + 1 end
-        if open[raid.name] == nil then open[raid.name] = set > 0 or raid == biggest end
-        local h = Line()
-        local single = #raid.bosses == 1  -- one boss: the raid box is the boss box
-        if single and editing.bosses then editing.bosses[raid.name] = nil end  -- drop old ticks (summary count)
-        local shown = not (editing.raidsOff and editing.raidsOff[raid.name])
-        h.raid, h.headRaid = (not single) and raid.name or nil, raid.name
-        h.check:SetLabel("")
-        h.check:SetPoint("LEFT")
-        h.trunk:Hide(); h.branch:Hide()
-        h.check:Set(shown)
-        h.check:Show()
-        h.text:SetPoint("LEFT", 18, 0)
-        h.text:Show()
-        local lockOn = editing.lockout ~= nil and editing.lockout[raid.name] == true
-        local mine = lockOn and select(2, Filters.ShownLockout(raid.name, editing.diffs))
-        h.text:SetText(single and raid.name or ((open[raid.name] and "- " or "+ ") .. raid.name
-            .. ((not open[raid.name] and set > 0) and ("  (" .. set .. " alive)") or "")))
-        local grey = shown and 0.7 or 0.4
-        h.text:SetTextColor(grey, grey, grey)
-        h.want.raid = raid.name
-        h.want:Paint(lockOn)
-        -- A one-boss raid shows its lock after the raid's name instead.
-        h.lock:ClearAllPoints()
-        h.lock:SetPoint("LEFT", h.text, "LEFT", math.min(h.text:GetStringWidth(), h.text:GetWidth()) + 3, 0)
-        h.lock:SetShown(single and mine and mine[raid.bosses[1]] == true or false)
-        h.want:Show()
-        local list = (open[raid.name] and not single) and raid.bosses or {}
-        for i, boss in ipairs(list) do
-            local l = Line()
-            l.trunk:SetPoint("BOTTOM", l, i == #list and "LEFT" or "BOTTOMLEFT", 6, 0)
-            l.trunk:Show(); l.branch:Show()
-            l.raid, l.headRaid = nil, nil
-            l.text:Hide()
-            l.want:Hide()
-            l.bossRaid, l.boss = raid.name, boss
-            l.check:SetLabel(boss)
-            l.check:SetPoint("LEFT", 18, 0)  -- under its raid's name, not its checkbox
-            l.lock:ClearAllPoints()
-            l.lock:SetPoint("LEFT", l.check, "RIGHT", 0, 0)
-            l.check:Set(rules and rules[boss])
-            l.check:Show()
-            local killed = mine and mine[boss]
-            local c = killed and { 0.4, 0.4, 0.4 } or l.labelColor
-            l.check.label:SetTextColor(c[1], c[2], c[3])
-            l.lock:SetShown(killed == true)
-        end
-        y = y - 4
-    end
-    for i = n + 1, #bossLines do bossLines[i]:Hide() end
-    if n == 0 then
-        local l = Line()
-        l.raid, l.headRaid = nil, nil
-        l.check:Hide()
-        l.lock:Hide()
-        l.trunk:Hide(); l.branch:Hide()
-        l.text:SetPoint("LEFT")
-        l.text:Show()
-        l.text:SetText("Bosses show here once raids are in the results.")
-        l.text:SetTextColor(0.55, 0.55, 0.55)
-        l.want:Hide()
-    end
-    bossBox:SetHeight(math.max(1, -y))
-    bossBox.scroll:Clamp(bossBox.scroll:GetVerticalScroll())
+    return v
 end
 
-local leadBox
-local function PaintLead(f)
-    local keys = f.kind == "lead_keys"
-    leadBox.title:SetText(keys and "Leading a key" or "Leading a raid")
-    leadBox.floorLabel:SetText(keys and "Score at least" or "Item level at least")
-    local n = keys and f.minScore or f.minIlvl
-    leadBox.floor:SetText((n or 0) > 0 and tostring(n) or "")
-    PaintRegions(f)
-end
+-- ---------------------------------------------------------------------------
+-- Dungeons
+-- ---------------------------------------------------------------------------
+local dungeonButtons = {}
 
-function Sidecar.Paint()
-    if not (frame and editing) then return end
-    keysBox:SetShown(editing.kind == "keys")
-    raidBox:SetShown(editing.kind == "raid")
-    leadBox:SetShown(Leading(editing))
-    if editing.kind == "keys" then PaintKeys(editing)
-    elseif editing.kind == "raid" then PaintRaid(editing)
-    else PaintLead(editing) end
-end
-
--- Leading: applicants who miss these are dimmed, with the reason on hover.
-local function BuildLead(parent)
-    local box = CreateFrame("Frame", nil, parent)
-    box.title = box:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-    box.title:SetPoint("TOPLEFT")
-    local y = RegionRow(box, -24, "Applicant's realm")
-    box.floorLabel = Label(box, "")
-    box.floorLabel:SetTextColor(1, 1, 1)
-    box.floorLabel:SetPoint("TOPLEFT", 0, y - 12)
-    box.floor = Kit.Edit(box, 56, function(text)
-        local n = tonumber(text)
-        local key = editing.kind == "lead_keys" and "minScore" or "minIlvl"
-        editing[key] = (n and n > 0) and n or nil
-        Changed()
-    end, true)
-    Kit.Hint(box.floor, "Any")
-    box.floor:SetPoint("TOPRIGHT", 0, y - 8)
-    local note = Label(box, "Applicants who don't match are dimmed, with the reason on hover. Nobody is hidden.")
-    note:SetPoint("TOPLEFT", 0, y - 44)
-    note:SetPoint("RIGHT")
-    note:SetJustifyH("LEFT")
-    note:SetWordWrap(true)
-    box:SetHeight(-y + 80)
-    return box
-end
-
-local function BuildKeys(parent)
-    local box = CreateFrame("Frame", nil, parent)
-    local y = 0
-    local head = Label(box, "Dungeons")
-    head:SetPoint("TOPLEFT", 0, y)
-    -- Two separate words: All turns every dungeon on, None turns them off.
-    local prevWord
-    for _, w in ipairs({ { "None", function() editing.dungeons = {} end }, { "All", function() editing.dungeons = nil end } }) do
-        local b = CreateFrame("Button", nil, box)
-        b:SetHeight(12)
-        local t = Label(b, w[1])
-        t:SetPoint("RIGHT")
-        b:SetWidth(t:GetStringWidth())
-        b:SetHitRectInsets(-4, -4, -6, -6)  -- 24px tall to click (WCAG 2.5.8)
-        if prevWord then b:SetPoint("RIGHT", prevWord, "LEFT", -8, 0) else b:SetPoint("TOPRIGHT", 0, y) end
-        b:SetScript("OnClick", function() w[2](); Sidecar.Paint(); Changed() end)
-        b:SetScript("OnEnter", function() t:SetTextColor(ON[1], ON[2], ON[3]) end)
-        b:SetScript("OnLeave", function() t:SetTextColor(0.55, 0.55, 0.55) end)
-        prevWord = b
-    end
-    y = y - 16
-    local cellW = (W - 2 * PAD - 3 * 3) / 4
+local function BuildKeys()
+    local v = CreateFrame("Frame", nil, frame)
+    local y = Title(v, "Filters")
+    -- 2 x 4: map art, code, my best timed key on the right; engaged = shown.
     for i, d in ipairs(Filters.Dungeons()) do
-        local b = Toggle(box, d.code, cellW, function(self)
+        local b = Kit.Toggle(v, "", Cell(2), function(self)
             -- nil means every dungeon: turning one off lists the rest.
             if not editing.dungeons then
                 editing.dungeons = {}
@@ -342,309 +323,563 @@ local function BuildKeys(parent)
             end
             editing.dungeons[self.dungeon] = not editing.dungeons[self.dungeon] or nil
             Sidecar.Paint(); Changed()
-        end)
-        b.dungeon, b.code = d.name, d.code
-        b:SetPoint("TOPLEFT", ((i - 1) % 4) * (cellW + 3), y - math.floor((i - 1) / 4) * 24)
+        end, BTN)
+        b.dungeon = d.name
+        Place(b, v, y - math.floor((i - 1) / 2) * (BTN + COL), (i - 1) % 2 + 1, 2)
+        local edge = b:CreateTexture(nil, "ARTWORK")
+        edge:SetColorTexture(0, 0, 0, 1)
+        edge:SetSize(18, 18)
+        edge:SetPoint("LEFT", 3, 0)
+        local art = b:CreateTexture(nil, "ARTWORK", nil, 1)
+        art:SetSize(16, 16)
+        art:SetPoint("CENTER", edge)
+        art:SetTexture(select(4, C_ChallengeMode.GetMapUIInfo(d.mapID)))
+        art:SetTexCoord(0.075, 0.925, 0.075, 0.925)
+        local code = b:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+        code:SetPoint("LEFT", edge, "RIGHT", 4, 0)
+        code:SetText(d.code)
+        b.best = b:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+        b.best:SetPoint("RIGHT", -4, 0)
+        b.best:SetTextColor(0.74, 0.74, 0.74)
         b:HookScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:SetText(self.dungeon)
-            local best = self:GetText():match("%+(%d+)")  -- colour codes have no "+"
-            GameTooltip:AddLine(best and ("Your best timed key this season: +" .. best) or "No timed key here this season.", 0.74, 0.74, 0.74)
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText(self.dungeon, 1, 1, 1)
+            GameTooltip:AddLine(self.bestLevel and ("Your best timed key this season: +" .. self.bestLevel)
+                or "No timed key here this season.", 0.74, 0.74, 0.74)
             GameTooltip:Show()
         end)
-        b:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        b:HookScript("OnLeave", GameTooltip_Hide)
         dungeonButtons[#dungeonButtons + 1] = b
     end
-    y = y - math.ceil(#dungeonButtons / 4) * 24 - 8
-    y = SetRow(box, y, "Playstyle", "styles", Filters.STYLES, Filters.STYLE_NAME,
-        "Groups listed with this playstyle.") - 8
-
-    for _, c in ipairs({
-        { "room", "Room for my role" }, { "atLeastMine", "Leader at least my score" },
-        { "leaderMyLevel", "Leader timed it at my level", "Keeps groups whose leader has timed this dungeon "
-            .. "at your best timed key there (the number on its button above) or higher. "
-            .. "Dungeons you haven't timed a key in aren't judged." },
-        { "lust", "Group has Bloodlust", "Keeps groups that have it, or will: you or your party bring it, "
-            .. "or a seat is still open after you join that a Bloodlust class can take (healer or damage)." },
-        { "brez", "Group has battle rez", "Keeps groups that have it, or will: you or your party bring it, "
-            .. "or a seat is still open after you join that a battle rez class can take." },
-        { "noMyClass", "No other " .. (UnitClass("player") or "of my class") .. " in the group" },
-    }) do
-        local key = c[1]
-        local cb = Kit.Check(box, c[2], function(on) editing[key] = on or nil; Changed() end)
-        cb:SetPoint("TOPLEFT", 0, y)
-        if c[3] then Kit.Tip(cb, c[2], c[3]) end
-        checks[key] = cb
-        y = y - 24
+    y = y - math.ceil(#dungeonButtons / 2) * (BTN + COL) + COL - GAP
+    local rule = Kit.Rule(v)
+    rule:SetPoint("TOPLEFT", 0, y - 2)
+    rule:SetPoint("TOPRIGHT", 0, y - 2)
+    y = y - 5 - GAP
+    local class = select(2, UnitClass("player")) or ""
+    local className = UnitClass("player") or "your class"
+    local grid = {
+        Flag(v, "Room for Me", "room", { "Room for Me", "Keeps groups with an open seat for a role you sign up as. In a party: seats for everyone's roles." }),
+        Flag(v, "No Other", "noMyClass", { "No Other " .. className, "Hides groups that already have a " .. className .. "." }, nil, { "classicon-" .. class:lower() }),
+        Flag(v, "Battle Rez", "brez", { "Battle Rez", "Keeps groups that have one, or will: you or your party bring it, or a seat still open after you join can take a battle rez class." }),
+        Flag(v, "Bloodlust", "lust", { "Bloodlust", "Keeps groups that have it, or will: you or your party bring it, or a seat still open after you join can take a Bloodlust class." }),
+        Flag(v, "\226\137\165 My Score", "atLeastMine", { "At Least My Score", "Keeps groups whose leader's Mythic+ score is at least yours." }),
+        Flag(v, "Leader Timed", "leaderMyLevel", { "Leader Timed", "Keeps groups whose leader has timed this dungeon at your best timed key there (the number on its button) or higher. Dungeons you haven't timed aren't judged." }),
+    }
+    for i, b in ipairs(grid) do
+        b:SetSize(Cell(2), BTN)
+        Place(b, v, y - math.floor((i - 1) / 2) * (BTN + COL), (i - 1) % 2 + 1, 2)
     end
-    y = y - 4
-    local l = Label(box, "Leader score at least")
-    l:SetTextColor(1, 1, 1)
-    l:SetPoint("TOPLEFT", 0, y - 4)
-    scoreBox = Kit.Edit(box, 56, function(text)
-        local n = tonumber(text)
-        editing.minScore = (n and n > 0) and n or nil
-        Changed()
-    end, true)
-    Kit.Hint(scoreBox, "Any")
-    scoreBox:SetPoint("TOPRIGHT", 0, y)
-    y = RegionRow(box, y - 30)
-    box:SetHeight(-y + 4)
-    return box
+    y = y - 3 * (BTN + COL) + COL - GAP
+    local has = {
+        Flag(v, "Has", "hasTank", { "Has Tank", "Keeps groups that already have a tank." }, { "hasEither" }, { "TANK" }),
+        Flag(v, "Has", "hasHealer", { "Has Healer", "Keeps groups that already have a healer." }, { "hasEither" }, { "HEALER" }),
+        Flag(v, "", "hasEither", { "Has Tank or Healer", "Keeps groups that already have a tank or a healer: hides groups of only damage dealers." }, { "hasTank", "hasHealer" }, { "TANK", "/", "HEALER" }),
+    }
+    for i, b in ipairs(has) do b:SetSize(Cell(3), BTN); Place(b, v, y, i, 3) end
+    y = y - BTN - GAP
+    -- Playstyle: each button as wide as its word needs, the rest shared out.
+    local style = {}
+    local words = { L = "Learn", R = "Relax", C = "Compete" }
+    local tips = { L = "Groups listed as Learning.", R = "Groups listed as Relaxed.", C = "Groups listed as Competitive." }
+    local need = 0
+    for i, code in ipairs(Filters.STYLES) do
+        local b = SetMember(v, words[code], "styles", code, Filters.STYLES, Filters.STYLE_NAME[code], tips[code])
+        style[i] = b
+        need = need + b:GetFontString():GetStringWidth()
+    end
+    local spare = (INNER - (#style - 1) * COL - need) / #style
+    local x = 0
+    for _, b in ipairs(style) do
+        local w = b:GetFontString():GetStringWidth() + spare
+        b:SetSize(w, BTN)
+        b:SetPoint("TOPLEFT", x, y)
+        x = x + w + COL
+    end
+    y = y - BTN - GAP
+    y = RegionRow(v, y)
+    -- A drag runs the list once per short pause, not on every step.
+    local queued
+    v.score = Kit.Slider(v, INNER, 4000, 50, "Min Score", function(n)
+        editing.minScore = n > 0 and n or nil
+        if queued then return end
+        queued = true
+        C_Timer.After(0.15, function() queued = false; Changed() end)
+    end)
+    v.score:SetPoint("TOPLEFT", 0, y)
+    Kit.Tip(v.score, "Min Score", "Hides groups whose leader's Mythic+ score is below this. Friends' and guildmates' groups always show.")
+    -- Footer: Reset, this week's affixes behind one icon, the runs.
+    local reset = ResetButton(v, 52)
+    reset:SetPoint("BOTTOMLEFT")
+    local aff = CreateFrame("Button", nil, v)
+    aff:SetSize(BTN, BTN)
+    Kit.Button(aff)
+    aff:SetPoint("LEFT", reset, "RIGHT", COL, 0)
+    aff.icon = aff:CreateTexture(nil, "ARTWORK")
+    aff.icon:SetSize(16, 16)
+    aff.icon:SetPoint("CENTER")
+    aff.icon:SetTexCoord(0.075, 0.925, 0.075, 0.925)
+    aff:HookScript("OnEnter", Week.AffixTooltip)
+    aff:HookScript("OnLeave", GameTooltip_Hide)
+    v.aff = aff
+    v.runs = RunsButton(v, INNER - 52 - BTN - 2 * COL)
+    v.runs:SetPoint("LEFT", aff, "RIGHT", COL, 0)
+    function v:Paint()
+        local a = Kit.Accent()
+        self.title:SetTextColor(a[1], a[2], a[3])
+        local best = {}
+        for _, d in ipairs(Filters.Dungeons()) do best[d.name] = d.best end
+        for _, b in ipairs(dungeonButtons) do
+            b.bestLevel = best[b.dungeon]
+            b.best:SetText(b.bestLevel and ("+" .. b.bestLevel) or "\226\128\148")
+            b:Paint(not editing.dungeons or editing.dungeons[b.dungeon] == true)
+        end
+        SyncToggles(self)
+        self.score:SetValue(editing.minScore or 0)
+        local first = Week.Affixes()[1]
+        self.aff.icon:SetTexture(first and first.icon or 134400)
+        self.runs:Sync()
+    end
+    return v
 end
 
-local function BuildRaid(parent)
-    local box = CreateFrame("Frame", nil, parent)
-    bossLabel = Label(box, "")
-    local y = SetRow(box, 0, "Difficulty", "diffs", { "N", "H", "M" },
-        { N = "Normal", H = "Heroic", M = "Mythic" }, "Groups at this difficulty.")
-    y = RegionRow(box, y - 8)
-    bossLabel:SetPoint("TOPLEFT", 0, y - 8)
-    bossLabel:SetWidth(W - 2 * PAD)
-    bossLabel:SetJustifyH("LEFT")
-    bossLabel:SetWordWrap(true)
-    -- The boss list scrolls (wheel) inside the space down to Reset; a
-    -- pulsing chevron says there's more below.
-    local scroll = CreateFrame("ScrollFrame", nil, box)
-    scroll:SetPoint("TOPLEFT", bossLabel, "BOTTOMLEFT", 0, -6)
-    scroll:SetPoint("BOTTOMRIGHT")
-    bossBox = CreateFrame("Frame", nil, scroll)
-    bossBox:SetSize(W - 2 * PAD, 1)
-    scroll:SetScrollChild(bossBox)
+-- ---------------------------------------------------------------------------
+-- Raids
+-- ---------------------------------------------------------------------------
+local LINE_H = 18
+
+local function BuildRaid()
+    local v = CreateFrame("Frame", nil, frame)
+    local y = Title(v, "Filters")
+    y = SetRow(v, y, "diffs", { "N", "H", "M" }, { N = "Normal", H = "Heroic", M = "Mythic" }, "Groups at this difficulty.")
+    y = RegionRow(v, y)
+    -- My Lockout: one switch for every raid (Filters.Lockout).
+    local mine = Kit.Toggle(v, "", INNER, function()
+        local was = editing.lockout == true or (type(editing.lockout) == "table" and next(editing.lockout) ~= nil)
+        editing.lockout = (not was) or nil
+        ns.Log.Emit("filter", { action = "my lockout", name = editing.lockout and "on" or "off" })
+        Sidecar.Paint(); Changed()
+    end, BTN)
+    mine:SetPoint("TOPLEFT", 0, y)
+    local label = IconLabel(mine, "My Lockout", {})
+    local lk = Lock(label)
+    lk:SetPoint("LEFT", label, "RIGHT", 4, 0)
+    label:SetPoint("CENTER", -5, 0)
+    Kit.Tip(mine, "My Lockout", "Hides groups with no loot left for you this week. Groups behind you still show (they may be skipping). Your kills are dimmed with a lock.")
+    function mine:Sync() self:Paint(editing.lockout == true or (type(editing.lockout) == "table" and next(editing.lockout) ~= nil)) end
+    toggles[#toggles + 1] = mine
+    y = y - BTN - GAP
+    local rule = Kit.Rule(v)
+    rule:SetPoint("TOPLEFT", 0, y - 2)
+    rule:SetPoint("TOPRIGHT", 0, y - 2)
+    y = y - 5 - GAP
+    -- The raid list scrolls (wheel) down to the footer; a chevron says there's more.
+    local scroll = CreateFrame("ScrollFrame", nil, v)
+    scroll:SetPoint("TOPLEFT", 0, y)
+    scroll:SetPoint("BOTTOMRIGHT", 0, BTN + GAP)
+    local box = CreateFrame("Frame", nil, scroll)
+    box:SetSize(INNER, 1)
+    scroll:SetScrollChild(box)
     scroll.more = Kit.More(scroll)
     function scroll:Clamp(to)
-        local most = math.max(0, bossBox:GetHeight() - self:GetHeight())
+        local most = math.max(0, box:GetHeight() - self:GetHeight())
         self:SetVerticalScroll(math.min(math.max(0, to), most))
         self.more:Set(self:GetVerticalScroll() < most - 1)
     end
     scroll:EnableMouseWheel(true)
-    scroll:SetScript("OnMouseWheel", function(self, delta) self:Clamp(self:GetVerticalScroll() - delta * 48) end)
-    bossBox.scroll = scroll
-    return box
+    scroll:SetScript("OnMouseWheel", function(self, delta) self:Clamp(self:GetVerticalScroll() - delta * 36) end)
+    v.box, v.scroll, v.lines = box, scroll, {}
+
+    local foot = ResetButton(v, Cell(3))
+    foot:SetPoint("BOTTOMLEFT")
+    HistoryButton(v, INNER - Cell(3) - COL):SetPoint("BOTTOMRIGHT")
+    return v
 end
 
--- Options: the switch to Blizzard's list and the clean-up rules.
--- Notes: up to Notes.MAX sign-up notes, offered to copy under Blizzard's
--- sign-up dialog (the game won't let an addon fill its note box).
-local noteBoxes = {}
-local function BuildNotes(parent)
-    local box = CreateFrame("Frame", nil, parent)
-    local intro = Label(box, "Shift-click Apply to sign up with a note: these are offered to copy under Blizzard's sign-up window. A plain click signs up at once, no note.")
-    intro:SetPoint("TOPLEFT")
+-- Pooled lines: a raid (tickbox + fold header), or a boss (indented tickbox).
+local function RaidLine(v, n)
+    local l = v.lines[n]
+    if l then return l end
+    l = CreateFrame("Frame", nil, v.box)
+    l:SetHeight(LINE_H)
+    l.check = Kit.Check(l, "", function(on)
+        if l.raid then  -- a raid: show its groups or not
+            editing.raidsOff = editing.raidsOff or {}
+            editing.raidsOff[l.raid] = not on or nil
+            if not next(editing.raidsOff) then editing.raidsOff = nil end
+        else
+            editing.bosses = editing.bosses or {}
+            editing.bosses[l.bossRaid] = editing.bosses[l.bossRaid] or {}
+            editing.bosses[l.bossRaid][l.boss] = on or nil
+        end
+        Sidecar.Paint(); Changed()
+    end)
+    l.check:SetPoint("LEFT")
+    Kit.Tip(l.check, function() return l.raid or l.boss end, function()
+        if l.raid then return "Show this raid's groups." end
+        return "Only groups with this boss still alive."
+    end)
+    -- The fold header: arrow and name, it only folds (one raid open at a time).
+    l.fold = CreateFrame("Button", nil, l)
+    l.fold:SetPoint("LEFT", l.check.well, "RIGHT", 4, 0)
+    l.fold:SetPoint("RIGHT")
+    l.fold:SetHeight(LINE_H)
+    l.arrow = Kit.Arrow(l.fold, 10)
+    l.arrow:SetPoint("LEFT")
+    l.name = l.fold:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    l.name:SetPoint("LEFT", 14, 0)
+    l.name:SetPoint("RIGHT")
+    l.name:SetJustifyH("LEFT")
+    l.name:SetWordWrap(false)
+    l.fold:SetScript("OnClick", function()
+        openRaid = (openRaid == l.raid) and false or l.raid
+        Sidecar.Paint()
+    end)
+    l.lock = Lock(l, true)
+    l.lock:SetPoint("RIGHT", -2, 0)
+    v.lines[n] = l
+    return l
+end
+
+local function PaintRaid(v)
+    local raids = ns.Groups.Raids()
+    if openRaid == nil then
+        -- First look: the raid with boss rules set, else the one with the most bosses.
+        local pick
+        for _, raid in ipairs(raids) do
+            local rules = editing.bosses and editing.bosses[raid.name]
+            if rules and next(rules) then pick = raid; break end
+            if not pick or #raid.bosses > #pick.bosses then pick = raid end
+        end
+        if pick then openRaid = pick.name end
+    end
+    local lockOn = editing.lockout == true or type(editing.lockout) == "table"
+    local a = Kit.Accent()
+    local y, n = 0, 0
+    for _, raid in ipairs(raids) do
+        n = n + 1
+        local h = RaidLine(v, n)
+        local single = #raid.bosses == 1  -- one boss: the raid tick is the boss tick
+        if single and editing.bosses then editing.bosses[raid.name] = nil end
+        local open = openRaid == raid.name and not single
+        h.raid, h.boss = raid.name, nil
+        h:ClearAllPoints()
+        h:SetPoint("TOPLEFT", 0, y)
+        h:SetPoint("RIGHT")
+        h.check:ClearAllPoints()
+        h.check:SetPoint("LEFT")
+        h.check:SetLabel("")
+        h.check:Set(not (editing.raidsOff and editing.raidsOff[raid.name]))
+        h.fold:Show()
+        h.arrow:SetShown(not single)
+        h.arrow:SetRotation(open and 0 or math.pi / 2)
+        h.name:SetText(raid.name)
+        local c = open and a or { 0.44, 0.44, 0.44 }
+        h.name:SetTextColor(c[1], c[2], c[3])
+        h.arrow:SetVertexColor(c[1], c[2], c[3])
+        local mine = lockOn and select(2, Filters.ShownLockout(raid.name, editing.diffs))
+        h.lock:SetShown(single and mine and mine[raid.bosses[1]] == true or false)
+        h:Show()
+        y = y - LINE_H - 2
+        for _, boss in ipairs(open and raid.bosses or {}) do
+            n = n + 1
+            local l = RaidLine(v, n)
+            l.raid, l.bossRaid, l.boss = nil, raid.name, boss
+            l:ClearAllPoints()
+            l:SetPoint("TOPLEFT", 10, y)
+            l:SetPoint("RIGHT")
+            l.fold:Hide()
+            l.check:SetLabel(boss)
+            local rules = editing.bosses and editing.bosses[raid.name]
+            l.check:Set(rules and rules[boss])
+            local killed = mine and mine[boss] == true
+            local g = killed and 0.44 or 1
+            l.check.label:SetTextColor(g, g, g)
+            l.lock:SetShown(killed or false)
+            l:Show()
+            y = y - LINE_H - 2
+        end
+    end
+    for i = n + 1, #v.lines do v.lines[i]:Hide() end
+    if n == 0 then
+        v.empty = v.empty or Label(v.box, "Raids show here once they're in the results.")
+        v.empty:SetPoint("TOPLEFT")
+        v.empty:SetPoint("RIGHT")
+        v.empty:SetJustifyH("LEFT")
+        v.empty:SetWordWrap(true)
+    end
+    if v.empty then v.empty:SetShown(n == 0) end
+    v.box:SetHeight(math.max(1, -y))
+    v.scroll:Clamp(v.scroll:GetVerticalScroll())
+end
+
+-- ---------------------------------------------------------------------------
+-- Leading: applicants who miss these are dimmed, with the reason on hover.
+-- ---------------------------------------------------------------------------
+local function BuildLead()
+    local v = CreateFrame("Frame", nil, frame)
+    local y = Title(v, "Leading")
+    y = RegionRow(v, y, "applicant")
+    v.floorLabel = Label(v, "")
+    v.floorLabel:SetTextColor(1, 1, 1)
+    v.floorLabel:SetPoint("TOPLEFT", 0, y - 4)
+    v.floor = Kit.Edit(v, 56, function(text)
+        local n = tonumber(text)
+        local key = editing.kind == "lead_keys" and "minScore" or "minIlvl"
+        editing[key] = (n and n > 0) and n or nil
+        Changed()
+    end, true)
+    Kit.Hint(v.floor, "Any")
+    v.floor:SetPoint("TOPRIGHT", 0, y)
+    local note = Label(v, "Applicants who don't match are dimmed, with the reason on hover. Nobody is hidden.")
+    note:SetPoint("TOPLEFT", 0, y - 30)
+    note:SetPoint("RIGHT")
+    note:SetJustifyH("LEFT")
+    note:SetWordWrap(true)
+    ResetButton(v, INNER):SetPoint("BOTTOMLEFT")
+    function v:Paint()
+        local keys = editing.kind == "lead_keys"
+        local a = Kit.Accent()
+        self.title:SetTextColor(a[1], a[2], a[3])
+        self.title:SetText(keys and "Leading a Key" or "Leading a Raid")
+        self.floorLabel:SetText(keys and "Score at least" or "Item level at least")
+        local n = keys and editing.minScore or editing.minIlvl
+        self.floor:SetText((n or 0) > 0 and tostring(n) or "")
+        SyncToggles(self)
+    end
+    return v
+end
+
+-- ---------------------------------------------------------------------------
+-- Settings and notes (standalone; with AES they're tabs in its settings)
+-- ---------------------------------------------------------------------------
+-- { key, label, tooltip, get(), set(on) }; every change is logged. The AES
+-- tab builds from the same list.
+Sidecar.OPTIONS = {
+    { "noChime", "Chime When Group Fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
+      function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
+    { "noShimmer", "Shimmer What's New", "One quick shimmer across a row that's news: a group new to your list (with fewer than 20 listed), a sign-up whose status just changed, a new applicant when you lead. New groups keep their white edge either way.",
+      function() return not ns.db.noShimmer end, function(on) ns.db.noShimmer = (not on) or nil end },
+    { "nameColors", "Color Names", "Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.",
+      function() return ns.db.nameColors end, function(on) ns.db.nameColors = on or nil; ns.Pane.Render() end },
+    { "hideDecliners", "Hide Decliners", "Once a leader turns down your sign-up, their groups are hidden (under the hidden count) until you /reload. Full or delisted groups don't count.",
+      function() return ns.db.hideDecliners end, function(on) ns.db.hideDecliners = on or nil; ns.Pane.Render() end },
+    { "swap", "Swap When Full", "With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.",
+      function() return ns.db.swap end, function(on) ns.db.swap = on or nil; ns.Pane.Render() end },
+    { "noteStrip", "Notes Under Sign-Up", "Your sign-up notes, ready to copy, under Blizzard's sign-up window.",
+      function() return ns.Notes.StripOn() end, function(on) ns.db.noteStrip = (not on) and false or nil end },
+    { "cleanup", "Clean Up the List", "Hides listings that are listed longer than 3 hours, look like adverts (no leader score and the voice chat field filled in), offer a carry, or are led by a blacklisted player. Right-click a row to report, blacklist or hide its leader.",
+      function() local c = ns.db.cleanup; return c.stale or c.advert or c.carry or c.blacklist end,
+      function(on) for _, k in ipairs({ "stale", "advert", "carry", "blacklist" }) do ns.db.cleanup[k] = on end; ns.Pane.Render() end },
+    { "noHints", "Hide Hint Tooltips", "Hides the tooltips that explain how a control works. Tooltips with information always show.",
+      function() return ns.db.noHints end, function(on) ns.db.noHints = on or nil end },
+    { "useBlizzard", "Use Blizzard's List", "Blizzard's own group list instead of PickupGroup's. A PickupGroup button on Blizzard's panel brings it back.",
+      function() return ns.db.useBlizzard end,
+      function(on) ns.db.useBlizzard = on; if on then ns.Filters.RestoreBlizzard() end; ns.Pane.Update() end },
+}
+
+function Sidecar.SetOption(o, on)
+    o[5](on)
+    ns.Log.Emit("setting", { key = o[1], on = on })
+end
+
+local function DoneButton(v)
+    local b = Button(v, "Done", INNER, function() Sidecar.Open(nil, nil) end)
+    b:SetPoint("BOTTOMLEFT")
+    return b
+end
+
+local function BuildSettings()
+    local v = CreateFrame("Frame", nil, frame)
+    local y = Title(v, "Settings")
+    v.switches = {}
+    for _, o in ipairs(Sidecar.OPTIONS) do
+        local cb = Kit.Check(v, o[2], function(on) Sidecar.SetOption(o, on) end)
+        cb:SetPoint("TOPLEFT", 0, y)
+        Kit.Tip(cb, o[2], o[3])
+        cb.get = o[4]
+        v.switches[#v.switches + 1] = cb
+        y = y - 22
+    end
+    y = y - 4
+    v.count = Label(v, "")
+    v.count:SetPoint("TOPLEFT", 0, y - 5)
+    local clear = Button(v, "Clear", 52, nil, 20)
+    clear:SetPoint("TOPRIGHT", 0, y)
+    Kit.Confirm(clear, "Clear", function() ns.Cleanup.Clear(); v:Paint(); ns.Pane.Render() end)
+    Kit.Tip(clear, "Clear", "Empties the blacklist. Click twice.")
+    y = y - 26
+    v.why = Label(v, "")
+    v.why:SetPoint("TOPLEFT", 0, y)
+    v.why:SetPoint("RIGHT")
+    v.why:SetJustifyH("LEFT")
+    v.why:SetWordWrap(true)
+    local w = Kit.Palette.warn
+    v.why:SetTextColor(w[1], w[2], w[3])
+    DoneButton(v)
+    function v:Paint()
+        local a = Kit.Accent()
+        self.title:SetTextColor(a[1], a[2], a[3])
+        for _, cb in ipairs(self.switches) do cb:Set(cb.get()) end
+        local n = ns.Cleanup.Count()
+        self.count:SetText(("Blacklist: %d leader%s"):format(n, n == 1 and "" or "s"))
+        local why = ns.Notes.Conflict()
+        self.why:SetText(why and ("Notes under sign-up are off: " .. why .. ".") or "")
+        Sidecar.CheckConflict()
+    end
+    return v
+end
+
+local function BuildNotes()
+    local v = CreateFrame("Frame", nil, frame)
+    local y = Title(v, "Sign-Up Notes")
+    local intro = Label(v, "Shift-click Apply to sign up with a note: these are offered to copy under Blizzard's sign-up window. A plain click signs up at once.")
+    intro:SetPoint("TOPLEFT", 0, y)
     intro:SetPoint("RIGHT")
     intro:SetJustifyH("LEFT")
     intro:SetWordWrap(true)
-    box.why = Label(box, "")
-    box.why:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -6)
-    box.why:SetPoint("RIGHT")
-    box.why:SetJustifyH("LEFT")
-    box.why:SetWordWrap(true)
-    box.why:SetTextColor(unpack(Kit.Palette.warn))
-    local prev = box.why
+    v.why = Label(v, "")
+    v.why:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -6)
+    v.why:SetPoint("RIGHT")
+    v.why:SetJustifyH("LEFT")
+    v.why:SetWordWrap(true)
+    local w = Kit.Palette.warn
+    v.why:SetTextColor(w[1], w[2], w[3])
+    v.boxes = {}
+    local prev = v.why
     for i = 1, ns.Notes.MAX do
-        local e = Kit.Edit(box, W - 2 * PAD, function(text) ns.Notes.Set(i, text) end)
+        local e = Kit.Edit(v, INNER, function(text) ns.Notes.Set(i, text) end)
         e:SetMaxLetters(255)
         e:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, i == 1 and -10 or -6)
         Kit.Hint(e, "Note " .. i)
-        noteBoxes[i] = e
+        v.boxes[i] = e
         prev = e
     end
-    return box
-end
-
-local function PaintNotes()
-    local why = ns.Notes.Conflict()
-    if notesView then
-        notesView.why:SetText(why and ("Not shown under Blizzard's window: " .. why .. ". Turn it off in EllesmereUI's options (Quality of Life or Group Finder) to use these.") or "")
+    DoneButton(v)
+    function v:Paint()
+        local a = Kit.Accent()
+        self.title:SetTextColor(a[1], a[2], a[3])
+        local why = ns.Notes.Conflict()
+        self.why:SetText(why and ("Not shown under Blizzard's window: " .. why .. ".") or "")
+        local list = ns.Notes.All()
+        for i, e in ipairs(self.boxes) do e:SetText(list[i] or "") end
     end
-    local list = ns.Notes.All()
-    for i, e in ipairs(noteBoxes) do e:SetText(list[i] or "") end
+    return v
 end
 
-local function BuildOptions(parent)
-    local box = CreateFrame("Frame", nil, parent)
-    local c = ns.db.cleanup
-    -- { key, label, tooltip?, get(), set(on) }; every change is logged.
-    local y = 0
-    box.switches = {}
-    for _, o in ipairs({
-        { "raidFurthest", "Sorting: Raid, furthest along first", "Raid groups with the most bosses down sort to the top (after friends, guild and My lockout). Off: fewest down first.",
-          function() return ns.db.raidFurthest end, function(on) ns.db.raidFurthest = on or nil; ns.Pane.Render() end },
-        -- Opt-out: on for everyone until turned off.
-        { "noChime", "Alert: Dungeon, chime when group fills", "Plays a short tone when a dungeon group you joined through a sign-up reaches five.",
-          function() return not ns.db.noChime end, function(on) ns.db.noChime = (not on) or nil end },
-        { "noShimmer", "Alert: Shimmer what's new", "One quick shimmer across a row that's news: a group new to your list (with fewer than 20 listed), a sign-up whose status just changed, a new applicant when you lead. New groups keep their white edge either way.",
-          function() return not ns.db.noShimmer end, function(on) ns.db.noShimmer = (not on) or nil end },
-        "-",  -- a rule between the sorting / alert pair and the rest
-        { "useBlizzard", "Use Blizzard's group list instead", "A PickupGroup button on Blizzard's panel brings this back.",
-          function() return ns.db.useBlizzard end,
-          function(on) ns.db.useBlizzard = on; if on then ns.Filters.RestoreBlizzard() end; ns.Pane.Update() end },
-        { "nameColors", "Color names for friends / guild", "Like Blizzard's list: group names turn blue with a friend in, green with a guildmate (blue wins when both). Replaces the marks.",
-          function() return ns.db.nameColors end, function(on) ns.db.nameColors = on or nil; ns.Pane.Render() end },
-        { "hideDecliners", "Hide groups that declined me", "Once a leader turns down your sign-up, their groups are hidden (under the hidden count) until you /reload. Full or delisted groups don't count.",
-          function() return ns.db.hideDecliners end, function(on) ns.db.hideDecliners = on or nil; ns.Pane.Render() end },
-        { "swap", "Swap when all sign-ups are out", "With all five sign-ups in use, a group's button reads Swap: click it to withdraw your oldest sign-up, then Apply.",
-          function() return ns.db.swap end, function(on) ns.db.swap = on or nil; ns.Pane.Render() end },
-        -- Opt-in (player): veterans can turn off the how-to tooltips.
-        { "noHints", "Hide hint tooltips", nil, function() return ns.db.noHints end, function(on) ns.db.noHints = on or nil end },
-        -- Off for players whose other addons handle sign-up notes (they clash).
-        { "noteStrip", "My notes under Blizzard's sign-up window", nil,
-          ns.Notes.StripOn, function(on) ns.db.noteStrip = (not on) and false or nil end },
-    }) do
-      if o == "-" then
-        local rule = box:CreateTexture(nil, "ARTWORK")
-        rule:SetColorTexture(0.25, 0.25, 0.25, 1)
-        rule:SetHeight(1)
-        rule:SetPoint("TOPLEFT", 0, y - 4)
-        rule:SetPoint("RIGHT")
-        y = y - 12
-      else
-        local cb = Kit.Check(box, o[2], function(on)
-            o[5](on)
-            ns.Log.Emit("setting", { key = o[1], on = on })
-        end)
-        cb:SetPoint("TOPLEFT", 0, y)
-        if o[3] then Kit.Tip(cb, o[2], o[3]) end
-        cb.get = o[4]
-        box.switches[#box.switches + 1] = cb
-        y = y - 24
-      end
-    end
-    y = y + 6
-    box.stripWhy = Label(box, "")
-    box.stripWhy:SetPoint("TOPLEFT", 18, y)
-    box.stripWhy:SetTextColor(unpack(Kit.Palette.warn))
-    y = y - 22
-
-    -- Clean-up: one switch for all its rules; what it hides is in the tooltip.
-    box.cleanup = Kit.Check(box, "Clean up the list", function(on)
-        for _, key in ipairs({ "stale", "advert", "carry", "blacklist" }) do c[key] = on end
-        ns.Log.Emit("setting", { key = "cleanup", on = on })
-        ns.Pane.Render()
-    end)
-    box.cleanup:SetPoint("TOPLEFT", 0, y)
-    Kit.Tip(box.cleanup, "Clean up the list", "Hides listings that are listed longer than "
-        .. (c.staleHours or 3) .. " hours, look like adverts (no leader score and the voice chat field"
-        .. " filled in), offer a carry, or are led by a blacklisted player."
-        .. " Right-click a row to report, blacklist or hide its leader.")
-    y = y - 30
-
-    box.count = Label(box, "")
-    box.count:SetPoint("TOPLEFT", 0, y - 4)
-    local clear = CreateFrame("Button", nil, box)
-    clear:SetSize(60, 20)
-    clear:SetPoint("TOPRIGHT", 0, y)
-    Kit.Button(clear)
-    clear:SetNormalFontObject("PickupGroupFontSmall")
-    Kit.Confirm(clear, "Clear", function() ns.Cleanup.Clear(); Sidecar.Show("options"); ns.Pane.Render() end)
-    y = y - 30
-    local history = CreateFrame("Button", nil, box)
-    history:SetSize(W - 2 * PAD, 20)
-    history:SetPoint("TOPLEFT", 0, y)
-    Kit.Button(history)
-    history:SetText("Sign-up history")
-    history:SetScript("OnClick", function() ns.History.Toggle() end)
-    box:Hide()
-    return box
-end
-
-local function PaintOptions()
-    local o, c = optionsView, ns.db.cleanup
-    for _, cb in ipairs(o.switches) do cb:Set(cb.get()) end
-    local why = ns.Notes.Conflict()
-    o.stripWhy:SetText(why and ("Off: " .. why .. ".") or "")
-    Sidecar.CheckConflict()
-    o.cleanup:Set(c.stale or c.advert or c.carry or c.blacklist)
-    local n = ns.Cleanup.Count()
-    o.count:SetText(("Blacklist: %d leader%s"):format(n, n == 1 and "" or "s"))
-end
-
+-- ---------------------------------------------------------------------------
+-- The panel
+-- ---------------------------------------------------------------------------
 local function Build()
     Kit.ApplyFontFace()
     frame = CreateFrame("Frame", "PickupGroupSidecar", PVEFrame)
     frame:SetWidth(W)
-    frame:SetPoint("TOPLEFT", PVEFrame, "TOPRIGHT", 1, 0)
-    frame:SetPoint("BOTTOMLEFT", PVEFrame, "BOTTOMRIGHT", 1, 0)
-    frame:SetFrameStrata("DIALOG")
-    frame:SetToplevel(true)
     frame:EnableMouse(true)
-    Kit.Fill(frame, { 0.06, 0.06, 0.06, 1 })
+    Kit.Fill(frame, Kit.Palette.panelBg)
     Kit.Border(frame)
-
-    -- Header: icon, name and version; Settings & Activity and close on the
-    -- right. Below it the tabs (Filter, Notes) with Reset at the row's end,
-    -- so every control sits at the top.
-    local head = Kit.Header(frame)
-    local close = Kit.HeaderIcon(head, Kit.CLOSE, "Close", function() frame:Hide() end)
-    close:SetPoint("RIGHT", -1, 0)
-    Kit.HeaderIcon(head, Kit.MENU, "Settings & Activity", function() Sidecar.Show("options") end)
-        :SetPoint("RIGHT", close, "LEFT", 2, 0)
-    local prev
-    for _, t in ipairs({ { "filter", "Filter" }, { "notes", "Notes" } }) do
-        local b = CreateFrame("Button", nil, frame)
-        b:SetHeight(24)
-        b.text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFont")
-        b.text:SetPoint("LEFT")
-        b.text:SetText(t[2])
-        b:SetWidth(b.text:GetStringWidth())
-        b.under = b:CreateTexture(nil, "OVERLAY")
-        b.under:SetColorTexture(ON[1], ON[2], ON[3], 1)
-        b.under:SetHeight(2)
-        b.under:SetPoint("BOTTOMLEFT", 0, 1)
-        b.under:SetPoint("BOTTOMRIGHT", 0, 1)
-        b.view = t[1]
-        b:SetScript("OnClick", function(self) Sidecar.Show(self.view) end)
-        if prev then b:SetPoint("LEFT", prev, "RIGHT", 14, 0) else b:SetPoint("TOPLEFT", PAD, -27) end
-        headTabs[#headTabs + 1] = b
-        prev = b
+    local function Fit(v)
+        v:SetPoint("TOPLEFT", PAD, -PAD)
+        v:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+        v:Hide()
+        return v
     end
-    local rule = frame:CreateTexture(nil, "OVERLAY")
-    rule:SetColorTexture(0, 0, 0, 1)
-    rule:SetHeight(1)
-    rule:SetPoint("TOPLEFT", 0, -52)
-    rule:SetPoint("TOPRIGHT", 0, -52)
-
-    local body = CreateFrame("Frame", nil, frame)
-    body:SetPoint("TOPLEFT", PAD, -60)
-    body:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-    filterView = body
-    optionsView = BuildOptions(frame)
-    optionsView:SetPoint("TOPLEFT", PAD, -60)
-    optionsView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+    views.quick = Fit(BuildQuick())
+    views.keys = Fit(BuildKeys())
+    local raid = Fit(BuildRaid())
+    function raid:Paint()
+        local a = Kit.Accent()
+        self.title:SetTextColor(a[1], a[2], a[3])
+        SyncToggles(self)
+        PaintRaid(self)
+    end
+    views.raid = raid
+    views.lead = Fit(BuildLead())
+    views.options = Fit(BuildSettings())
+    views.notes = Fit(BuildNotes())
     prompt = BuildPrompt(frame)
-    prompt:SetPoint("TOPLEFT", PAD, -60)
+    prompt:SetPoint("TOPLEFT", PAD, -PAD)
     prompt:SetPoint("BOTTOMRIGHT", -PAD, 44)
-    notesView = BuildNotes(frame)
-    notesView:SetPoint("TOPLEFT", PAD, -60)
-    notesView:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-
-    keysBox = BuildKeys(body)
-    keysBox:SetPoint("TOPLEFT")
-    keysBox:SetPoint("RIGHT")
-    raidBox = BuildRaid(body)
-    raidBox:SetPoint("TOPLEFT")
-    raidBox:SetPoint("BOTTOMRIGHT")
-    leadBox = BuildLead(body)
-    leadBox:SetPoint("TOPLEFT")
-    leadBox:SetPoint("RIGHT")
-
-    -- Reset: the filter back to its starting rules; a second click
-    -- confirms. At the end of the tab row, on the Filter tab only.
-    resetBtn = CreateFrame("Button", nil, frame)
-    resetBtn:SetSize(60, 20)
-    resetBtn:SetPoint("TOPRIGHT", -PAD, -29)
-    Kit.Button(resetBtn)
-    resetBtn:SetNormalFontObject("PickupGroupFontSmall")
-    Kit.Confirm(resetBtn, "Reset", function() Filters.Reset(editing); Sidecar.Paint(); Changed() end)
-    -- Raider.IO's profile panel (when loaded) moves over to the sidecar's
+    function prompt:Paint() PaintPrompt() end
+    views.clash = prompt
+    -- Raider.IO's profile panel (when loaded) moves over to the panel's
     -- right edge while it's open, and back when it closes.
     frame:HookScript("OnShow", Sidecar.MoveRaiderIO)
     frame:HookScript("OnHide", Sidecar.MoveRaiderIO)
     frame:Hide()
 end
 
+-- What the panel shows now: a view picked from the menu, else what the Group Finder is on.
+local function Pick()
+    if override and views[override] then return override end
+    local lead = ns.Leader.Kind and ns.Leader.Kind()
+    if lead then editing = Filters.Active("lead_" .. lead); return "lead" end
+    if ns.Pane.Shown and ns.Pane.Shown() then
+        local kind = Filters.Kind()
+        editing = Filters.Active(kind)
+        return kind
+    end
+    return "quick"
+end
+
+-- Where it docks: the Group Finder's right edge, or past AES's own panel
+-- while that one is still on (the clash prompt offers to turn it off).
+local function Dock()
+    local aes = _G.AE_GroupFinderPanel
+    local to = (aes and aes:IsShown()) and aes or PVEFrame
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", to, "TOPRIGHT", 2, 0)
+    frame:SetPoint("BOTTOMLEFT", to, "BOTTOMRIGHT", 2, 0)
+end
+
+-- Shown with Dungeons & Raids, except on Blizzard's listing form (the quick list docks there).
+local function Wanted()
+    if not (PVEFrame and PVEFrame:IsShown() and GroupFinderFrame and GroupFinderFrame:IsVisible()) then return false end
+    local ec = LFGListFrame and LFGListFrame.EntryCreation
+    return not (ec and ec:IsVisible())
+end
+
+function Sidecar.Update()
+    if not Wanted() then
+        if frame then frame:Hide() end
+        override = nil
+        return
+    end
+    if not frame then Build() end
+    Dock()
+    local was = mode
+    mode = Pick()
+    if mode ~= was then openRaid = nil end
+    for name, v in pairs(views) do v:SetShown(name == mode) end
+    if mode == "raid" then RequestRaidInfo() end  -- lockouts for My Lockout
+    frame:Show()
+    Sidecar.Paint()
+end
+
+function Sidecar.Paint()
+    if not (frame and frame:IsShown() and mode) then return end
+    local v = views[mode]
+    if (mode == "keys" or mode == "raid" or mode == "lead") and not editing then return end
+    if v and v.Paint then v:Paint() end
+end
+
+-- Open a view from the menu ("options", "notes", "clash"); nil goes back to
+-- the filters. Opening the one already open goes back too.
+function Sidecar.Open(f, which)
+    if which == "filter" then which = nil end
+    if which and override == which then which = nil end
+    override = which
+    if f then editing = f end
+    Sidecar.Update()
+end
+-- Put a view up without toggling (the clash prompt, Later).
+function Sidecar.Show(which)
+    override = (which ~= "filter") and which or nil
+    Sidecar.Update()
+end
+
 -- Raider.IO places its profile panel by anchoring a small frame to the
 -- Group Finder's right edge (and re-places it whenever it updates). While
--- one of our docked panels is open (the sidecar, or the quick list beside
+-- one of our docked panels is open (this one, or the quick list beside
 -- Blizzard's listing form) that anchor follows the panel instead; only an
 -- anchor on the Group Finder or one of our panels is touched (a
 -- user-placed panel stays put).
@@ -667,56 +902,39 @@ function Sidecar.MoveRaiderIO()
     moving = false
 end
 
--- Switch the sidecar between its Filter, Notes and Settings & Activity views.
-function Sidecar.Show(which)
-    view = which
-    filterView:SetShown(which == "filter")
-    optionsView:SetShown(which == "options")
-    notesView:SetShown(which == "notes")
-    resetBtn:SetShown(which == "filter")
-    prompt:SetShown(which == "clash")
-    for _, t in ipairs(headTabs) do
-        local on = t.view == which
-        t.text:SetTextColor(on and ON[1] or 0.74, on and ON[2] or 0.74, on and ON[3] or 0.74)
-        t.under:SetShown(on)
-    end
-    if which == "clash" then PaintPrompt()
-    elseif which == "options" then PaintOptions()
-    elseif which == "notes" then PaintNotes()
-    else Sidecar.Paint() end
-end
-
--- Open on a filter (the active one by default), or on Options; clicking
--- what's already showing closes it.
-function Sidecar.Open(f, which)
-    if not PVEFrame then return end
-    if not frame then Build() end
-    which = which or "filter"
-    f = f or Filters.Active()
-    if frame:IsShown() and view == which and (which ~= "filter" or editing == f) then frame:Hide() return end
-    editing = f
-    RequestRaidInfo()  -- lockouts for My lockout
-    frame:Show()
-    Sidecar.Show(which)
-end
-
--- New results can bring raids the boss list hasn't shown yet.
+-- New results can bring raids the list hasn't shown yet.
 function Sidecar.RefreshBosses()
-    if frame and frame:IsShown() and editing and editing.kind == "raid" then PaintRaid(editing) end
+    if frame and frame:IsShown() and mode == "raid" then Sidecar.Paint() end
 end
 
 ns.On("UPDATE_INSTANCE_INFO", function() Sidecar.RefreshBosses() end)  -- lockouts arrived
+ns.On("CHALLENGE_MODE_MAPS_UPDATE", function() Sidecar.Paint() end)
+ns.On("MYTHIC_PLUS_CURRENT_AFFIX_UPDATE", function() Sidecar.Paint() end)
 
--- Close the sidecar if it's on a filter of that side (leading or searching):
--- the pane and the leader view each close only their own.
-function Sidecar.Close(leading)
-    if frame and frame:IsShown() and view ~= "clash" and Leading(editing) == leading then frame:Hide() end
-end
+-- The pane and the leader view call these when they appear or go.
+function Sidecar.Close() Sidecar.Update() end
+function Sidecar.Follow() Sidecar.Update() end
+
+EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
+    PVEFrame:HookScript("OnShow", Sidecar.Update)
+    PVEFrame:HookScript("OnHide", Sidecar.Update)
+    if GroupFinderFrame then
+        GroupFinderFrame:HookScript("OnShow", Sidecar.Update)
+        GroupFinderFrame:HookScript("OnHide", Sidecar.Update)
+    end
+    local lfg = LFGListFrame
+    for _, key in ipairs({ "CategorySelection", "SearchPanel", "EntryCreation", "ApplicationViewer" }) do
+        local f = lfg and lfg[key]
+        if f then f:HookScript("OnShow", Sidecar.Update); f:HookScript("OnHide", Sidecar.Update) end
+    end
+    if C_MythicPlus.RequestMapInfo then C_MythicPlus.RequestMapInfo() end
+    if C_MythicPlus.RequestCurrentAffixes then C_MythicPlus.RequestCurrentAffixes() end
+end)
 
 -- ---------------------------------------------------------------------------
 -- Clashes: another addon doing the same job on the same Blizzard frame.
--- While one stands, PickupGroup's part is off. The choice waits in the
--- sidecar (the clash prompt): ticked = theirs stays on; untick to turn
+-- While one stands, PickupGroup's part is off (AES's own Group Finder panel:
+-- ours docks past it). The choice waits in the panel (the clash prompt): ticked = theirs stays on; untick to turn
 -- theirs off from the next reload (we write that one setting in its saved
 -- settings). One chat line says so at login or when a clash starts.
 -- ---------------------------------------------------------------------------
@@ -738,6 +956,9 @@ local CLASHES = {
           local ok, qc = pcall(ae.GetModule, ae, "LFGQuickCreate", true)
           if ok and type(qc) == "table" and type(qc.db) == "table" then qc.db.QuickCreate = on end
       end },
+    { function() return ns.AESMode and ns.AESMode.PanelClash() end, "aesPanelConflict", "aes group finder panel",
+      "atrocityEssentials' Group Finder Panel", "filter panel",
+      function(on) if ns.AESMode then ns.AESMode.SetPanel(on) end end },
 }
 -- asking = the prompt opens with the Group Finder (until Later).
 local function Standing()
@@ -843,7 +1064,7 @@ end
 -- The prompt opens with the Group Finder while a clash is waiting for a choice.
 EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     PVEFrame:HookScript("OnShow", function()
-        if asking and #Standing() > 0 then Sidecar.Open(nil, "clash") end
+        if asking and #Standing() > 0 then Sidecar.Show("clash") end
     end)
 end)
 
@@ -855,10 +1076,11 @@ ns.On("PLAYER_LOGIN", function()
     C_Timer.NewTicker(2, function()
         -- (Each returns nothing when there's no clash, so "or".)
         local now = (ns.Notes.Conflict() or "") .. "|" .. (ns.FinderClash() or "") .. "|" .. (ns.QuickList.Clash() or "")
+            .. "|" .. (ns.AESMode and ns.AESMode.PanelClash() or "")
         if now == last then return end
         local first = last == nil
         last = now
-        if not first then Sidecar.CheckConflict(); ns.QuickList.Update(); ns.Pane.Update() end
+        if not first then Sidecar.CheckConflict(); ns.QuickList.Update(); ns.Pane.Update(); Sidecar.Update() end
     end)
 end)
 
@@ -924,9 +1146,3 @@ EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
     hooksecurefunc("LFGListApplicationDialog_Show", function() if dialog:IsShown() then Refresh() end end)
     dialog:HookScript("OnHide", function() if strip then strip:Hide() end end)
 end)
-
--- Keep an open sidecar on the category's filter; with `open`, open it too.
-function Sidecar.Follow(f, open)
-    if frame and frame:IsShown() then editing = f; Sidecar.Paint()
-    elseif open then Sidecar.Open(f) end
-end

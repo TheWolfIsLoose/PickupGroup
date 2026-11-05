@@ -604,8 +604,14 @@ function Leader.Update()
     if not viewer then return end
     if not pane then Build() end
     pane:SetShown(Eligible())
-    if not pane:IsShown() then ns.Sidecar.Close(true) end
     Leader.Render()
+    ns.Sidecar.Update()  -- the panel shows the leading filter while this is up
+end
+
+-- "keys" / "raid" while the leader view is up, else nil.
+function Leader.Kind()
+    if not (pane and pane:IsShown()) then return nil end
+    return select(3, Listing())
 end
 
 EventUtil.ContinueOnAddOnLoaded("Blizzard_GroupFinder", function()
