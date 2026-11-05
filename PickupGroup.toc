@@ -5,6 +5,7 @@
 ## IconTexture: Interface\AddOns\PickupGroup\icon.png
 ## Version: 1.2.3
 ## SavedVariables: PickupGroupDB
+## OptionalDeps: atrocityEssentials
 ## X-Category: Group Finder
 ## X-Curse-Project-ID: 1718475
 
@@ -15,9 +16,11 @@ Groups.lua
 Applications.lua
 Filters.lua
 Cleanup.lua
+Week.lua
 UI\Kit.lua
 UI\LogPopup.lua
 UI\Pane.lua
 UI\Sidecar.lua
 UI\Leader.lua
 UI\QuickList.lua
+AES\Adapter.lua
