@@ -8,13 +8,16 @@
           atLeastMine, dungeons (nil = all,
           else set of dungeon names), styles (nil = all, else set of
           "L" / "R" / "C": Learning, Relaxed, Competitive), leaderMyLevel
-          (the leader has timed this dungeon at my best timed level there)
+          (the leader has timed this dungeon at my best timed level there),
+          hasTank / hasHealer / hasEither (the group already has a tank, a
+          healer, or at least one of the two)
     raid: diffs (nil = all, else set of "N" / "H" / "M"), raidsOff[raid name]
           = true (hidden): both ours, so Blizzard's search box is free for
           words in group titles (the one name match there is),
           bosses[raid name][boss name] = true (must be alive; absent = either),
-          lockout[raid name] = true (My lockout: hide groups with no loot left
-          for me, sort the rest by how far past my kills they are)
+          lockout = true (My lockout, every raid: hide groups with no loot
+          left for me, sort the rest by how far past my kills they are; a
+          table of raid names from before 1.3 still counts per raid)
     lead_keys / lead_raid: regions, minScore / minIlvl (the leader view dims
           applicants who miss them)
 --]]
@@ -87,7 +90,7 @@ function Filters.Summary(f)
         local rules = 0
         for _, bosses in pairs(f.bosses or {}) do for _ in pairs(bosses) do rules = rules + 1 end end
         if rules > 0 then out[#out + 1] = rules .. (rules == 1 and " boss alive" or " bosses alive") end
-        if next(f.lockout or {}) then out[#out + 1] = "loot left for me" end
+        if f.lockout == true or next(type(f.lockout) == "table" and f.lockout or {}) then out[#out + 1] = "loot left for me" end
     else
         local n = 0
         for _, on in pairs(f.dungeons or {}) do if on then n = n + 1 end end
@@ -102,6 +105,11 @@ function Filters.Summary(f)
         if f.lust then out[#out + 1] = "has Bloodlust" end
         if f.brez then out[#out + 1] = "has battle rez" end
         if f.noMyClass then out[#out + 1] = "no other " .. (UnitClass("player") or "of my class") end
+        if f.hasEither then out[#out + 1] = "has a tank or healer"
+        else
+            if f.hasTank then out[#out + 1] = "has a tank" end
+            if f.hasHealer then out[#out + 1] = "has a healer" end
+        end
         if f.atLeastMine then out[#out + 1] = "score at least mine"
         elseif (f.minScore or 0) > 0 then out[#out + 1] = "score " .. f.minScore .. "+" end
     end
@@ -188,7 +196,8 @@ end
 -- off (or the journal hasn't given the raid's bosses yet).
 function Filters.Lockout(row)
     local f = Filters.Active("raid")
-    if not (f.lockout and f.lockout[row.activity]) or #(row.bosses or {}) == 0 then return nil end
+    local on = f.lockout == true or (type(f.lockout) == "table" and f.lockout[row.activity])
+    if not on or #(row.bosses or {}) == 0 then return nil end
     local mine, known = MyKills(row.activity, row.difficulty), {}
     local caught, left = 0, false
     for _, boss in ipairs(row.bosses) do
@@ -316,6 +325,10 @@ function Filters.Pass(row)
     if f.lust and not ns.Groups.CanHave(row, LUST) then return false end
     if f.brez and not ns.Groups.CanHave(row, BREZ) then return false end
     if f.noMyClass and row.classes and row.classes[select(2, UnitClass("player"))] then return false end
+    local c = row.counts or {}
+    if f.hasEither and (c.TANK or 0) == 0 and (c.HEALER or 0) == 0 then return false end
+    if f.hasTank and (c.TANK or 0) == 0 then return false end
+    if f.hasHealer and (c.HEALER or 0) == 0 then return false end
     local score = row.score or 0
     if (f.minScore or 0) > 0 and score < f.minScore then return false end
     if f.atLeastMine and score < (C_ChallengeMode.GetOverallDungeonScore() or 0) then return false end

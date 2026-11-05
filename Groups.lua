@@ -5,7 +5,7 @@
 
     Row: { id, name (protected string: display only), leader, score,
            activity (full name), code (short), difficulty, isRaid,
-           tiles (dungeons: 5 x { icon? , role, mine, leader? }), leaderClass,
+           tiles (dungeons: 5 x { icon? , role, mine, leader?, class? }), leaderClass,
            counts ({ TANK, HEALER, DAMAGER }), down, total,
            age, fits, status, pending, remaining, playstyle,
            specs (dungeons: { spec, class, file, icon, name?, leader, leaver }),
@@ -371,6 +371,7 @@ function Groups.Read(id, keepDelisted)
                 for _, t in ipairs(tiles) do
                     if t.role == p.assignedRole and not t.filled then
                         t.filled, t.icon, t.leader, t.leaver = true, SpecIcon(p.classFilename, p.specName), p.isLeader, ns.Kit.IsLeaver(p.isLeaver)
+                        t.class = p.classFilename
                         break
                     end
                 end
@@ -405,8 +406,29 @@ end
 -- Status words WoW uses for an application that is still out.
 local OUT = { applied = true, invited = true }
 
--- pinned: the player's sign-ups; rows: everything else that passes, by
--- leader score (raids: my kills done too, bosses down, then age).
+-- How the list is sorted, per view: the column (keys: "key", "comp",
+-- "score"; raid: "raid", "comp") and whether high comes first. Clicking a
+-- heading picks it (Pane). Raids start on bosses down, the way the old
+-- "furthest along first" option had it.
+local SORT_DEFAULT = { keys = { "score", true }, raid = { "raid", false } }
+function Groups.Sort(view, by)
+    ns.db.sort = ns.db.sort or {}
+    local cur = ns.db.sort[view]
+    if not cur then
+        cur = { SORT_DEFAULT[view][1], SORT_DEFAULT[view][2] }
+        if view == "raid" and ns.db.raidFurthest then cur[2] = true end
+        ns.db.sort[view] = cur
+    end
+    if by then
+        -- The same heading again turns the order round; a new one starts high first.
+        if cur[1] == by then cur[2] = not cur[2] else cur[1], cur[2] = by, by ~= "key" end
+        ns.Log.Emit("setting", { key = "sort " .. view .. " " .. by, on = cur[2] })
+    end
+    return cur[1], cur[2]
+end
+
+-- pinned: the player's sign-ups; rows: everything else that passes, sorted
+-- by Groups.Sort after friends, guild and (raids) My lockout.
 -- A listing that errors is left out and logged once, never the whole list.
 local failed = {}
 local function SafeRead(id)
@@ -441,6 +463,13 @@ function Groups.List(showHidden)
             end
         end
     end
+    local by, desc = Groups.Sort(ns.Filters.Kind())
+    local function Value(r)
+        if by == "key" then return r.code or "" end
+        if by == "comp" then return r.members or 0 end
+        if by == "raid" then return r.down or 0 end
+        return r.score or 0
+    end
     table.sort(rows, function(a, b)
         -- Must agree whichever row comes first, or table.sort breaks: a
         -- raid category can return a non-raid listing. Raids go first.
@@ -448,17 +477,16 @@ function Groups.List(showHidden)
         -- People you know first, as Blizzard's list does (friends, then guild).
         if (a.friends > 0) ~= (b.friends > 0) then return a.friends > 0 end
         if (a.guild > 0) ~= (b.guild > 0) then return a.guild > 0 end
-        if a.isRaid then
-            -- My lockout: groups that have done more of my kills first.
-            if (a.caught or 0) ~= (b.caught or 0) then return (a.caught or 0) > (b.caught or 0) end
-            -- Fewest bosses down first, or furthest along first (Options).
-            if (a.down or 0) ~= (b.down or 0) then
-                if ns.db.raidFurthest then return (a.down or 0) > (b.down or 0) end
-                return (a.down or 0) < (b.down or 0)
-            end
-            return (a.age or 0) < (b.age or 0)
+        -- My lockout: groups that have done more of my kills first.
+        if a.isRaid and (a.caught or 0) ~= (b.caught or 0) then return (a.caught or 0) > (b.caught or 0) end
+        -- The column picked in the pane's headings.
+        local va, vb = Value(a), Value(b)
+        if va ~= vb then
+            if desc then return va > vb end
+            return va < vb
         end
-        return (a.score or 0) > (b.score or 0)
+        if (a.score or 0) ~= (b.score or 0) then return (a.score or 0) > (b.score or 0) end
+        return (a.age or 0) < (b.age or 0)
     end)
     return pinned, rows, hidden
 end
