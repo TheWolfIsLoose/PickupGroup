@@ -1,8 +1,11 @@
 --[[
     PickupGroup - UI/Kit.lua
     The look, shared by every window: fonts, palette and the style helpers.
-    Same visual language as StockClerk (its Dev/STYLE.md): flat fills, 1px
-    black lines (grey rings on controls), monochrome (white = on), drawn glyphs, no Blizzard templates.
+    One look with or without atrocityEssentials (AES): its visual language
+    (flat #0e0e0e controls, 1px black edges, a grey hover wash, the accent
+    as a 35% fill for "engaged"), drawn by our own helpers. With AES loaded,
+    AES/Adapter.lua swaps in its accent (brand blue) and its font; without
+    it the accent is white. No Blizzard templates.
 --]]
 
 local _, ns = ...
@@ -18,8 +21,9 @@ ns.Kit = Kit
 -- ---------------------------------------------------------------------------
 local FONT_FALLBACK = "Interface\\AddOns\\PickupGroup\\Media\\BarlowSemiCondensed-Medium.ttf"
 local FONTS = {
-    PickupGroupFontSmall = { 10, 1 }, PickupGroupFont = { 12, 1 }, PickupGroupFontLarge = { 16, 1 },
-    PickupGroupFontDisabled = { 10, 0.55 },  -- disabled button labels: Small in muted
+    -- AES's sizes: 11 for buttons and labels, 12 body, 14 titles.
+    PickupGroupFontSmall = { 11, 1 }, PickupGroupFont = { 12, 1 }, PickupGroupFontLarge = { 14, 1 },
+    PickupGroupFontDisabled = { 11, 0.55 },  -- disabled button labels: Small in muted
 }
 for name, spec in pairs(FONTS) do
     local fo = CreateFont(name)
@@ -30,29 +34,34 @@ end
 
 -- Switch to Expressway once other addons have registered their media; every
 -- window's build calls this first. Font strings follow their font object.
+-- With AES loaded its own font wins (Kit.FaceOverride, set by the adapter).
 function Kit.ApplyFontFace()
     if Kit.fontsApplied then return end
     Kit.fontsApplied = true
+    local face = Kit.FaceOverride and Kit.FaceOverride()
     local lsm = LibStub and LibStub("LibSharedMedia-3.0", true)
-    local face = lsm and lsm:Fetch("font", "Expressway", true)
+    face = face or (lsm and lsm:Fetch("font", "Expressway", true))
     if face then
         for _, f in pairs(FONTS) do f.fo:SetFont(face, f.size, "") end
     end
 end
 
 Kit.Palette = {
-    bgDark    = { 0.031, 0.031, 0.031, 0.97 }, -- window
-    bgMedium  = { 0.055, 0.055, 0.055, 0.95 }, -- buttons
-    panelBg   = { 0.060, 0.060, 0.060, 0.98 }, -- sidecar, log window
-    btnRest   = { 1, 1, 1, 0.07 },
-    well      = { 1, 1, 1, 0.08 },             -- text boxes, checkboxes: visibly "fill me"
-    ringRest  = { 0.4, 0.4, 0.4, 1 },          -- controls at rest: 3.3:1 on the panel (WCAG 1.4.11)
-    ringHover = { 0.7, 0.7, 0.7, 1 },          -- control under the mouse
-    hoverWash = { 0.851, 0.851, 0.851, 0.15 },
+    bgDark    = { 0.031, 0.031, 0.031, 0.97 }, -- window (AES #080808)
+    bgMedium  = { 0.055, 0.055, 0.055, 0.90 }, -- controls (AES control fill)
+    panelBg   = { 0.055, 0.055, 0.055, 0.98 }, -- docked panel, log window (AES #0e0e0e)
+    btnRest   = { 1, 1, 1, 0 },
+    well      = { 0.055, 0.055, 0.055, 0.90 }, -- text boxes, checkboxes: the control fill
+    ringRest  = { 0, 0, 0, 1 },                -- controls at rest: a black edge, as AES
+    ringHover = { 0, 0, 0, 1 },                -- (hover is the wash, not the edge)
+    hoverWash = { 0.851, 0.851, 0.851, 0.15 }, -- AES's one hover value
     pressFill = { 0.851, 0.851, 0.851, 0.22 },
-    border    = { 0, 0, 0, 1 },                -- window edges, tiles (not controls)
-    on        = { 1, 1, 1, 1 },                -- on, live, hover, focus (monochrome suite)
-    glyphRest = { 0.7, 0.7, 0.7, 1 },          -- header icons at rest
+    border    = { 0, 0, 0, 1 },
+    on        = { 1, 1, 1, 1 },                -- white text
+    accent    = { 1, 1, 1, 1 },                -- engaged, headings: white alone, AES's brand with AES
+    selectA   = 0.35,                          -- accent fill behind an engaged toggle (AES selectedA)
+    fillA     = 0.8,                           -- a ticked box
+    glyphRest = { 0.85, 0.85, 0.85, 1 },
     -- Text and status tokens (suite style guide): soft 0.74 for tooltip bodies
     -- and secondary text, muted 0.55 (8C8C8C) for labels, headings and "off",
     -- warn yellow FFD84A, bad red FF6666, info blue 5AA9FF (new / worth a
@@ -108,7 +117,7 @@ function Kit.Tile(parent, size)
     t.icon = t:CreateTexture(nil, "ARTWORK")
     t.icon:SetPoint("TOPLEFT", 1, -1)
     t.icon:SetPoint("BOTTOMRIGHT", -1, 1)
-    t.icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)  -- icon border trimmed, plus a ~10% zoom
+    t.icon:SetTexCoord(0.075, 0.925, 0.075, 0.925)  -- AES's icon zoom (0.3)
     -- Blizzard's leaver mark (the player left groups early lately), on its
     -- own frame so the leader ring drawn over the tile doesn't cover it.
     local top = CreateFrame("Frame", nil, t)
@@ -351,65 +360,85 @@ function Kit.HeaderIcon(parent, bars, tip, onClick)
     return btn
 end
 
--- Toggle button: on = its colour (white by default) as text and ring plus a
--- 2px bar along the bottom, the same mark as an active sidecar tab, so "on"
--- never rests on colour alone (WCAG 1.4.1). Off: grey text, grey ring.
-function Kit.Toggle(parent, text, w, onClick)
+-- Role art on a texture: AES's own role icons with AES (Kit.ROLE_ART, set by
+-- the adapter), else Blizzard's small role atlas.
+local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
+Kit.ROLE_ATLAS = ROLE_ATLAS
+function Kit.RoleIcon(tex, role)
+    local art = Kit.ROLE_ART and Kit.ROLE_ART[role]
+    if art then tex:SetTexture(art); tex:SetTexCoord(0, 1, 0, 1) else tex:SetAtlas(ROLE_ATLAS[role]) end
+end
+
+-- The accent (white alone, AES's brand with AES), read when a frame is painted.
+function Kit.Accent() return Palette.accent end
+
+-- Toggle button (AES's "engaged" look): white text both ways; on = an accent
+-- fill at 35% behind it, and the tooltip / summary say it in words (WCAG 1.4.1).
+-- b:Paint(on). Height 20 unless given (the panel's are AES's 26).
+function Kit.Toggle(parent, text, w, onClick, h)
     local b = CreateFrame("Button", nil, parent)
-    b:SetSize(w, 20)
+    b:SetSize(w, h or 20)
     Kit.Button(b)
-    b:SetNormalFontObject("PickupGroupFontSmall")
-    b:SetHighlightFontObject("PickupGroupFontSmall")
     b:SetText(text)
-    local bar = Solid(b, "OVERLAY", 6, Palette.on)
-    bar:SetHeight(2)
-    bar:SetPoint("BOTTOMLEFT", 1, 1)
-    bar:SetPoint("BOTTOMRIGHT", -1, 1)
-    function b:Paint(on, color)
-        local c = on and (color or Palette.on) or { 0.55, 0.55, 0.55 }
-        self:GetFontString():SetTextColor(c[1], c[2], c[3], 1)
-        Ring(self, on and c or Palette.ringRest)
-        bar:SetColorTexture(c[1], c[2], c[3], 1)
-        bar:SetShown(on)
+    local fs = b:GetFontString()
+    if fs then fs:SetWordWrap(false) end
+    local sel = Solid(b, "BORDER", 1, Palette.accent)
+    sel:SetPoint("TOPLEFT", 1, -1)
+    sel:SetPoint("BOTTOMRIGHT", -1, 1)
+    sel:Hide()
+    function b:Paint(on)
+        local c = Kit.Accent()
+        sel:SetColorTexture(c[1], c[2], c[3], Palette.selectA)
+        sel:SetShown(on and true or false)
+        self.on = on and true or false
     end
     b:SetScript("OnClick", onClick)
     return b
 end
 
--- Checkbox: 12px light well (grey ring on hover), white square when on; the label is part of the
--- click area, 24px tall (WCAG 2.5.8: rows of checkboxes sit 24px apart).
--- box:Set(on), box:Get(); onChange(on) after a click.
+-- Checkbox (AES's skinned tickbox): a 14px control box with a black edge, an
+-- accent square when ticked, the hover wash; the label is part of the click
+-- area. box:Set(on), box:Get(); onChange(on) after a click.
 function Kit.Check(parent, label, onChange)
     local b = CreateFrame("Button", nil, parent)
-    b:SetHeight(16)
-    b:SetHitRectInsets(0, 0, -4, -4)
+    b:SetHeight(18)
+    b:SetHitRectInsets(0, 0, -3, -3)
     local well = CreateFrame("Frame", nil, b)
-    well:SetSize(12, 12)
+    well:SetSize(14, 14)
     well:SetPoint("LEFT")
     Kit.Fill(well, Palette.well)
-    Kit.Border(well, Palette.ringRest)
-    b:SetScript("OnEnter", function() Ring(well, Palette.ringHover) end)
-    b:SetScript("OnLeave", function() Ring(well, Palette.ringRest) end)
+    Kit.Border(well, Palette.border)
+    local wash = Solid(well, "ARTWORK", 1, Palette.hoverWash)
+    wash:SetPoint("TOPLEFT", 1, -1)
+    wash:SetPoint("BOTTOMRIGHT", -1, 1)
+    wash:Hide()
+    b:SetScript("OnEnter", function() wash:Show() end)
+    b:SetScript("OnLeave", function() wash:Hide() end)
     local mark = well:CreateTexture(nil, "OVERLAY")
-    mark:SetSize(8, 8)
-    mark:SetPoint("CENTER")
-    mark:SetColorTexture(Palette.on[1], Palette.on[2], Palette.on[3], 1)
+    mark:SetPoint("TOPLEFT", 2, -2)
+    mark:SetPoint("BOTTOMRIGHT", -2, 2)
     local text = b:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
-    text:SetPoint("LEFT", well, "RIGHT", 6, 0)
+    text:SetPoint("LEFT", well, "RIGHT", 5, 0)
+    text:SetWordWrap(false)
     text:SetText(label)
-    b:SetWidth(18 + text:GetStringWidth() + 4)
-    b.label = text
+    b:SetWidth(19 + text:GetStringWidth() + 4)
+    b.label, b.well = text, well
     local on = false
-    function b:Set(v) on = v and true or false; mark:SetShown(on) end
+    function b:Set(v)
+        on = v and true or false
+        local c = Kit.Accent()
+        mark:SetColorTexture(c[1], c[2], c[3], Palette.fillA)
+        mark:SetShown(on)
+    end
     function b:Get() return on end
-    function b:SetLabel(t) text:SetText(t); self:SetWidth(18 + text:GetStringWidth() + 4) end
+    function b:SetLabel(t) text:SetText(t); self:SetWidth(19 + text:GetStringWidth() + 4) end
     b:SetScript("OnClick", function(self) self:Set(not on); onChange(on) end)
     b:Set(false)
     return b
 end
 
--- Text box: light well + grey ring (grey on hover, white while typing). onCommit(text) on Enter or losing
--- focus. Clears focus when hidden (a hidden focused box eats every key).
+-- Text box: control fill, black edge; the accent edge while typing. onCommit(text)
+-- on Enter or losing focus. Clears focus when hidden (a hidden focused box eats every key).
 function Kit.Edit(parent, width, onCommit, numeric)
     local e = CreateFrame("EditBox", nil, parent)
     e:SetSize(width, 20)
@@ -418,18 +447,99 @@ function Kit.Edit(parent, width, onCommit, numeric)
     e:SetTextInsets(6, 6, 0, 0)
     if numeric then e:SetNumeric(true) end
     Kit.Fill(e, Palette.well)
-    Kit.Border(e, Palette.ringRest)
+    Kit.Border(e, Palette.border)
     -- SetScript drops any hooks already on that script, so set before hooking
     -- (the rest ring after typing never came back while this ran last).
     e:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     e:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     e:SetScript("OnEditFocusLost", function(self) onCommit(self:GetText()) end)
     e:SetScript("OnHide", function(self) self:ClearFocus() end)
-    e:HookScript("OnEnter", function(self) if not self:HasFocus() then Ring(self, Palette.ringHover) end end)
-    e:HookScript("OnLeave", function(self) if not self:HasFocus() then Ring(self, Palette.ringRest) end end)
-    e:HookScript("OnEditFocusGained", function(self) Ring(self, Palette.on) end)
-    e:HookScript("OnEditFocusLost", function(self) Ring(self, self:IsMouseOver() and Palette.ringHover or Palette.ringRest) end)
+    e:HookScript("OnEditFocusGained", function(self) Ring(self, Kit.Accent()) end)
+    e:HookScript("OnEditFocusLost", function(self) Ring(self, Palette.border) end)
     return e
+end
+
+-- A thin rule between groups of controls (AES: #2a2a2a).
+function Kit.Rule(parent)
+    local t = parent:CreateTexture(nil, "ARTWORK")
+    t:SetColorTexture(0.165, 0.165, 0.165, 1)
+    t:SetHeight(1)
+    return t
+end
+
+-- AES's arrow (its own art when AES is loaded, else a drawn chevron), pointing
+-- down; tex:SetRotation turns it. Kit.ARROW_ART is set by the adapter.
+function Kit.Arrow(parent, size)
+    local t = parent:CreateTexture(nil, "OVERLAY")
+    t:SetSize(size or 10, size or 10)
+    if Kit.ARROW_ART then
+        t:SetTexture(Kit.ARROW_ART)
+        return t
+    end
+    t:SetTexture("Interface\\Buttons\\WHITE8x8")
+    t:SetTexCoord(0, 1, 0, 1)
+    -- Drawn: two bars in a V (pointing down at 0), turned with the same
+    -- angles as AES's art (SetRotation, counter-clockwise: right = pi / 2).
+    t:SetAlpha(0)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetAllPoints(t)
+    local bars, BASE = {}, { { -1.8, -math.pi / 4 }, { 1.8, math.pi / 4 } }
+    for i = 1, 2 do
+        bars[i] = holder:CreateTexture(nil, "OVERLAY")
+        bars[i]:SetSize(6, 1.5)
+    end
+    function t:SetVertexColor(r, g, b) for _, bar in ipairs(bars) do bar:SetColorTexture(r, g, b, 1) end end
+    function t:SetRotation(rad)
+        local c, sn = math.cos(rad), math.sin(rad)
+        for i, bar in ipairs(bars) do
+            local x = BASE[i][1]
+            bar:ClearAllPoints()
+            bar:SetPoint("CENTER", x * c, x * sn)
+            bar:SetRotation(BASE[i][2] + rad)
+        end
+    end
+    function t:SetShown(on) holder:SetShown(on) end
+    function t:Show() holder:Show() end
+    function t:Hide() holder:Hide() end
+    t:SetVertexColor(0.85, 0.85, 0.85)
+    t:SetRotation(0)
+    return t
+end
+
+-- Slider (AES's Min Score): a label above, a 10px track with an accent thumb.
+-- s:SetValue(v) without a callback; onChange(v) on a drag, stepped.
+function Kit.Slider(parent, width, max, step, label, onChange)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetSize(width, 28)
+    local text = holder:CreateFontString(nil, "OVERLAY", "PickupGroupFontSmall")
+    text:SetPoint("TOPLEFT")
+    local s = CreateFrame("Slider", nil, holder)
+    s:SetOrientation("HORIZONTAL")
+    s:SetHeight(10)
+    s:SetPoint("TOPLEFT", 0, -15)
+    s:SetPoint("TOPRIGHT", 0, -15)
+    s:SetHitRectInsets(0, 0, -6, -6)
+    Kit.Fill(s, Palette.bgMedium)
+    Kit.Border(s, Palette.border)
+    local thumb = s:CreateTexture(nil, "OVERLAY")
+    local c = Kit.Accent()
+    thumb:SetColorTexture(c[1], c[2], c[3], 1)
+    thumb:SetSize(8, 10)
+    s:SetThumbTexture(thumb)
+    s:SetMinMaxValues(0, max)
+    s:SetValueStep(step)
+    s:SetObeyStepOnDrag(true)
+    local quiet = false
+    local function Show(v) text:SetText(label .. ": " .. (v > 0 and tostring(v) or "Off")) end
+    s:SetScript("OnValueChanged", function(_, value)
+        local v = math.floor(value / step + 0.5) * step
+        Show(v)
+        if not quiet then onChange(v) end
+    end)
+    function holder:SetValue(v) quiet = true; s:SetValue(v or 0); Show(v or 0); quiet = false end
+    holder:SetValue(0)
+    holder:EnableMouse(true)
+    return holder
 end
 
 -- Grey placeholder naming the field, shown while the box is empty and unfocused.
