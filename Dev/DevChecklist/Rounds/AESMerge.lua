@@ -5,6 +5,7 @@ DevChecklist_Rounds["AES Group Finder"] = {
         { "talent builds", "No spec label; Raid / M+ / Gear headings sit right under the toggles.", "screenshot" },
         { "talent builds", "Click a build: blue wash only, no marching outline; tree marks show.", "yes / no" },
         { "talent builds", "Footer: just Apply / Tags... / More..., no text.", "screenshot" },
+        { "talent builds", "Apply a build: one atrocityUI loadout in the dropdown, and it's the selected one.", "screenshot" },
         { "talent builds", "Apply three different builds, one after another. Then /reload.", "log" },
         { "talent builds", "Apply is a plain button: lit when there's something to apply, grayed on the build in use.", "yes / no" },
         { "talent builds", "+ and import icons open Save / Import; the menu opens settings.", "yes / no" },
