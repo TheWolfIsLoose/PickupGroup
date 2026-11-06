@@ -6,7 +6,8 @@ DevChecklist_Rounds["AES Group Finder"] = {
         { "prompt", "Click a Loot tile: it lights; your own spec's tile means follow spec.", "yes / no" },
         { "prompt", "Build dropdown: pick another build, it applies right away.", "yes / no" },
         { "prompt", "Tag...: Tag This Build Here, and Save as a New Build for Here opens the form pre-tagged.", "yes / no" },
-        { "prompt", "Click a Spec tile: spec changes, card follows. Then /reload.", "log" },
+        { "prompt", "Loot tile on your own spec: chat says Loot Specialization set to: Current Specialization.", "yes / no" },
+        { "prompt", "Hover the gold build name: tooltip above it; click: tooltip goes, menu opens.", "yes / no" },
         { "talent builds", "Preview a build: added green, dropped red, changed choice or rank gold.", "screenshot" },
     },
 }
