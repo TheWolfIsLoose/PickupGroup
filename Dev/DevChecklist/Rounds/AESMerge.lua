@@ -1,9 +1,9 @@
 DevChecklist_Rounds = DevChecklist_Rounds or {}
 DevChecklist_Rounds["AES Group Finder"] = {
-    round = "talent builds: last windows",
+    round = "talent builds: button labels + tag overview",
     items = {
-        { "talent builds", "Settings > Bring Builds In: blue title, grey note, Title Case buttons. Not Now closes.", "screenshot" },
-        { "talent builds", "Settings > Open Log: blue title, dark box with black edge, blue edge when focused.", "screenshot" },
-        { "talent builds", "Pane and Tag Overview greys look the same as Group Finder's muted text.", "yes / no" },
+        { "talent builds", "Tags... and More... labels white; Save / Cancel and prompt Tag... white too.", "screenshot" },
+        { "talent builds", "Tag Overview: same dark as the pane (no lighter slab), no Raid / M+ / Gear headings.", "screenshot" },
+        { "talent builds", "Back to Builds: list and headings return.", "yes / no" },
     },
 }
