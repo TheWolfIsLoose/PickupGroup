@@ -5,6 +5,5 @@ DevChecklist_Rounds["AESMerge"] = {
         { "slash", "/aes talents, /aes restock, /aes gf: each prints its commands.", "yes / no" },
         { "slash", "/aes talents log, /aes restock log, /aes gf log: each opens its log.", "yes / no" },
         { "tab", "Utilities › Talent Builds: no Open Log button, no slash note.", "screenshot" },
-        { "readycheck", "At a ready check, Shift-drag the card: it moves and stays.", "yes / no" },
     },
 }
