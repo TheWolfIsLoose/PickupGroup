@@ -1,11 +1,7 @@
 DevChecklist_Rounds = DevChecklist_Rounds or {}
 DevChecklist_Rounds["AES Group Finder"] = {
-    round = "talent builds: group finder look",
+    round = "talent builds: apply in place",
     items = {
-        { "talent builds", "No spec label; Raid / M+ / Gear headings sit right under the toggles.", "screenshot" },
-        { "talent builds", "Click a build: blue wash only, no marching outline; tree marks show.", "yes / no" },
-        { "talent builds", "Footer: just Apply / Tags... / More..., no text.", "screenshot" },
-        { "talent builds", "Apply a build: one atrocityUI loadout in the dropdown, and it's the selected one.", "screenshot" },
         { "talent builds", "Talents open: apply three builds in a row. Any hitch or freeze when you click?", "yes / no" },
         { "talent builds", "/aes talents inplace (says by import), apply three more, then /reload.", "log" },
         { "talent builds", "Select another build: Apply fills blue like the Builds toggle; on the build in use it grays.", "screenshot" },
